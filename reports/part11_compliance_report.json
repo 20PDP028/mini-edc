@@ -1,0 +1,40 @@
+{
+  "report_generated": "2026-05-08T09:06:51.201530+00:00",
+  "standard": "21 CFR Part 11",
+  "statistics": {
+    "users": 3,
+    "sessions": 1,
+    "audit_entries": 9,
+    "e_signatures": 1,
+    "crf_records": 1
+  },
+  "integrity": {
+    "total_entries": 9,
+    "tampered_count": 0,
+    "tampered_ids": [],
+    "integrity_ok": true,
+    "checked_at": "2026-05-08T09:06:51.201368+00:00"
+  },
+  "audit_actions": {
+    "CREATE": 4,
+    "LOGIN": 1,
+    "LOGIN_FAIL": 1,
+    "SIGN": 1,
+    "UPDATE": 2
+  },
+  "signature_reasons": {
+    "Medical Review": 1
+  },
+  "requirements_met": {
+    "\u00a711.10(e) Audit trail": true,
+    "\u00a711.10(d) Access control": true,
+    "\u00a711.50  Signature manifest": true,
+    "\u00a711.70  Record binding": true,
+    "\u00a711.100 Non-repudiation": true,
+    "\u00a711.200 Password re-entry": true,
+    "\u00a711.300 Password controls": true,
+    "Tamper detection (HMAC)": true,
+    "Hash chain integrity": true,
+    "Immutable audit (DB triggers)": true
+  }
+}

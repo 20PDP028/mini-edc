@@ -1,0 +1,81 @@
+# ── Mini EDC — Phase F: Docker Compose ───────────────────────────────────────
+# Runs the full stack: API + Streamlit dashboard + Nginx reverse proxy
+#
+# Usage:
+#   docker compose up --build          # start everything
+#   docker compose up -d               # start in background
+#   docker compose down                # stop and remove containers
+#   docker compose logs -f api         # tail API logs
+
+version: "3.9"
+
+services:
+
+  # ── REST API (Phase E) ─────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: mini_edc_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - edc_reports:/app/reports
+      - edc_logs:/app/logs
+    environment:
+      - EDC_ENV=production
+      - EDC_SECRET_KEY=${EDC_SECRET_KEY:-mini_edc_change_in_prod}
+      - EDC_LOG_LEVEL=${EDC_LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - edc_network
+
+  # ── Streamlit Dashboard (Phase D) ─────────────────────────────────────────
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: mini_edc_dashboard
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      - EDC_API_URL=http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - edc_network
+
+  # ── Nginx Reverse Proxy ───────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: mini_edc_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - dashboard
+    networks:
+      - edc_network
+
+volumes:
+  edc_reports:
+    driver: local
+  edc_logs:
+    driver: local
+
+networks:
+  edc_network:
+    driver: bridge

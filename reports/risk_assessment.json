@@ -1,0 +1,89 @@
+{
+  "generated_at": "2026-05-08T01:26:50.707773",
+  "site_count": 3,
+  "high_risk": 1,
+  "medium_risk": 1,
+  "low_risk": 1,
+  "sites": [
+    {
+      "siteid": "SITE03",
+      "score": 100,
+      "category": "HIGH RISK",
+      "action": "Immediate on-site visit required",
+      "icon": "\ud83d\udd34",
+      "subjects": 5,
+      "critical_queries": 1,
+      "major_queries": 2,
+      "sae_pending": 2,
+      "stale_queries": 0,
+      "unanswered_rate": 100.0,
+      "factors": [
+        {
+          "factor": "Critical open queries",
+          "count": 1,
+          "points": 25,
+          "level": "HIGH"
+        },
+        {
+          "factor": "SAEs pending 24hr report",
+          "count": 2,
+          "points": 40,
+          "level": "CRITICAL"
+        },
+        {
+          "factor": "Major open queries",
+          "count": 2,
+          "points": 20,
+          "level": "MEDIUM"
+        },
+        {
+          "factor": "Unanswered rate (100%)",
+          "count": 3,
+          "points": 20,
+          "level": "LOW"
+        }
+      ]
+    },
+    {
+      "siteid": "SITE01",
+      "score": 53,
+      "category": "MEDIUM RISK",
+      "action": "Remote monitoring review within 2 weeks",
+      "icon": "\ud83d\udfe1",
+      "subjects": 8,
+      "critical_queries": 2,
+      "major_queries": 0,
+      "sae_pending": 0,
+      "stale_queries": 0,
+      "unanswered_rate": 66.7,
+      "factors": [
+        {
+          "factor": "Critical open queries",
+          "count": 2,
+          "points": 40,
+          "level": "HIGH"
+        },
+        {
+          "factor": "Unanswered rate (67%)",
+          "count": 2,
+          "points": 13,
+          "level": "LOW"
+        }
+      ]
+    },
+    {
+      "siteid": "SITE02",
+      "score": 0,
+      "category": "LOW RISK",
+      "action": "Routine monitoring schedule",
+      "icon": "\ud83d\udfe2",
+      "subjects": 7,
+      "critical_queries": 0,
+      "major_queries": 0,
+      "sae_pending": 0,
+      "stale_queries": 0,
+      "unanswered_rate": 0.0,
+      "factors": []
+    }
+  ]
+}

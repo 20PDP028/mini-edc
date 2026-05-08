@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini EDC — eCRF Builder</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #F0F4F8; color: #1a1a2e; font-size: 14px; }
+
+  /* Header */
+  .header { background: #0D2B55; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 18px; }
+  .header .badge { background: #00897B; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+
+  /* Layout */
+  .layout { display: flex; gap: 0; min-height: calc(100vh - 52px); }
+
+  /* Sidebar */
+  .sidebar { width: 240px; background: white; border-right: 1px solid #ddd; padding: 16px; flex-shrink: 0; }
+  .sidebar h3 { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .field-item { background: #F0F4F8; border: 1px solid #ddd; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; cursor: grab; font-size: 13px; display: flex; align-items: center; gap: 8px; user-select: none; }
+  .field-item:hover { background: #E3EAF4; border-color: #0D2B55; }
+  .field-item .icon { font-size: 16px; }
+  .field-item:active { cursor: grabbing; opacity: .7; }
+
+  /* Canvas */
+  .canvas-wrap { flex: 1; padding: 20px; overflow-y: auto; }
+  .canvas-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .canvas-header h2 { font-size: 16px; color: #0D2B55; }
+  .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
+  .btn-primary { background: #0D2B55; color: white; }
+  .btn-success { background: #00897B; color: white; }
+  .btn-danger  { background: #C62828; color: white; font-size: 11px; padding: 4px 10px; }
+  .btn-sm      { font-size: 11px; padding: 4px 10px; }
+  .btn:hover   { opacity: .85; }
+
+  /* Form canvas */
+  .form-canvas { background: white; border: 2px dashed #B0BEC5; border-radius: 10px; min-height: 400px; padding: 20px; transition: border-color .2s; }
+  .form-canvas.drag-over { border-color: #0D2B55; background: #E8EFF8; }
+  .drop-hint { text-align: center; color: #999; padding: 60px 20px; font-size: 15px; }
+  .drop-hint .icon { font-size: 48px; margin-bottom: 10px; }
+
+  /* Form field row */
+  .form-field-row { display: flex; align-items: center; gap: 10px; background: #F8FAFC; border: 1px solid #E0E6EF; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
+  .form-field-row .label-col { flex: 0 0 160px; }
+  .form-field-row .label-col input { border: none; background: transparent; font-weight: bold; color: #0D2B55; font-size: 13px; width: 100%; outline: none; }
+  .form-field-row .input-col { flex: 1; }
+  .form-field-row .input-col input,
+  .form-field-row .input-col select,
+  .form-field-row .input-col textarea { width: 100%; padding: 6px 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; }
+  .form-field-row .req { color: #C62828; font-weight: bold; font-size: 16px; flex: 0 0 12px; }
+  .form-field-row .actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .field-type-tag { font-size: 10px; background: #E3EAF4; color: #0D2B55; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; }
+
+  /* Preview panel */
+  .preview-panel { width: 320px; background: white; border-left: 1px solid #ddd; padding: 16px; flex-shrink: 0; overflow-y: auto; }
+  .preview-panel h3 { font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; }
+  .preview-form label { display: block; font-size: 12px; font-weight: bold; color: #333; margin-bottom: 3px; margin-top: 10px; }
+  .preview-form input,
+  .preview-form select,
+  .preview-form textarea { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+  .preview-form .req-star { color: #C62828; }
+
+  /* Saved forms list */
+  .saved-list { margin-top: 16px; }
+  .saved-item { background: #F8FAFC; border: 1px solid #ddd; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .saved-item strong { color: #0D2B55; }
+
+  /* Status bar */
+  .statusbar { background: #0D2B55; color: rgba(255,255,255,.8); font-size: 11px; padding: 4px 20px; }
+
+  /* Tab bar */
+  .tabs { display: flex; gap: 2px; margin-bottom: 14px; }
+  .tab { padding: 7px 16px; background: #E8EFF8; border-radius: 6px 6px 0 0; cursor: pointer; font-size: 12px; color: #666; border: 1px solid #ddd; border-bottom: none; }
+  .tab.active { background: white; color: #0D2B55; font-weight: bold; }
+
+  /* Toast */
+  #toast { position: fixed; bottom: 30px; right: 30px; background: #00897B; color: white; padding: 10px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏥 Mini EDC — eCRF Builder <span style="opacity:.5;font-weight:normal;font-size:13px">Feature 19</span></h1>
+  <span class="badge">Enterprise Level</span>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR: Field palette -->
+  <div class="sidebar">
+    <h3>Field Types</h3>
+    <div class="field-item" draggable="true" data-type="text"     data-label="Text Field">    <span class="icon">📝</span> Text Field</div>
+    <div class="field-item" draggable="true" data-type="number"   data-label="Number">        <span class="icon">🔢</span> Number</div>
+    <div class="field-item" draggable="true" data-type="date"     data-label="Date">          <span class="icon">📅</span> Date</div>
+    <div class="field-item" draggable="true" data-type="select"   data-label="Dropdown">      <span class="icon">▼</span>  Dropdown</div>
+    <div class="field-item" draggable="true" data-type="radio"    data-label="Yes / No">      <span class="icon">⭕</span> Yes / No</div>
+    <div class="field-item" draggable="true" data-type="textarea" data-label="Comment">       <span class="icon">💬</span> Comment</div>
+    <div class="field-item" draggable="true" data-type="checkbox" data-label="Checkbox">      <span class="icon">☑️</span> Checkbox</div>
+    <div class="field-item" draggable="true" data-type="email"    data-label="Email">         <span class="icon">✉️</span> Email</div>
+
+    <h3 style="margin-top:20px">CDISC Quick Fields</h3>
+    <div class="field-item" draggable="true" data-type="text"   data-label="USUBJID">  <span class="icon">🆔</span> USUBJID</div>
+    <div class="field-item" draggable="true" data-type="number" data-label="AGE">      <span class="icon">🔢</span> AGE</div>
+    <div class="field-item" draggable="true" data-type="select" data-label="SEX"
+         data-options="M|F">                                                           <span class="icon">▼</span>  SEX (M/F)</div>
+    <div class="field-item" draggable="true" data-type="number" data-label="WEIGHTBL"> <span class="icon">🔢</span> WEIGHTBL</div>
+    <div class="field-item" draggable="true" data-type="date"   data-label="VISITDT">  <span class="icon">📅</span> VISITDT</div>
+    <div class="field-item" draggable="true" data-type="select" data-label="AESEV"
+         data-options="MILD|MODERATE|SEVERE">                                          <span class="icon">▼</span>  AESEV</div>
+    <div class="field-item" draggable="true" data-type="select" data-label="AESER"
+         data-options="Y|N">                                                           <span class="icon">▼</span>  AESER</div>
+    <div class="field-item" draggable="true" data-type="number" data-label="EXDOSE">   <span class="icon">🔢</span> EXDOSE</div>
+
+    <h3 style="margin-top:20px">Saved Forms</h3>
+    <div class="saved-list" id="saved-list"></div>
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas-wrap">
+    <div class="canvas-header">
+      <div>
+        <h2 id="form-title-display">Untitled CRF</h2>
+        <input id="form-title" type="text" value="Untitled CRF"
+               style="border:none;font-size:13px;color:#666;width:240px;outline:none;margin-top:2px"
+               oninput="document.getElementById('form-title-display').textContent=this.value">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" style="background:#E3EAF4;color:#0D2B55" onclick="clearCanvas()">Clear</button>
+        <button class="btn btn-sm" style="background:#E3EAF4;color:#0D2B55" onclick="exportJSON()">Export JSON</button>
+        <button class="btn btn-success" onclick="saveForm()">💾 Save Form</button>
+        <button class="btn btn-primary" onclick="submitForm()">✅ Submit CRF</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('build',this)">Build</div>
+      <div class="tab" onclick="switchTab('data',this)">Submitted Data</div>
+    </div>
+
+    <!-- Build tab -->
+    <div id="tab-build">
+      <div class="form-canvas" id="drop-zone">
+        <div class="drop-hint" id="drop-hint">
+          <div class="icon">📋</div>
+          Drag field types from the left panel<br>
+          <span style="font-size:12px;color:#bbb">or click a CDISC quick field to add it instantly</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submitted data tab -->
+    <div id="tab-data" style="display:none">
+      <div style="background:white;border-radius:8px;padding:16px">
+        <h3 style="font-size:13px;color:#0D2B55;margin-bottom:12px">Submitted CRF Records</h3>
+        <div id="submitted-table" style="overflow-x:auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREVIEW PANEL -->
+  <div class="preview-panel">
+    <h3>Live Preview</h3>
+    <div class="preview-form" id="preview-form">
+      <p style="color:#bbb;font-size:12px">Preview appears as you add fields</p>
+    </div>
+    <hr style="margin:16px 0;border-color:#eee">
+    <h3>Validation Rules</h3>
+    <div id="rules-list" style="font-size:11px;color:#555;line-height:1.8">
+      <p style="color:#bbb">No fields yet</p>
+    </div>
+  </div>
+</div>
+
+<div class="statusbar" id="statusbar">Ready — drag fields onto the canvas to build your eCRF</div>
+<div id="toast"></div>
+
+<script>
+let fields = [];
+let savedForms = JSON.parse(localStorage.getItem('ecrf_forms') || '[]');
+let submissions = JSON.parse(localStorage.getItem('ecrf_submissions') || '[]');
+
+const dropZone = document.getElementById('drop-zone');
+const dropHint = document.getElementById('drop-hint');
+let dragData = null;
+
+// ── Drag from sidebar ─────────────────────────────────────────
+document.querySelectorAll('.field-item[draggable]').forEach(el => {
+  el.addEventListener('dragstart', e => {
+    dragData = { type: el.dataset.type, label: el.dataset.label, options: el.dataset.options || '' };
+  });
+  el.addEventListener('click', () => {
+    dragData = { type: el.dataset.type, label: el.dataset.label, options: el.dataset.options || '' };
+    addField(dragData);
+  });
+});
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  if (dragData) addField(dragData);
+});
+
+// ── Add field ─────────────────────────────────────────────────
+function addField(data) {
+  const id = 'f_' + Date.now();
+  const field = { id, type: data.type, label: data.label, required: true, options: data.options };
+  fields.push(field);
+  renderField(field);
+  updatePreview();
+  updateRules();
+  dropHint.style.display = 'none';
+  setStatus(`Added: ${field.label} (${field.type})`);
+}
+
+function renderField(f) {
+  const row = document.createElement('div');
+  row.className = 'form-field-row';
+  row.id = 'row_' + f.id;
+  row.innerHTML = `
+    <div class="label-col">
+      <input value="${f.label}" onchange="updateLabel('${f.id}',this.value)" title="Click to rename">
+    </div>
+    <span class="field-type-tag">${f.type}</span>
+    <div class="input-col">${getInputHTML(f)}</div>
+    <span class="req" title="Required">${f.required ? '*' : ''}</span>
+    <div class="actions">
+      <button class="btn btn-sm" style="background:#E3EAF4;color:#0D2B55"
+        onclick="toggleRequired('${f.id}')">Req</button>
+      <button class="btn btn-danger" onclick="removeField('${f.id}')">✕</button>
+    </div>
+  `;
+  dropZone.appendChild(row);
+}
+
+function getInputHTML(f) {
+  if (f.type === 'select') {
+    const opts = (f.options || 'Option 1|Option 2').split('|')
+      .map(o => `<option>${o}</option>`).join('');
+    return `<select disabled><option value="">-- select --</option>${opts}</select>`;
+  }
+  if (f.type === 'radio') {
+    return `<label style="margin-right:12px"><input type="radio" disabled> Yes</label>
+            <label><input type="radio" disabled> No</label>`;
+  }
+  if (f.type === 'textarea') return `<textarea rows="2" disabled placeholder="${f.label}"></textarea>`;
+  if (f.type === 'checkbox') return `<input type="checkbox" disabled>`;
+  return `<input type="${f.type}" disabled placeholder="${f.label}">`;
+}
+
+function updateLabel(id, val) {
+  const f = fields.find(x => x.id === id);
+  if (f) { f.label = val; updatePreview(); updateRules(); }
+}
+
+function toggleRequired(id) {
+  const f = fields.find(x => x.id === id);
+  if (!f) return;
+  f.required = !f.required;
+  document.querySelector(`#row_${id} .req`).textContent = f.required ? '*' : '';
+  updateRules();
+}
+
+function removeField(id) {
+  fields = fields.filter(x => x.id !== id);
+  document.getElementById('row_' + id)?.remove();
+  if (!fields.length) dropHint.style.display = '';
+  updatePreview();
+  updateRules();
+  setStatus('Field removed');
+}
+
+// ── Preview ───────────────────────────────────────────────────
+function updatePreview() {
+  const pf = document.getElementById('preview-form');
+  if (!fields.length) { pf.innerHTML = '<p style="color:#bbb;font-size:12px">Preview appears as you add fields</p>'; return; }
+  pf.innerHTML = fields.map(f => {
+    const req = f.required ? '<span class="req-star">*</span>' : '';
+    let inp = '';
+    if (f.type === 'select') {
+      const opts = (f.options || 'Option 1|Option 2').split('|').map(o=>`<option>${o}</option>`).join('');
+      inp = `<select><option value="">-- select --</option>${opts}</select>`;
+    } else if (f.type === 'radio') {
+      inp = `<label style="margin-right:10px"><input type="radio" name="${f.id}"> Yes</label>
+             <label><input type="radio" name="${f.id}"> No</label>`;
+    } else if (f.type === 'textarea') {
+      inp = `<textarea rows="2"></textarea>`;
+    } else if (f.type === 'checkbox') {
+      inp = `<input type="checkbox">`;
+    } else {
+      inp = `<input type="${f.type}" placeholder="${f.label}">`;
+    }
+    return `<label>${f.label} ${req}</label>${inp}`;
+  }).join('');
+}
+
+// ── Rules ─────────────────────────────────────────────────────
+function updateRules() {
+  const rl = document.getElementById('rules-list');
+  if (!fields.length) { rl.innerHTML = '<p style="color:#bbb">No fields yet</p>'; return; }
+  rl.innerHTML = fields.map(f =>
+    `• <strong>${f.label}</strong>: ${f.type}${f.required ? ' [required]' : ''}`
+  ).join('<br>');
+}
+
+// ── Save / Load ───────────────────────────────────────────────
+function saveForm() {
+  const title = document.getElementById('form-title').value.trim() || 'Untitled CRF';
+  const form = { id: Date.now(), title, fields: JSON.parse(JSON.stringify(fields)), saved_at: new Date().toISOString() };
+  savedForms = savedForms.filter(f => f.title !== title);
+  savedForms.unshift(form);
+  localStorage.setItem('ecrf_forms', JSON.stringify(savedForms));
+  renderSavedList();
+  toast(`Form "${title}" saved!`);
+}
+
+function loadForm(id) {
+  const form = savedForms.find(f => f.id === id);
+  if (!form) return;
+  fields = JSON.parse(JSON.stringify(form.fields));
+  document.getElementById('form-title').value = form.title;
+  document.getElementById('form-title-display').textContent = form.title;
+  dropZone.querySelectorAll('.form-field-row').forEach(r => r.remove());
+  fields.forEach(renderField);
+  dropHint.style.display = fields.length ? 'none' : '';
+  updatePreview();
+  updateRules();
+  toast(`Loaded: ${form.title}`);
+}
+
+function deleteForm(id, e) {
+  e.stopPropagation();
+  savedForms = savedForms.filter(f => f.id !== id);
+  localStorage.setItem('ecrf_forms', JSON.stringify(savedForms));
+  renderSavedList();
+  toast('Form deleted');
+}
+
+function renderSavedList() {
+  const el = document.getElementById('saved-list');
+  if (!savedForms.length) { el.innerHTML = '<p style="color:#bbb;font-size:11px">No saved forms</p>'; return; }
+  el.innerHTML = savedForms.map(f => `
+    <div class="saved-item" onclick="loadForm(${f.id})" style="cursor:pointer">
+      <div><strong>${f.title}</strong><br><span style="color:#888;font-size:10px">${f.fields.length} fields</span></div>
+      <button class="btn btn-danger" onclick="deleteForm(${f.id},event)">✕</button>
+    </div>
+  `).join('');
+}
+
+// ── Submit ────────────────────────────────────────────────────
+function submitForm() {
+  const pf = document.getElementById('preview-form');
+  const record = { submitted_at: new Date().toISOString(), form: document.getElementById('form-title').value };
+  let valid = true;
+
+  fields.forEach(f => {
+    const inp = pf.querySelector(`input[placeholder="${f.label}"], select, textarea`);
+    const val = inp ? inp.value : '';
+    if (f.required && !val) { valid = false; }
+    record[f.label] = val;
+  });
+
+  if (!valid) { toast('⚠️ Fill all required fields first'); return; }
+
+  submissions.unshift(record);
+  localStorage.setItem('ecrf_submissions', JSON.stringify(submissions));
+  toast('✅ CRF submitted successfully!');
+  renderSubmissions();
+}
+
+function renderSubmissions() {
+  const el = document.getElementById('submitted-table');
+  if (!submissions.length) { el.innerHTML = '<p style="color:#bbb">No submissions yet</p>'; return; }
+  const keys = Object.keys(submissions[0]);
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <tr>${keys.map(k=>`<th style="background:#0D2B55;color:white;padding:6px 10px;text-align:left">${k}</th>`).join('')}</tr>
+    ${submissions.map((r,i)=>`<tr style="background:${i%2?'#F8FAFC':'white'}">${keys.map(k=>`<td style="padding:5px 10px;border-bottom:1px solid #eee">${r[k]||'-'}</td>`).join('')}</tr>`).join('')}
+  </table>`;
+}
+
+// ── Export ────────────────────────────────────────────────────
+function exportJSON() {
+  const data = { title: document.getElementById('form-title').value, fields, exported_at: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = (data.title || 'ecrf') + '.json'; a.click();
+  toast('JSON exported!');
+}
+
+function clearCanvas() {
+  fields = [];
+  dropZone.querySelectorAll('.form-field-row').forEach(r => r.remove());
+  dropHint.style.display = '';
+  updatePreview(); updateRules();
+  setStatus('Canvas cleared');
+}
+
+// ── Tab ───────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-build').style.display = tab === 'build' ? '' : 'none';
+  document.getElementById('tab-data').style.display  = tab === 'data'  ? '' : 'none';
+  if (tab === 'data') renderSubmissions();
+}
+
+// ── Utils ─────────────────────────────────────────────────────
+function setStatus(msg) { document.getElementById('statusbar').textContent = msg; }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+renderSavedList();
+setStatus('Ready — drag fields onto the canvas or click CDISC quick fields to build your eCRF');
+</script>
+</body>
+</html>

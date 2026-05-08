@@ -1,0 +1,28 @@
+[
+  {
+    "timestamp": "2026-05-08T01:13:32.349203",
+    "saes": 2,
+    "criticals": 3,
+    "stale": 0,
+    "summary": {
+      "open": 5,
+      "critical": 3,
+      "saes": 2,
+      "subjects": 20
+    },
+    "email_sent": false
+  },
+  {
+    "timestamp": "2026-05-08T01:23:16.324696",
+    "saes": 2,
+    "criticals": 3,
+    "stale": 0,
+    "summary": {
+      "open": 5,
+      "critical": 3,
+      "saes": 2,
+      "subjects": 20
+    },
+    "email_sent": true
+  }
+]

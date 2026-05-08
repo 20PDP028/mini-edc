@@ -1,0 +1,1652 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Mini EDC REST API",
+    "description": "\n## Mini EDC System \u2014 Phase E REST API\n\nA **CDISC-compliant Electronic Data Capture** system exposing all core modules:\n\n| Module | Description |\n|--------|-------------|\n| \ud83d\udd10 **Auth** | JWT-style token login, role-based access |\n| \u2705 **Validation** | Phase A \u2014 40+ CDISC edit checks across 7 domains |\n| \ud83d\udce6 **SDTM** | Phase B \u2014 SDTM v1.8 dataset generation |\n| \ud83d\udccb **Audit** | Phase C \u2014 21 CFR Part 11 immutable audit trail |\n| \ud83d\udcca **Subjects** | Subject management (add, query, status) |\n| \ud83d\udd14 **Queries** | Data query workflow (raise, respond, close) |\n\n> \u2699\ufe0f **Base URL**: `http://localhost:8000`  \n> \ud83d\udcd6 **Docs**: `/docs` (Swagger UI) | `/redoc` (ReDoc)\n",
+    "contact": {
+      "name": "Mini EDC Project",
+      "email": "sponsor@cro.com"
+    },
+    "license": {
+      "name": "MIT"
+    },
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login and receive an auth token",
+        "description": "Authenticate with username and password.\n\nReturns a **token** to pass as `?token=` on all protected endpoints.\n\n**Demo credentials:**\n| Username | Password | Role |\n|----------|----------|------|\n| admin | Admin@1234 | Admin |\n| investigator | Invest@1234 | Investigator |\n| datamanager | DataMgr@1234 | Data Manager |\n| monitor | Monitor@1234 | Monitor |",
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout and invalidate token",
+        "operationId": "logout_auth_logout_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subjects": {
+      "post": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Enroll a new subject",
+        "description": "Enroll a new subject into the study.\n\n- **usubjid**: Must be unique \u2014 CDISC USUBJID format (e.g. STUDY001-001)\n- **sex**: M / F / U / N\n- **country**: ISO 3166-1 alpha-3 (e.g. USA, GBR)\n- **consent_date**: Must be before first dose",
+        "operationId": "create_subject_subjects_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubjectIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "List all enrolled subjects",
+        "operationId": "list_subjects_subjects_get",
+        "parameters": [
+          {
+            "name": "site_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by site ID",
+              "title": "Site Id"
+            },
+            "description": "Filter by site ID"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status (ENROLLED, COMPLETED, WITHDRAWN)",
+              "title": "Status"
+            },
+            "description": "Filter by status (ENROLLED, COMPLETED, WITHDRAWN)"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubjectOut"
+                  },
+                  "title": "Response List Subjects Subjects Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subjects/{usubjid}": {
+      "get": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Get a single subject by USUBJID",
+        "operationId": "get_subject_subjects__usubjid__get",
+        "parameters": [
+          {
+            "name": "usubjid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Usubjid"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subjects/{usubjid}/status": {
+      "patch": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Update subject status (ENROLLED \u2192 COMPLETED / WITHDRAWN)",
+        "operationId": "update_subject_status_subjects__usubjid__status_patch",
+        "parameters": [
+          {
+            "name": "usubjid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Usubjid"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_subject_status_subjects__usubjid__status_patch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/validation/run": {
+      "post": {
+        "tags": [
+          "validation"
+        ],
+        "summary": "Run CDISC edit checks on a batch of records",
+        "description": "Submit records for **Phase A CDISC validation**.\n\nSupported domains: **DM, AE, VS, LB, EX, SV, DS**\n\nReturns all findings categorised by:\n- \ud83d\udd34 **CRITICAL** \u2014 Protocol/regulatory violations\n- \ud83d\udfe0 **ERROR** \u2014 CDISC rule failures\n- \ud83d\udfe1 **WARNING** \u2014 Data quality issues",
+        "operationId": "run_validation_validation_run_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/validation/rules": {
+      "get": {
+        "tags": [
+          "validation"
+        ],
+        "summary": "List all available validation rules by domain",
+        "description": "Returns the catalogue of built-in CDISC edit checks.\nFilter by domain to see domain-specific rules.",
+        "operationId": "list_rules_validation_rules_get",
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DomainEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Domain"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sdtm/generate": {
+      "post": {
+        "tags": [
+          "sdtm"
+        ],
+        "summary": "Generate an SDTM v1.8 dataset for a domain",
+        "description": "Generate a **CDISC SDTM v1.8** compliant dataset.\n\nSupported domains: **DM, AE, VS, LB, EX**\n\nReturns structured rows ready for SAS Transport (.xpt) conversion.",
+        "operationId": "generate_sdtm_sdtm_generate_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SDTMRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sdtm/domains": {
+      "get": {
+        "tags": [
+          "sdtm"
+        ],
+        "summary": "List supported SDTM domains and their variables",
+        "operationId": "list_sdtm_domains_sdtm_domains_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/audit/trail": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "Retrieve the immutable 21 CFR Part 11 audit trail",
+        "description": "Returns the **hash-chained, tamper-evident audit log** (21 CFR Part 11 \u00a711.10(e)).\n\nEach entry carries a HMAC chain hash linking it to the previous entry.\nAny modification to a historical record breaks the chain and is immediately detectable.",
+        "operationId": "get_audit_trail_audit_trail_get",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by username",
+              "title": "User"
+            },
+            "description": "Filter by username"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by action type",
+              "title": "Action"
+            },
+            "description": "Filter by action type"
+          },
+          {
+            "name": "domain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by CDISC domain",
+              "title": "Domain"
+            },
+            "description": "Filter by CDISC domain"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "Max entries to return",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Max entries to return"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEntry"
+                  },
+                  "title": "Response Get Audit Trail Audit Trail Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/audit/integrity": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "Verify the chain integrity of the entire audit log",
+        "description": "Re-computes every chain hash in the audit log and flags any broken links.\nA clean result means **no tampering has occurred**.",
+        "operationId": "verify_audit_integrity_audit_integrity_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/queries": {
+      "post": {
+        "tags": [
+          "queries"
+        ],
+        "summary": "Raise a data query against a subject record",
+        "description": "Open a **data query** on a subject's data point.\n\nThe query workflow: **OPEN \u2192 ANSWERED \u2192 CLOSED**",
+        "operationId": "raise_query_queries_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "queries"
+        ],
+        "summary": "List all queries, optionally filtered",
+        "operationId": "list_queries_queries_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/QueryStatusEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "usubjid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Usubjid"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QueryOut"
+                  },
+                  "title": "Response List Queries Queries Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/queries/{query_id}/respond": {
+      "patch": {
+        "tags": [
+          "queries"
+        ],
+        "summary": "Respond to an open query",
+        "operationId": "respond_to_query_queries__query_id__respond_patch",
+        "parameters": [
+          {
+            "name": "query_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Query Id"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_respond_to_query_queries__query_id__respond_patch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/queries/{query_id}/close": {
+      "patch": {
+        "tags": [
+          "queries"
+        ],
+        "summary": "Close an answered query",
+        "operationId": "close_query_queries__query_id__close_patch",
+        "parameters": [
+          {
+            "name": "query_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Query Id"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Health check \u2014 no auth required",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/stats": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Study-level statistics",
+        "operationId": "system_stats_system_stats_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Auth token from /auth/login",
+              "title": "Token"
+            },
+            "description": "Auth token from /auth/login"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "API root \u2014 links to docs",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuditEntry": {
+        "properties": {
+          "entry_id": {
+            "type": "string",
+            "title": "Entry Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          },
+          "user": {
+            "type": "string",
+            "title": "User"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "domain": {
+            "type": "string",
+            "title": "Domain"
+          },
+          "usubjid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usubjid"
+          },
+          "details": {
+            "type": "string",
+            "title": "Details"
+          },
+          "chain_hash": {
+            "type": "string",
+            "title": "Chain Hash"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entry_id",
+          "timestamp",
+          "user",
+          "action",
+          "domain",
+          "usubjid",
+          "details",
+          "chain_hash"
+        ],
+        "title": "AuditEntry"
+      },
+      "Body_respond_to_query_queries__query_id__respond_patch": {
+        "properties": {
+          "response": {
+            "type": "string",
+            "title": "Response"
+          }
+        },
+        "type": "object",
+        "required": [
+          "response"
+        ],
+        "title": "Body_respond_to_query_queries__query_id__respond_patch"
+      },
+      "Body_update_subject_status_subjects__usubjid__status_patch": {
+        "properties": {
+          "new_status": {
+            "type": "string",
+            "enum": [
+              "ENROLLED",
+              "COMPLETED",
+              "WITHDRAWN"
+            ],
+            "title": "New Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "new_status"
+        ],
+        "title": "Body_update_subject_status_subjects__usubjid__status_patch"
+      },
+      "DomainEnum": {
+        "type": "string",
+        "enum": [
+          "DM",
+          "AE",
+          "VS",
+          "LB",
+          "EX",
+          "SV",
+          "DS"
+        ],
+        "title": "DomainEnum"
+      },
+      "FindingOut": {
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "title": "Rule Id"
+          },
+          "domain": {
+            "type": "string",
+            "title": "Domain"
+          },
+          "usubjid": {
+            "type": "string",
+            "title": "Usubjid"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule_id",
+          "domain",
+          "usubjid",
+          "severity",
+          "message",
+          "field"
+        ],
+        "title": "FindingOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LoginRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "example": "admin"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "example": "Admin@1234"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "LoginResponse": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "username",
+          "role",
+          "message"
+        ],
+        "title": "LoginResponse"
+      },
+      "QueryIn": {
+        "properties": {
+          "usubjid": {
+            "type": "string",
+            "title": "Usubjid",
+            "example": "STUDY001-001"
+          },
+          "domain": {
+            "$ref": "#/components/schemas/DomainEnum",
+            "example": "VS"
+          },
+          "field": {
+            "type": "string",
+            "title": "Field",
+            "example": "VSORRES"
+          },
+          "visit": {
+            "type": "string",
+            "title": "Visit",
+            "example": "WEEK 4"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "example": "Systolic value 185 seems implausibly high. Please verify source document."
+          }
+        },
+        "type": "object",
+        "required": [
+          "usubjid",
+          "domain",
+          "field",
+          "visit",
+          "message"
+        ],
+        "title": "QueryIn"
+      },
+      "QueryOut": {
+        "properties": {
+          "usubjid": {
+            "type": "string",
+            "title": "Usubjid",
+            "example": "STUDY001-001"
+          },
+          "domain": {
+            "$ref": "#/components/schemas/DomainEnum",
+            "example": "VS"
+          },
+          "field": {
+            "type": "string",
+            "title": "Field",
+            "example": "VSORRES"
+          },
+          "visit": {
+            "type": "string",
+            "title": "Visit",
+            "example": "WEEK 4"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "example": "Systolic value 185 seems implausibly high. Please verify source document."
+          },
+          "query_id": {
+            "type": "string",
+            "title": "Query Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "raised_by": {
+            "type": "string",
+            "title": "Raised By"
+          },
+          "raised_at": {
+            "type": "string",
+            "title": "Raised At"
+          },
+          "response": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usubjid",
+          "domain",
+          "field",
+          "visit",
+          "message",
+          "query_id",
+          "status",
+          "raised_by",
+          "raised_at",
+          "response",
+          "closed_at"
+        ],
+        "title": "QueryOut"
+      },
+      "QueryStatusEnum": {
+        "type": "string",
+        "enum": [
+          "OPEN",
+          "ANSWERED",
+          "CLOSED"
+        ],
+        "title": "QueryStatusEnum"
+      },
+      "SDTMRequest": {
+        "properties": {
+          "domain": {
+            "$ref": "#/components/schemas/DomainEnum",
+            "example": "DM"
+          },
+          "subjects": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subjects",
+            "example": [
+              "STUDY001-001",
+              "STUDY001-002"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "domain"
+        ],
+        "title": "SDTMRequest"
+      },
+      "SubjectIn": {
+        "properties": {
+          "usubjid": {
+            "type": "string",
+            "title": "Usubjid",
+            "description": "Unique Subject Identifier (CDISC USUBJID)",
+            "example": "STUDY001-001"
+          },
+          "age": {
+            "type": "integer",
+            "maximum": 99.0,
+            "minimum": 18.0,
+            "title": "Age",
+            "example": 45
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "M",
+              "F",
+              "U",
+              "N"
+            ],
+            "title": "Sex",
+            "example": "M"
+          },
+          "race": {
+            "type": "string",
+            "title": "Race",
+            "example": "WHITE"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country",
+            "description": "ISO 3166-1 alpha-3",
+            "example": "USA"
+          },
+          "consent_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Consent Date",
+            "example": "2024-01-15"
+          },
+          "site_id": {
+            "type": "string",
+            "title": "Site Id",
+            "example": "SITE-01"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usubjid",
+          "age",
+          "sex",
+          "race",
+          "country",
+          "consent_date",
+          "site_id"
+        ],
+        "title": "SubjectIn"
+      },
+      "SubjectOut": {
+        "properties": {
+          "usubjid": {
+            "type": "string",
+            "title": "Usubjid",
+            "description": "Unique Subject Identifier (CDISC USUBJID)",
+            "example": "STUDY001-001"
+          },
+          "age": {
+            "type": "integer",
+            "maximum": 99.0,
+            "minimum": 18.0,
+            "title": "Age",
+            "example": 45
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "M",
+              "F",
+              "U",
+              "N"
+            ],
+            "title": "Sex",
+            "example": "M"
+          },
+          "race": {
+            "type": "string",
+            "title": "Race",
+            "example": "WHITE"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country",
+            "description": "ISO 3166-1 alpha-3",
+            "example": "USA"
+          },
+          "consent_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Consent Date",
+            "example": "2024-01-15"
+          },
+          "site_id": {
+            "type": "string",
+            "title": "Site Id",
+            "example": "SITE-01"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "enrolled_at": {
+            "type": "string",
+            "title": "Enrolled At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usubjid",
+          "age",
+          "sex",
+          "race",
+          "country",
+          "consent_date",
+          "site_id",
+          "status",
+          "enrolled_at"
+        ],
+        "title": "SubjectOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ValidationRequest": {
+        "properties": {
+          "domain": {
+            "$ref": "#/components/schemas/DomainEnum",
+            "example": "DM"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Records",
+            "example": [
+              {
+                "AGE": 45,
+                "BRTHDTC": "1979-03-10",
+                "COUNTRY": "USA",
+                "DMDTC": "2024-01-15",
+                "ETHNIC": "NOT HISPANIC OR LATINO",
+                "RACE": "WHITE",
+                "RFENDTC": "2024-06-30",
+                "RFSTDTC": "2024-01-16",
+                "SEX": "M",
+                "USUBJID": "STUDY001-001"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "domain",
+          "records"
+        ],
+        "title": "ValidationRequest"
+      },
+      "ValidationResponse": {
+        "properties": {
+          "domain": {
+            "type": "string",
+            "title": "Domain"
+          },
+          "records_checked": {
+            "type": "integer",
+            "title": "Records Checked"
+          },
+          "findings_count": {
+            "type": "integer",
+            "title": "Findings Count"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/FindingOut"
+            },
+            "type": "array",
+            "title": "Findings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "domain",
+          "records_checked",
+          "findings_count",
+          "findings"
+        ],
+        "title": "ValidationResponse"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Authentication & session management"
+    },
+    {
+      "name": "subjects",
+      "description": "Subject enrollment & status"
+    },
+    {
+      "name": "validation",
+      "description": "CDISC edit check validation (Phase A)"
+    },
+    {
+      "name": "sdtm",
+      "description": "SDTM dataset generation (Phase B)"
+    },
+    {
+      "name": "audit",
+      "description": "21 CFR Part 11 audit trail (Phase C)"
+    },
+    {
+      "name": "queries",
+      "description": "Data query workflow"
+    },
+    {
+      "name": "system",
+      "description": "Health checks & metadata"
+    }
+  ]
+}

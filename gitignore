@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+venv/
+.venv/
+env/
+.env
+
+# Environment variables (NEVER commit secrets)
+.env
+.env.local
+.env.production
+*.secret
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+test-results.xml
+
+# Docker
+.dockerignore
+
+# Data files with PII (never commit real patient data)
+data/raw_clinical_data.xlsx
+data/cleaned_data.csv
+reports/sdtm/*.csv
+reports/*.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# SQLite databases (may contain patient data)
+*.db
+*.sqlite3
+sql/*.db

@@ -1,0 +1,226 @@
+{
+  "summary": {
+    "total": 17,
+    "by_severity": {
+      "CRITICAL": 9,
+      "MAJOR": 6,
+      "MINOR": 2
+    },
+    "by_domain": {
+      "DM": 3,
+      "AE": 4,
+      "VS": 4,
+      "LB": 2,
+      "EX": 1,
+      "SV": 2,
+      "DS": 1
+    },
+    "submission_ready": false
+  },
+  "findings": [
+    {
+      "rule_id": "DM03",
+      "domain": "DM",
+      "subject_id": "STUDY001-001-002",
+      "variable": "SEX",
+      "value": "FEMALE",
+      "message": "SEX 'FEMALE' not in CDISC CT {'U', 'UN', 'F', 'M', 'UNDIFFERENTIATED'}",
+      "severity": "CRITICAL",
+      "visit": null,
+      "seq": null,
+      "timestamp": "2026-05-07T20:07:29.426401Z"
+    },
+    {
+      "rule_id": "DM08",
+      "domain": "DM",
+      "subject_id": "STUDY001-001-002",
+      "variable": "RFICDTC",
+      "value": "2024-01-20",
+      "message": "Informed consent date 2024-01-20 is AFTER reference start 2024-01-18",
+      "severity": "CRITICAL",
+      "visit": null,
+      "seq": null,
+      "timestamp": "2026-05-07T20:07:29.426584Z"
+    },
+    {
+      "rule_id": "DM07",
+      "domain": "DM",
+      "subject_id": "STUDY001-002-001",
+      "variable": "AGE",
+      "value": 155.0,
+      "message": "AGE 155.0 outside plausible range (0\u2013120)",
+      "severity": "MAJOR",
+      "visit": null,
+      "seq": null,
+      "timestamp": "2026-05-07T20:07:29.426674Z"
+    },
+    {
+      "rule_id": "AE03",
+      "domain": "AE",
+      "subject_id": "STUDY001-001-001",
+      "variable": "AEENDTC",
+      "value": "2024-02-08",
+      "message": "AE end date 2024-02-08 is before start date 2024-02-10",
+      "severity": "CRITICAL",
+      "visit": "WEEK 4",
+      "seq": 1,
+      "timestamp": "2026-05-07T20:07:29.426727Z"
+    },
+    {
+      "rule_id": "AE12",
+      "domain": "AE",
+      "subject_id": "STUDY001-001-001",
+      "variable": "AEDECOD",
+      "value": "Headache",
+      "message": "AEDECOD equals AETERM \u2014 medical coding may not have been applied",
+      "severity": "MINOR",
+      "visit": "WEEK 4",
+      "seq": 1,
+      "timestamp": "2026-05-07T20:07:29.426743Z"
+    },
+    {
+      "rule_id": "AE08",
+      "domain": "AE",
+      "subject_id": "STUDY001-001-002",
+      "variable": "AESER",
+      "value": "Y",
+      "message": "SAE flagged but none of AESDTH/AESHOSP/AESDISAB/AESLIFE/AESMIE = Y",
+      "severity": "CRITICAL",
+      "visit": "WEEK 2",
+      "seq": 1,
+      "timestamp": "2026-05-07T20:07:29.426807Z"
+    },
+    {
+      "rule_id": "AE10",
+      "domain": "AE",
+      "subject_id": "STUDY001-001-002",
+      "variable": "AEOUT",
+      "value": "FATAL",
+      "message": "AEOUT=FATAL but AESDTH is not Y",
+      "severity": "CRITICAL",
+      "visit": "WEEK 2",
+      "seq": 1,
+      "timestamp": "2026-05-07T20:07:29.426836Z"
+    },
+    {
+      "rule_id": "VS04",
+      "domain": "VS",
+      "subject_id": "STUDY001-001-001",
+      "variable": "VSORRES",
+      "value": 130.0,
+      "message": "DIABP value 130.0 outside plausible range (40\u2013120)",
+      "severity": "MAJOR",
+      "visit": "BASELINE",
+      "seq": 2,
+      "timestamp": "2026-05-07T20:07:29.426865Z"
+    },
+    {
+      "rule_id": "VS04",
+      "domain": "VS",
+      "subject_id": "STUDY001-002-001",
+      "variable": "VSORRES",
+      "value": 250.0,
+      "message": "PULSE value 250.0 outside plausible range (30\u2013200)",
+      "severity": "MAJOR",
+      "visit": "BASELINE",
+      "seq": 1,
+      "timestamp": "2026-05-07T20:07:29.426874Z"
+    },
+    {
+      "rule_id": "VS04",
+      "domain": "VS",
+      "subject_id": "STUDY001-001-002",
+      "variable": "VSORRES",
+      "value": "seventy",
+      "message": "WEIGHT result 'seventy' is not numeric",
+      "severity": "CRITICAL",
+      "visit": "BASELINE",
+      "seq": 1,
+      "timestamp": "2026-05-07T20:07:29.426886Z"
+    },
+    {
+      "rule_id": "VS05",
+      "domain": "VS",
+      "subject_id": "STUDY001-001-001",
+      "variable": "SYSBP",
+      "value": 125.0,
+      "message": "Systolic BP (125.0) is not greater than diastolic (130.0)",
+      "severity": "CRITICAL",
+      "visit": "BASELINE",
+      "seq": 1,
+      "timestamp": "2026-05-07T20:07:29.426911Z"
+    },
+    {
+      "rule_id": "LB05",
+      "domain": "LB",
+      "subject_id": "STUDY001-001-001",
+      "variable": "LBORRES",
+      "value": 450.0,
+      "message": "ALT 450.0 > 3\u00d7 ULN (40.0) \u2014 potential hepatotoxicity",
+      "severity": "CRITICAL",
+      "visit": "BASELINE",
+      "seq": 1,
+      "timestamp": "2026-05-07T20:07:29.426924Z"
+    },
+    {
+      "rule_id": "LB06",
+      "domain": "LB",
+      "subject_id": "STUDY001-001-002",
+      "variable": "LBSTRESU",
+      "value": null,
+      "message": "Lab standard units (LBSTRESU) missing when result present",
+      "severity": "MINOR",
+      "visit": "BASELINE",
+      "seq": 1,
+      "timestamp": "2026-05-07T20:07:29.426933Z"
+    },
+    {
+      "rule_id": "EX05",
+      "domain": "EX",
+      "subject_id": "STUDY001-001-002",
+      "variable": "EXSTDTC",
+      "value": "2024-01-10",
+      "message": "Dosing started 2024-01-10 before informed consent 2024-01-20",
+      "severity": "CRITICAL",
+      "visit": "BASELINE",
+      "seq": 1,
+      "timestamp": "2026-05-07T20:07:29.426984Z"
+    },
+    {
+      "rule_id": "SV02",
+      "domain": "SV",
+      "subject_id": "STUDY001-001-001",
+      "variable": "SVSTDTC",
+      "value": "2024-02-20",
+      "message": "Visit 'WEEK 4' on study day 37 is outside protocol window (26\u201330)",
+      "severity": "MAJOR",
+      "visit": "WEEK 4",
+      "seq": null,
+      "timestamp": "2026-05-07T20:07:29.427022Z"
+    },
+    {
+      "rule_id": "SV01",
+      "domain": "SV",
+      "subject_id": "STUDY001-001-002",
+      "variable": "VISIT",
+      "value": "MYSTERY VISIT",
+      "message": "Visit 'MYSTERY VISIT' not in protocol schedule",
+      "severity": "MAJOR",
+      "visit": "MYSTERY VISIT",
+      "seq": null,
+      "timestamp": "2026-05-07T20:07:29.427037Z"
+    },
+    {
+      "rule_id": "DS04",
+      "domain": "DS",
+      "subject_id": "STUDY001-001-002",
+      "variable": "DSTERM",
+      "value": null,
+      "message": "DSTERM (verbatim reason) required when DSDECOD=PROTOCOL DEVIATION",
+      "severity": "MAJOR",
+      "visit": null,
+      "seq": null,
+      "timestamp": "2026-05-07T20:07:29.427050Z"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+Query_ID,Generated_Date,Subject_ID,Row_Number,Field,Invalid_Value,Issue_Detected,Severity,Query_Text,Status,Resolved_By,Resolution_Date,Resolution_Note
+QRY-0001,2026-05-06 22:36,SUB001,5,Subject_ID,SUB001,Duplicate Subject_ID (first seen at row 2),Critical,Duplicate Subject ID detected. Please confirm this is a unique patient record and correct if necessary.,Open,,,
+QRY-0002,2026-05-06 22:36,SUB004,6,Age,150.0,Age 150.0 out of range (1–120),Critical,Please verify the recorded age. Value appears to be out of acceptable range (1–120 years).,Open,,,
+QRY-0003,2026-05-06 22:36,SUB005,7,Weight_kg,,Weight is missing (required field),Major,Weight_kg is a required field. Please provide the subject's weight at this visit.,Open,,,
+QRY-0004,2026-05-06 22:36,SUB006,8,Gender,male,Invalid gender value 'male' (expected Male/Female),Major,Gender value is invalid or improperly formatted. Acceptable values are 'Male' or 'Female' only.,Open,,,
+QRY-0005,2026-05-06 22:36,SUB008,10,Lab_Hb,25.0,Hb value 25.0 g/dL out of range (8–18),Critical,Hemoglobin value is outside the expected physiological range (8–18 g/dL). Please verify with source document.,Open,,,
+QRY-0006,2026-05-06 22:36,SUB009,11,Visit_Date,32-13-2025,Invalid date format '32-13-2025' (expected YYYY-MM-DD),Major,Visit date is in an incorrect format or represents an impossible date. Expected format: YYYY-MM-DD.,Open,,,
+QRY-0007,2026-05-06 22:36,SUB010,12,Lab_WBC,1500.0,WBC 1500 cells/μL out of range (4000–11000),Critical,WBC count is outside the expected range (4000–11000 cells/μL). Please verify with laboratory report.,Open,,,
+QRY-0008,2026-05-06 22:36,SUB011,13,Age,0.0,Age 0.0 out of range (1–120),Critical,Please verify the recorded age. Value appears to be out of acceptable range (1–120 years).,Open,,,
+QRY-0009,2026-05-06 22:36,SUB013,15,Gender,M,Invalid gender value 'M' (expected Male/Female),Major,Gender value is invalid or improperly formatted. Acceptable values are 'Male' or 'Female' only.,Open,,,
+QRY-0010,2026-05-06 22:36,SUB016,18,Lab_Hb,5.0,Hb value 5.0 g/dL out of range (8–18),Critical,Hemoglobin value is outside the expected physiological range (8–18 g/dL). Please verify with source document.,Open,,,
+QRY-0011,2026-05-06 22:36,SUB017,19,Lab_WBC,15000.0,WBC 15000 cells/μL out of range (4000–11000),Critical,WBC count is outside the expected range (4000–11000 cells/μL). Please verify with laboratory report.,Open,,,
+QRY-0012,2026-05-06 22:36,SUB019,21,Dose_mg,-50.0,Dose_mg -50.0 is negative (invalid),Critical,"Dose recorded is negative, which is not valid. Please confirm the correct dose administered.",Open,,,
