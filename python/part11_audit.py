@@ -26,7 +26,6 @@ import secrets
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
-from dataclasses import dataclass, asdict
 from typing import Optional
 
 
@@ -941,7 +940,7 @@ if __name__ == "__main__":
                                "sharma@site1.com",   "Sharma@Trial2024!")
     dm_id    = um.create_user("cdm_raj",     "Raj Kumar",        Role.DATA_MANAGER,
                                "raj@cro.com",        "CdmRaj@Trial2024!")
-    print(f"   ✅ Created: admin, dr_sharma (Investigator), cdm_raj (Data Manager)")
+    print("   ✅ Created: admin, dr_sharma (Investigator), cdm_raj (Data Manager)")
 
     # 2. Authenticate
     print("\n[2] Authenticating users...")
@@ -973,14 +972,14 @@ if __name__ == "__main__":
         user_id=inv_id, username="dr_sharma", role=Role.INVESTIGATOR.value,
         session_id=session["session_id"],
     )
-    print(f"   ✅ AESEV updated: MILD → MODERATE (reason recorded)")
+    print("   ✅ AESEV updated: MILD → MODERATE (reason recorded)")
 
     crm.update_record(
         rec_id, "AEENDTC", "2024-02-15",
         reason="AE resolved — end date confirmed by site",
         user_id=dm_id, username="cdm_raj", role=Role.DATA_MANAGER.value,
     )
-    print(f"   ✅ AEENDTC added by CDM: 2024-02-15")
+    print("   ✅ AEENDTC added by CDM: 2024-02-15")
 
     # 5. Electronic signature
     print("\n[5] Applying electronic signature (§11.50)...")
@@ -1038,7 +1037,7 @@ if __name__ == "__main__":
         json.dump(report, f, indent=2)
 
     print(f"\n{'='*62}")
-    print(f"  21 CFR Part 11 Compliance Summary")
+    print("  21 CFR Part 11 Compliance Summary")
     print(f"{'='*62}")
     for req, met in report["requirements_met"].items():
         icon = "✅" if met else "❌"

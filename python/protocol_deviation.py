@@ -141,6 +141,7 @@ def auto_detect_deviations():
                   datetime.now().isoformat()))
             detected += 1
     except Exception as e:
+        print(f"Error auto-detecting dosing errors: {e}")
         pass
 
     # Detect invalid date deviations (visit window violations)
@@ -163,6 +164,7 @@ def auto_detect_deviations():
                   datetime.now().isoformat()))
             detected += 1
     except Exception as e:
+        print(f"Error auto-detecting visit window violations: {e}")
         pass
 
     conn.commit()
@@ -177,7 +179,8 @@ def get_pd_summary():
     conn = sqlite3.connect(DB_PATH)
     try:
         df = pd.read_sql_query("SELECT * FROM protocol_deviations ORDER BY reported_at DESC", conn)
-    except:
+    except Exception as e:
+        print(f"Error fetching protocol deviation summary: {e}")
         df = pd.DataFrame()
     conn.close()
     return df

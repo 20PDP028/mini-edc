@@ -69,8 +69,10 @@ LAB_RANGES = {
 # Map gender values from DB to M/F/U
 def _norm_gender(gender):
     g = str(gender).upper().strip()
-    if g in ["M", "MALE"]:   return "M"
-    if g in ["F", "FEMALE"]: return "F"
+    if g in ["M", "MALE"]:
+        return "M"
+    if g in ["F", "FEMALE"]:
+        return "F"
     return "U"
 
 

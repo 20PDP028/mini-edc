@@ -12,7 +12,7 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
     HRFlowable, PageBreak
 )
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from datetime import datetime
 import os
 
@@ -28,7 +28,7 @@ BLACK   = colors.black
 
 
 def _styles():
-    base = getSampleStyleSheet()
+    
     return {
         "title": ParagraphStyle("title", fontSize=20, textColor=WHITE,
                                  fontName="Helvetica-Bold", alignment=TA_CENTER,

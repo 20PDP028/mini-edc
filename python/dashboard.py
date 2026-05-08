@@ -145,8 +145,10 @@ def load_df(table):
     try:
         conn = sqlite3.connect(DB_PATH)
         df = pd.read_sql_query(f"SELECT * FROM {table}", conn)
-        conn.close(); return df
+        conn.close() 
+        return df
     except Exception as e: 
+        st.error(f"Error loading data from {table}: {e}")
         return pd.DataFrame()
 
 df_queries  = load_df("queries")
@@ -208,9 +210,12 @@ elif page == "🔍 Query Management":
     ss = c3.selectbox("Site",     ["All"]+list(df_queries["siteid"].unique())   if "siteid"   in df_queries.columns else ["All"])
 
     filt = df_queries.copy()
-    if sf!="All" and "status"   in filt.columns: filt = filt[filt["status"]  ==sf]
-    if sv!="All" and "severity" in filt.columns: filt = filt[filt["severity"]==sv]
-    if ss!="All" and "siteid"   in filt.columns: filt = filt[filt["siteid"]  ==ss]
+    if sf!="All" and "status"   in filt.columns:
+        filt = filt[filt["status"]  ==sf]
+    if sv!="All" and "severity" in filt.columns:
+        filt = filt[filt["severity"]==sv]
+    if ss!="All" and "siteid"   in filt.columns:
+        filt = filt[filt["siteid"]  ==ss]
     st.dataframe(filt, use_container_width=True, hide_index=True, height=300)
 
     if can("answer_query") or can("close_query"):
@@ -233,7 +238,8 @@ elif page == "🔍 Query Management":
                               (new_status, datetime.now().isoformat(), sel_q))
                 conn2.execute("INSERT INTO audit_trail (event_time,action,table_name,record_id,field_name,new_value,performed_by) VALUES (?,?,?,?,?,?,?)",
                               (datetime.now().isoformat(), f"QUERY_{new_status.upper()}", "queries", sel_q, "status", new_status, by_user))
-                conn2.commit(); conn2.close()
+                conn2.commit()
+                conn2.close()
                 if new_status == "Closed" and AUTH_AVAILABLE:
                     ok, msg = esign(user["user_id"], sig_pwd, "QUERY_CLOSE", sel_q, sig_meaning)
                     st.success(msg) if ok else st.error(msg)
@@ -250,7 +256,8 @@ elif page == "⚠️ SAE Monitor":
     c1,c2 = st.columns(2)
     c1.metric("Total SAEs", len(df_saes))
     c2.metric("🚨 Pending Report", len(pending))
-    if not pending.empty: st.error(f"🚨 {len(pending)} SAE(s) require 24-hour expedited reporting!")
+    if not pending.empty: 
+        st.error(f"🚨 {len(pending)} SAE(s) require 24-hour expedited reporting!")
     st.dataframe(df_saes, use_container_width=True, hide_index=True)
 
 # ── Audit Trail ───────────────────────────────────────────────

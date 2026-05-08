@@ -19,26 +19,25 @@ Pages:
   7. 📊 Reports      — compliance report + charts
 """
 
-import os, sys, json, sqlite3, io, zipfile, csv
-from datetime import datetime, timezone
+import os, sys, json, sqlite3, io, zipfile
 from pathlib import Path
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
+from cdisc_validation_engine import CDISCValidator, SAMPLE_DATA
+from sdtm_generator import SDTMGenerator, DefineXMLGenerator, SDTMConformanceChecker
+from part11_audit import (
+    UserManager, ESignatureEngine, AuditTrailEngine, ClinicalRecordManager,
+    generate_compliance_report, Role, SignatureReason, 
+    DB_PATH, init_db,
+)
 
 # ── path setup so we can import our Phase A/B/C modules ──────────────────────
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
 
-from cdisc_validation_engine import CDISCValidator, SAMPLE_DATA, Severity
-from sdtm_generator import SDTMGenerator, DefineXMLGenerator, SDTMConformanceChecker
-from part11_audit import (
-    UserManager, ESignatureEngine, AuditTrailEngine, ClinicalRecordManager,
-    generate_compliance_report, Role, SignatureReason, RecordStatus,
-    DB_PATH, init_db,
-)
+
 
 # ── constants ─────────────────────────────────────────────────────────────────
 SDTM_OUT = str(HERE.parent / "reports" / "sdtm")
@@ -560,9 +559,12 @@ elif page == "🔐 Audit Trail":
             sel_domain = st.selectbox("Filter by domain", domains)
 
         filtered = df.copy()
-        if sel_user   != "All": filtered = filtered[filtered["username"] == sel_user]
-        if sel_action != "All": filtered = filtered[filtered["action"]   == sel_action]
-        if sel_domain != "All": filtered = filtered[filtered["domain"]   == sel_domain]
+        if sel_user   != "All": 
+            filtered = filtered[filtered["username"] == sel_user]
+        if sel_action != "All": 
+            filtered = filtered[filtered["action"]   == sel_action]
+        if sel_domain != "All": 
+            filtered = filtered[filtered["domain"]   == sel_domain]
 
         st.markdown(f"**{len(filtered)}** entries")
 

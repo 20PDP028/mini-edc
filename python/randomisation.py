@@ -79,7 +79,7 @@ def generate_randomisation_list(seed: int = 42, subjects_per_site: int = 20):
     block_pattern = []
     for arm, count in ALLOCATION_RATIO.items():
         block_pattern.extend([arm] * count)
-    block_size = len(block_pattern)
+    
 
     rand_number = 1
     for site in sites:
@@ -194,7 +194,8 @@ def get_arm_balance():
             GROUP BY siteid, arm_code
             ORDER BY siteid, arm_code
         """, conn)
-    except:
+    except Exception as e:
+        print(f"Error fetching arm balance: {e}")
         df = pd.DataFrame()
     conn.close()
     return df
@@ -209,8 +210,10 @@ def print_randomisation_report():
             SELECT arm_code, arm_description, COUNT(*) as n
             FROM randomisation GROUP BY arm_code
         """).fetchall()
-    except:
-        total = 0; by_arm = []
+    except Exception as e:
+        total = 0
+        by_arm = []
+        print(f"Error fetching randomisation summary: {e}")
     conn.close()
 
     print("\n" + "="*65)

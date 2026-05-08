@@ -190,7 +190,8 @@ def get_soc_summary():
             GROUP BY meddra_soc
             ORDER BY Count DESC
         """, conn)
-    except:
+    except Exception as e:
+        print(f"Error fetching SOC summary: {e}")
         df = pd.DataFrame()
     conn.close()
     return df

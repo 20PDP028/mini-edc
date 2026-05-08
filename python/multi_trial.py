@@ -152,7 +152,8 @@ def get_trial_dashboard():
             SELECT trial_id, COUNT(*) as sites
             FROM trial_sites GROUP BY trial_id
         """, conn)
-    except:
+    except Exception as e:
+        print(f"Error fetching trial dashboard data: {e}")
         trials = pd.DataFrame()
         subjects_per_trial = pd.DataFrame()
         sites_per_trial = pd.DataFrame()

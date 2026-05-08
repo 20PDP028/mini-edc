@@ -45,8 +45,8 @@ def _compute_checksum():
         try:
             rows = conn.execute(f"SELECT * FROM {table} ORDER BY rowid").fetchall()
             combined += str(rows)
-        except:
-            pass
+        except Exception as e:
+            print(f"Error fetching data from {table}: {e}")
     conn.close()
     return hashlib.sha256(combined.encode()).hexdigest()
 
@@ -62,7 +62,8 @@ def _verify_user(user_id: str, password: str) -> bool:
         conn.close()
         if row:
             return row[0] == hashlib.sha256(password.encode()).hexdigest()
-    except:
+    except Exception as e:
+        print(f"Error verifying user: {e}")
         conn.close()
     return False
 
@@ -174,7 +175,8 @@ def get_lock_history():
         df = df_import.read_sql_query(
             "SELECT * FROM data_lock ORDER BY locked_at DESC", conn
         )
-    except:
+    except Exception as e:
+        print(f"Error loading lock history: {e}")
         df = None
     conn.close()
     return df
@@ -188,7 +190,7 @@ def print_lock_status():
 
     locked, info = is_locked()
     if locked:
-        print(f"  🔒 STATUS    : LOCKED")
+        print("  🔒 STATUS    : LOCKED")
         print(f"  Lock Type   : {info[1]}")
         print(f"  Locked By   : {info[2]}")
         print(f"  Locked At   : {info[3]}")
@@ -199,8 +201,8 @@ def print_lock_status():
             print(f"\n  {icon} DB Integrity : {'VERIFIED — No changes since lock' if match else 'WARNING — Data may have changed!'}")
             print(f"  Checksum    : {cur[:20]}...")
     else:
-        print(f"  🔓 STATUS    : UNLOCKED")
-        print(f"  Database is open for editing.")
+        print("  🔓 STATUS    : UNLOCKED")
+        print("  Database is open for editing.")
     print()
 
 
