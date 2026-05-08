@@ -1,15 +1,17 @@
-"""
+""
 Mini EDC — Phase E: REST API with Swagger / OpenAPI 3.0 docs
 FastAPI-based, auto-generates /docs (Swagger UI) and /redoc
 """
 
-from fastapi import FastAPI, HTTPException, Depends, status, Query, Body
+from fastapi import FastAPI, HTTPException, Depends, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 from typing import Optional, List, Literal
 from datetime import datetime, date
-import hashlib, hmac, uuid, json, csv, io
+import hashlib
+import hmac
+import uuid
+import io
 from enum import Enum
 
 # ── App setup ─────────────────────────────────────────────────────────────────
@@ -386,14 +388,6 @@ def logout(current_user: dict = Depends(get_current_user)):
 @app.post("/subjects", response_model=SubjectOut, tags=["subjects"],
           summary="Enroll a new subject", status_code=201)
 def create_subject(subject: SubjectIn, current_user: dict = Depends(get_current_user)):
-    """
-    Enroll a new subject into the study.
-
-    - **usubjid**: Must be unique — CDISC USUBJID format (e.g. STUDY001-001)
-    - **sex**: M / F / U / N
-    - **country**: ISO 3166-1 alpha-3 (e.g. USA, GBR)
-    - **consent_date**: Must be before first dose
-    """
     if subject.usubjid in SUBJECTS:
         raise HTTPException(status_code=409, detail=f"Subject {subject.usubjid} already enrolled")
     record = {**subject.dict(), "status": "ENROLLED",
@@ -444,16 +438,6 @@ def update_subject_status(
 @app.post("/validation/run", response_model=ValidationResponse, tags=["validation"],
           summary="Run CDISC edit checks on a batch of records")
 def run_validation(req: ValidationRequest, current_user: dict = Depends(get_current_user)):
-    """
-    Submit records for **Phase A CDISC validation**.
-
-    Supported domains: **DM, AE, VS, LB, EX, SV, DS**
-
-    Returns all findings categorised by:
-    - 🔴 **CRITICAL** — Protocol/regulatory violations
-    - 🟠 **ERROR** — CDISC rule failures
-    - 🟡 **WARNING** — Data quality issues
-    """
     findings = validate_domain(req.domain.value, req.records)
     log_audit(current_user["username"], "VALIDATION_RUN", req.domain.value, None,
               f"{len(req.records)} records checked, {len(findings)} findings")
@@ -463,10 +447,6 @@ def run_validation(req: ValidationRequest, current_user: dict = Depends(get_curr
 @app.get("/validation/rules", tags=["validation"],
          summary="List all available validation rules by domain")
 def list_rules(domain: Optional[DomainEnum] = Query(None)):
-    """
-    Returns the catalogue of built-in CDISC edit checks.
-    Filter by domain to see domain-specific rules.
-    """
     all_rules = [
         {"rule_id":"DM001","domain":"DM","check":"SEX controlled terminology","severity":"ERROR"},
         {"rule_id":"DM002","domain":"DM","check":"RACE controlled terminology","severity":"ERROR"},
@@ -494,13 +474,6 @@ def list_rules(domain: Optional[DomainEnum] = Query(None)):
 @app.post("/sdtm/generate", tags=["sdtm"],
           summary="Generate an SDTM v1.8 dataset for a domain")
 def generate_sdtm(req: SDTMRequest, current_user: dict = Depends(get_current_user)):
-    """
-    Generate a **CDISC SDTM v1.8** compliant dataset.
-
-    Supported domains: **DM, AE, VS, LB, EX**
-
-    Returns structured rows ready for SAS Transport (.xpt) conversion.
-    """
     data = generate_sdtm_domain(req.domain.value, req.subjects)
     log_audit(current_user["username"], "SDTM_GENERATE", req.domain.value, None,
               f"Generated {len(data)} rows for domain {req.domain.value}")
@@ -531,12 +504,6 @@ def get_audit_trail(
     limit: int            = Query(50, ge=1, le=500, description="Max entries to return"),
     current_user: dict = Depends(get_current_user)
 ):
-    """
-    Returns the **hash-chained, tamper-evident audit log** (21 CFR Part 11 §11.10(e)).
-
-    Each entry carries a HMAC chain hash linking it to the previous entry.
-    Any modification to a historical record breaks the chain and is immediately detectable.
-    """
     results = AUDIT_LOG.copy()
     if user:   results = [e for e in results if e["user"] == user]
     if action: results = [e for e in results if e["action"] == action]
@@ -546,10 +513,6 @@ def get_audit_trail(
 @app.get("/audit/integrity", tags=["audit"],
          summary="Verify the chain integrity of the entire audit log")
 def verify_audit_integrity(current_user: dict = Depends(get_current_user)):
-    """
-    Re-computes every chain hash in the audit log and flags any broken links.
-    A clean result means **no tampering has occurred**.
-    """
     if not AUDIT_LOG:
         return {"status": "EMPTY", "entries_checked": 0, "broken_links": 0}
     broken = 0
@@ -568,11 +531,6 @@ def verify_audit_integrity(current_user: dict = Depends(get_current_user)):
 @app.post("/queries", response_model=QueryOut, tags=["queries"],
           summary="Raise a data query against a subject record", status_code=201)
 def raise_query(q: QueryIn, current_user: dict = Depends(get_current_user)):
-    """
-    Open a **data query** on a subject's data point.
-
-    The query workflow: **OPEN → ANSWERED → CLOSED**
-    """
     qid = f"QRY-{len(QUERIES)+1:04d}"
     record = {**q.dict(), "query_id": qid, "status": "OPEN",
               "raised_by": current_user["username"],
