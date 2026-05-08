@@ -112,7 +112,7 @@ jobs:
 
       - name: Build Docker image (no push — just validate)
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: false
@@ -181,7 +181,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build and push to GHCR
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
