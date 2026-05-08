@@ -10,26 +10,26 @@ import os
 import pandas as pd
 from datetime import datetime
 
-BASE    = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, '..', 'sql', 'cdm_phase3.db')
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 
 # ── Deviation Categories ──────────────────────────────────────
 DEVIATION_TYPES = {
-    "IC":   "Informed Consent",
-    "EX":   "Eligibility Criteria",
-    "PD":   "Prohibited Drug/Medication",
-    "VW":   "Visit Window Violation",
-    "DOS":  "Dosing Error",
-    "LAB":  "Laboratory Procedure",
-    "AE":   "Adverse Event Reporting",
-    "SAE":  "SAE Reporting Timeline",
+    "IC": "Informed Consent",
+    "EX": "Eligibility Criteria",
+    "PD": "Prohibited Drug/Medication",
+    "VW": "Visit Window Violation",
+    "DOS": "Dosing Error",
+    "LAB": "Laboratory Procedure",
+    "AE": "Adverse Event Reporting",
+    "SAE": "SAE Reporting Timeline",
     "DATA": "Data Collection Error",
-    "OTH":  "Other",
+    "OTH": "Other",
 }
 
 SEVERITY_LEVELS = {
-    "Major":   "Directly impacts subject safety or data integrity",
-    "Minor":   "No direct impact on safety or data integrity",
+    "Major": "Directly impacts subject safety or data integrity",
+    "Minor": "No direct impact on safety or data integrity",
     "Medical": "Medical judgement deviation — requires DM review",
 }
 
@@ -63,29 +63,60 @@ def _next_pd_code(conn):
     return f"PD-{n+1:04d}"
 
 
-def log_deviation(usubjid, siteid, dev_type, severity, description,
-                  action_taken="", reported_by="SITE", capa=""):
+def log_deviation(
+    usubjid,
+    siteid,
+    dev_type,
+    severity,
+    description,
+    action_taken="",
+    reported_by="SITE",
+    capa="",
+):
     """Log a new protocol deviation."""
     init_pd_table()
     conn = sqlite3.connect(DB_PATH)
     code = _next_pd_code(conn)
-    cat  = DEVIATION_TYPES.get(dev_type, "Other")
+    cat = DEVIATION_TYPES.get(dev_type, "Other")
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT OR IGNORE INTO protocol_deviations
         (pd_code, usubjid, siteid, deviation_type, deviation_cat,
          severity, description, action_taken, reported_by, reported_at, capa)
         VALUES (?,?,?,?,?,?,?,?,?,?,?)
-    """, (code, usubjid, siteid, dev_type, cat,
-          severity, description, action_taken,
-          reported_by, datetime.now().isoformat(), capa))
+    """,
+        (
+            code,
+            usubjid,
+            siteid,
+            dev_type,
+            cat,
+            severity,
+            description,
+            action_taken,
+            reported_by,
+            datetime.now().isoformat(),
+            capa,
+        ),
+    )
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO audit_trail
         (event_time, action, table_name, record_id, field_name, new_value, performed_by)
         VALUES (?,?,?,?,?,?,?)
-    """, (datetime.now().isoformat(), "PD_LOGGED", "protocol_deviations",
-          code, "status", "Open", reported_by))
+    """,
+        (
+            datetime.now().isoformat(),
+            "PD_LOGGED",
+            "protocol_deviations",
+            code,
+            "status",
+            "Open",
+            reported_by,
+        ),
+    )
 
     conn.commit()
     conn.close()
@@ -96,17 +127,30 @@ def log_deviation(usubjid, siteid, dev_type, severity, description,
 def resolve_deviation(pd_code, resolved_by, capa_description):
     """Mark a deviation as resolved with CAPA."""
     conn = sqlite3.connect(DB_PATH)
-    conn.execute("""
+    conn.execute(
+        """
         UPDATE protocol_deviations
         SET status='Resolved', resolved_at=?, capa=?
         WHERE pd_code=?
-    """, (datetime.now().isoformat(), capa_description, pd_code))
-    conn.execute("""
+    """,
+        (datetime.now().isoformat(), capa_description, pd_code),
+    )
+    conn.execute(
+        """
         INSERT INTO audit_trail
         (event_time, action, table_name, record_id, field_name, new_value, performed_by)
         VALUES (?,?,?,?,?,?,?)
-    """, (datetime.now().isoformat(), "PD_RESOLVED", "protocol_deviations",
-          pd_code, "status", "Resolved", resolved_by))
+    """,
+        (
+            datetime.now().isoformat(),
+            "PD_RESOLVED",
+            "protocol_deviations",
+            pd_code,
+            "status",
+            "Resolved",
+            resolved_by,
+        ),
+    )
     conn.commit()
     conn.close()
     print(f"[PD] {pd_code} resolved by {resolved_by}")
@@ -131,14 +175,25 @@ def auto_detect_deviations():
 
         for qid, subj, site, issue in dose_issues:
             code = _next_pd_code(conn)
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT OR IGNORE INTO protocol_deviations
                 (pd_code, usubjid, siteid, deviation_type, deviation_cat,
                  severity, description, reported_by, reported_at)
                 VALUES (?,?,?,?,?,?,?,?,?)
-            """, (code, subj, site or "UNKNOWN", "DOS", "Dosing Error",
-                  "Major", f"Auto-detected: {issue}", "SYSTEM",
-                  datetime.now().isoformat()))
+            """,
+                (
+                    code,
+                    subj,
+                    site or "UNKNOWN",
+                    "DOS",
+                    "Dosing Error",
+                    "Major",
+                    f"Auto-detected: {issue}",
+                    "SYSTEM",
+                    datetime.now().isoformat(),
+                ),
+            )
             detected += 1
     except Exception as e:
         print(f"Error auto-detecting dosing errors: {e}")
@@ -154,14 +209,25 @@ def auto_detect_deviations():
 
         for qid, subj, site, issue in date_issues:
             code = _next_pd_code(conn)
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT OR IGNORE INTO protocol_deviations
                 (pd_code, usubjid, siteid, deviation_type, deviation_cat,
                  severity, description, reported_by, reported_at)
                 VALUES (?,?,?,?,?,?,?,?,?)
-            """, (code, subj, site or "UNKNOWN", "VW", "Visit Window Violation",
-                  "Minor", f"Auto-detected: {issue}", "SYSTEM",
-                  datetime.now().isoformat()))
+            """,
+                (
+                    code,
+                    subj,
+                    site or "UNKNOWN",
+                    "VW",
+                    "Visit Window Violation",
+                    "Minor",
+                    f"Auto-detected: {issue}",
+                    "SYSTEM",
+                    datetime.now().isoformat(),
+                ),
+            )
             detected += 1
     except Exception as e:
         print(f"Error auto-detecting visit window violations: {e}")
@@ -178,7 +244,9 @@ def get_pd_summary():
     init_pd_table()
     conn = sqlite3.connect(DB_PATH)
     try:
-        df = pd.read_sql_query("SELECT * FROM protocol_deviations ORDER BY reported_at DESC", conn)
+        df = pd.read_sql_query(
+            "SELECT * FROM protocol_deviations ORDER BY reported_at DESC", conn
+        )
     except Exception as e:
         print(f"Error fetching protocol deviation summary: {e}")
         df = pd.DataFrame()
@@ -189,20 +257,20 @@ def get_pd_summary():
 def print_pd_report():
     """Print deviation report to console."""
     df = get_pd_summary()
-    print("\n" + "="*65)
+    print("\n" + "=" * 65)
     print("  PROTOCOL DEVIATION REPORT")
-    print("="*65)
+    print("=" * 65)
 
     if df.empty:
         print("  No deviations recorded.")
         print()
         return
 
-    total   = len(df)
-    major   = len(df[df["severity"] == "Major"])   if "severity" in df.columns else 0
-    minor   = len(df[df["severity"] == "Minor"])   if "severity" in df.columns else 0
-    open_pd = len(df[df["status"] == "Open"])      if "status"   in df.columns else 0
-    resolved= len(df[df["status"] == "Resolved"])  if "status"   in df.columns else 0
+    total = len(df)
+    major = len(df[df["severity"] == "Major"]) if "severity" in df.columns else 0
+    minor = len(df[df["severity"] == "Minor"]) if "severity" in df.columns else 0
+    open_pd = len(df[df["status"] == "Open"]) if "status" in df.columns else 0
+    resolved = len(df[df["status"] == "Resolved"]) if "status" in df.columns else 0
 
     print(f"  Total Deviations : {total}")
     print(f"  Major            : {major}")
@@ -213,7 +281,9 @@ def print_pd_report():
     if "siteid" in df.columns:
         print("\n  By Site:")
         for site, grp in df.groupby("siteid"):
-            print(f"  {site:10} | Total: {len(grp)} | Major: {len(grp[grp['severity']=='Major'])}")
+            print(
+                f"  {site:10} | Total: {len(grp)} | Major: {len(grp[grp['severity']=='Major'])}"
+            )
 
     if "deviation_cat" in df.columns:
         print("\n  By Category:")
@@ -238,7 +308,7 @@ if __name__ == "__main__":
         description="Informed consent obtained after first study procedure",
         action_taken="Subject re-consented. Protocol amendment submitted.",
         reported_by="MONITOR_01",
-        capa="SOP updated to check consent date before any procedure"
+        capa="SOP updated to check consent date before any procedure",
     )
 
     print_pd_report()

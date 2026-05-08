@@ -33,15 +33,20 @@ import plotly.express as px
 from cdisc_validation_engine import CDISCValidator, SAMPLE_DATA
 from sdtm_generator import SDTMGenerator, DefineXMLGenerator, SDTMConformanceChecker
 from part11_audit import (
-    UserManager, ESignatureEngine, AuditTrailEngine, ClinicalRecordManager,
-    generate_compliance_report, Role, SignatureReason, 
-    DB_PATH, init_db,
+    UserManager,
+    ESignatureEngine,
+    AuditTrailEngine,
+    ClinicalRecordManager,
+    generate_compliance_report,
+    Role,
+    SignatureReason,
+    DB_PATH,
+    init_db,
 )
 
 # ── path setup so we can import our Phase A/B/C modules ──────────────────────
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
-
 
 
 # ── constants ─────────────────────────────────────────────────────────────────
@@ -58,7 +63,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.markdown("""
+st.markdown(
+    """
 <style>
 /* ── sidebar nav ── */
 [data-testid="stSidebar"] { background: #0f1117; }
@@ -118,7 +124,9 @@ st.markdown("""
     font-size: 13px;
 }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -129,11 +137,12 @@ def ss(key, default=None):
         st.session_state[key] = default
     return st.session_state[key]
 
+
 ss("validation_findings", [])
 ss("validation_summary", {})
 ss("sdtm_datasets", {})
 ss("sdtm_generated", False)
-ss("logged_in_user", None)   # dict from authenticate()
+ss("logged_in_user", None)  # dict from authenticate()
 ss("page", "🏠 Home")
 
 
@@ -143,6 +152,7 @@ ss("page", "🏠 Home")
 def get_db():
     return sqlite3.connect(DB_PATH)
 
+
 def ensure_demo_users():
     """Seed demo users if none exist."""
     um = UserManager(DB_PATH)
@@ -151,26 +161,52 @@ def ensure_demo_users():
     con.close()
     if n == 0:
         try:
-            um.create_user("dr_sharma", "Dr. Priya Sharma", Role.INVESTIGATOR,
-                           "sharma@site1.com", "Sharma@Trial2024!")
-            um.create_user("cdm_raj",   "Raj Kumar",        Role.DATA_MANAGER,
-                           "raj@cro.com",     "CdmRaj@Trial2024!")
-            um.create_user("monitor1",  "Sarah Chen",       Role.MONITOR,
-                           "chen@sponsor.com","Monitor@Trial2024!")
-            um.create_user("admin",     "System Admin",     Role.ADMIN,
-                           "admin@trial.com", "Admin@Trial2024!")
+            um.create_user(
+                "dr_sharma",
+                "Dr. Priya Sharma",
+                Role.INVESTIGATOR,
+                "sharma@site1.com",
+                "Sharma@Trial2024!",
+            )
+            um.create_user(
+                "cdm_raj",
+                "Raj Kumar",
+                Role.DATA_MANAGER,
+                "raj@cro.com",
+                "CdmRaj@Trial2024!",
+            )
+            um.create_user(
+                "monitor1",
+                "Sarah Chen",
+                Role.MONITOR,
+                "chen@sponsor.com",
+                "Monitor@Trial2024!",
+            )
+            um.create_user(
+                "admin",
+                "System Admin",
+                Role.ADMIN,
+                "admin@trial.com",
+                "Admin@Trial2024!",
+            )
         except Exception:
             pass
+
 
 init_db(DB_PATH)
 ensure_demo_users()
 
-SEV_ICON  = {"CRITICAL": "🔴", "MAJOR": "🟡", "MINOR": "🔵"}
+SEV_ICON = {"CRITICAL": "🔴", "MAJOR": "🟡", "MINOR": "🔵"}
 SEV_COLOR = {"CRITICAL": "#ff4d4f", "MAJOR": "#faad14", "MINOR": "#1890ff"}
 ACTION_COLOR = {
-    "CREATE": "#52c41a", "UPDATE": "#1890ff", "SIGN": "#722ed1",
-    "LOGIN": "#faad14",  "LOGIN_FAIL": "#ff4d4f", "ACCOUNT_LOCK": "#ff4d4f",
-    "EXPORT": "#13c2c2", "LOCK": "#eb2f96",
+    "CREATE": "#52c41a",
+    "UPDATE": "#1890ff",
+    "SIGN": "#722ed1",
+    "LOGIN": "#faad14",
+    "LOGIN_FAIL": "#ff4d4f",
+    "ACCOUNT_LOCK": "#ff4d4f",
+    "EXPORT": "#13c2c2",
+    "LOCK": "#eb2f96",
 }
 
 
@@ -182,15 +218,19 @@ with st.sidebar:
     st.markdown(f"**Study:** {STUDY_ID}")
     st.markdown("---")
 
-    page = st.radio("Navigation", [
-        "🏠 Home",
-        "✅ Validation",
-        "📦 SDTM Export",
-        "🔐 Audit Trail",
-        "✍️ E-Signatures",
-        "👥 Users",
-        "📊 Reports",
-    ], label_visibility="collapsed")
+    page = st.radio(
+        "Navigation",
+        [
+            "🏠 Home",
+            "✅ Validation",
+            "📦 SDTM Export",
+            "🔐 Audit Trail",
+            "✍️ E-Signatures",
+            "👥 Users",
+            "📊 Reports",
+        ],
+        label_visibility="collapsed",
+    )
 
     st.markdown("---")
     if st.session_state.logged_in_user:
@@ -207,7 +247,8 @@ with st.sidebar:
         "<div style='font-size:11px;color:#666'>"
         "Phase A · Phase B · Phase C<br>"
         "CDISC SDTM v1.8 · 21 CFR Part 11"
-        "</div>", unsafe_allow_html=True
+        "</div>",
+        unsafe_allow_html=True,
     )
 
 
@@ -220,8 +261,7 @@ def login_widget():
         password = st.text_input("Password", type="password", key="login_pw")
         if st.button("Sign in", use_container_width=True):
             um = UserManager(DB_PATH)
-            result = um.authenticate(username, password,
-                                     ip_address="127.0.0.1")
+            result = um.authenticate(username, password, ip_address="127.0.0.1")
             if result:
                 st.session_state.logged_in_user = result
                 st.success(f"Welcome, {result['display_name']}!")
@@ -293,11 +333,14 @@ if page == "🏠 Home":
             st.rerun()
 
     st.markdown("---")
-    st.markdown("""
+    st.markdown(
+        """
     <div style='font-size:13px; color:#888; text-align:center'>
     Mini EDC · Built with Python · CDISC SDTM v1.8 · 21 CFR Part 11 · SQLite
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -309,7 +352,9 @@ elif page == "✅ Validation":
 
     col_run, col_info = st.columns([2, 3])
     with col_run:
-        data_source = st.selectbox("Data source", ["Built-in sample data", "Custom JSON"])
+        data_source = st.selectbox(
+            "Data source", ["Built-in sample data", "Custom JSON"]
+        )
         if data_source == "Custom JSON":
             uploaded = st.file_uploader("Upload study data (JSON)", type="json")
             raw_data = json.load(uploaded) if uploaded else SAMPLE_DATA
@@ -318,10 +363,10 @@ elif page == "✅ Validation":
 
         if st.button("🚀 Run Validation", use_container_width=True, type="primary"):
             validator = CDISCValidator()
-            findings  = validator.run_all(raw_data)
-            summary   = validator.summary()
+            findings = validator.run_all(raw_data)
+            summary = validator.summary()
             st.session_state.validation_findings = findings
-            st.session_state.validation_summary  = summary
+            st.session_state.validation_summary = summary
             st.success(f"Validation complete — {summary['total']} findings detected.")
 
     if st.session_state.validation_summary:
@@ -329,66 +374,89 @@ elif page == "✅ Validation":
         st.markdown('<div class="section-hdr">Summary</div>', unsafe_allow_html=True)
 
         m1, m2, m3, m4, m5 = st.columns(5)
-        m1.metric("Total Findings",  s["total"])
-        m2.metric("🔴 Critical",     s["by_severity"].get("CRITICAL", 0))
-        m3.metric("🟡 Major",        s["by_severity"].get("MAJOR",    0))
-        m4.metric("🔵 Minor",        s["by_severity"].get("MINOR",    0))
+        m1.metric("Total Findings", s["total"])
+        m2.metric("🔴 Critical", s["by_severity"].get("CRITICAL", 0))
+        m3.metric("🟡 Major", s["by_severity"].get("MAJOR", 0))
+        m4.metric("🔵 Minor", s["by_severity"].get("MINOR", 0))
         ready = s.get("submission_ready", False)
         m5.metric("Submission Ready", "✅ Yes" if ready else "❌ No")
 
         # Charts row
         ch1, ch2 = st.columns(2)
         with ch1:
-            domain_df = pd.DataFrame([
-                {"Domain": k, "Findings": v}
-                for k, v in s["by_domain"].items()
-            ])
-            fig = px.bar(domain_df, x="Domain", y="Findings",
-                         color="Domain",
-                         color_discrete_sequence=px.colors.qualitative.Set2,
-                         title="Findings by domain")
-            fig.update_layout(showlegend=False, height=280,
-                              plot_bgcolor="#0f1117", paper_bgcolor="#0f1117",
-                              font_color="#e0e0e0")
+            domain_df = pd.DataFrame(
+                [{"Domain": k, "Findings": v} for k, v in s["by_domain"].items()]
+            )
+            fig = px.bar(
+                domain_df,
+                x="Domain",
+                y="Findings",
+                color="Domain",
+                color_discrete_sequence=px.colors.qualitative.Set2,
+                title="Findings by domain",
+            )
+            fig.update_layout(
+                showlegend=False,
+                height=280,
+                plot_bgcolor="#0f1117",
+                paper_bgcolor="#0f1117",
+                font_color="#e0e0e0",
+            )
             st.plotly_chart(fig, use_container_width=True)
 
         with ch2:
-            sev_df = pd.DataFrame([
-                {"Severity": k, "Count": v}
-                for k, v in s["by_severity"].items() if v > 0
-            ])
-            fig2 = px.pie(sev_df, names="Severity", values="Count",
-                          color="Severity",
-                          color_discrete_map={
-                              "CRITICAL": "#ff4d4f",
-                              "MAJOR":    "#faad14",
-                              "MINOR":    "#1890ff",
-                          },
-                          title="Severity breakdown",
-                          hole=0.55)
-            fig2.update_layout(height=280,
-                               plot_bgcolor="#0f1117", paper_bgcolor="#0f1117",
-                               font_color="#e0e0e0")
+            sev_df = pd.DataFrame(
+                [
+                    {"Severity": k, "Count": v}
+                    for k, v in s["by_severity"].items()
+                    if v > 0
+                ]
+            )
+            fig2 = px.pie(
+                sev_df,
+                names="Severity",
+                values="Count",
+                color="Severity",
+                color_discrete_map={
+                    "CRITICAL": "#ff4d4f",
+                    "MAJOR": "#faad14",
+                    "MINOR": "#1890ff",
+                },
+                title="Severity breakdown",
+                hole=0.55,
+            )
+            fig2.update_layout(
+                height=280,
+                plot_bgcolor="#0f1117",
+                paper_bgcolor="#0f1117",
+                font_color="#e0e0e0",
+            )
             st.plotly_chart(fig2, use_container_width=True)
 
         # Findings table
-        st.markdown('<div class="section-hdr">Findings Detail</div>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-hdr">Findings Detail</div>', unsafe_allow_html=True
+        )
 
-        fil_sev    = st.multiselect("Filter by severity",
-                                    ["CRITICAL", "MAJOR", "MINOR"],
-                                    default=["CRITICAL", "MAJOR", "MINOR"])
-        fil_domain = st.multiselect("Filter by domain",
-                                    list(s["by_domain"].keys()),
-                                    default=list(s["by_domain"].keys()))
+        fil_sev = st.multiselect(
+            "Filter by severity",
+            ["CRITICAL", "MAJOR", "MINOR"],
+            default=["CRITICAL", "MAJOR", "MINOR"],
+        )
+        fil_domain = st.multiselect(
+            "Filter by domain",
+            list(s["by_domain"].keys()),
+            default=list(s["by_domain"].keys()),
+        )
 
         findings_filtered = [
-            f for f in st.session_state.validation_findings
+            f
+            for f in st.session_state.validation_findings
             if f["severity"] in fil_sev and f["domain"] in fil_domain
         ]
 
         for f in findings_filtered:
-            icon  = SEV_ICON.get(f["severity"], "⚪")
+            icon = SEV_ICON.get(f["severity"], "⚪")
             color = SEV_COLOR.get(f["severity"], "#888")
             st.markdown(
                 f'<div class="finding-row">'
@@ -398,8 +466,8 @@ elif page == "✅ Validation":
                 f'&nbsp;·&nbsp;<code>{f["subject_id"]}</code>'
                 f'&nbsp;·&nbsp;<code>{f["variable"]}={f["value"]}</code>'
                 f'<br><span style="color:#aaa;font-size:12px">{f["message"]}</span>'
-                f'</div>',
-                unsafe_allow_html=True
+                f"</div>",
+                unsafe_allow_html=True,
             )
 
         # Download
@@ -422,33 +490,36 @@ elif page == "📦 SDTM Export":
     col_gen, col_status = st.columns([1, 2])
     with col_gen:
         study_id_inp = st.text_input("Study ID", value=STUDY_ID)
-        domains = st.multiselect("Domains to export",
-                                 ["DM", "AE", "VS", "LB", "EX"],
-                                 default=["DM", "AE", "VS", "LB", "EX"])
+        domains = st.multiselect(
+            "Domains to export",
+            ["DM", "AE", "VS", "LB", "EX"],
+            default=["DM", "AE", "VS", "LB", "EX"],
+        )
         gen_define = st.checkbox("Generate define.xml", value=True)
-        run_conf   = st.checkbox("Run conformance check", value=True)
+        run_conf = st.checkbox("Run conformance check", value=True)
 
         if st.button("📦 Generate SDTM", use_container_width=True, type="primary"):
             with st.spinner("Generating SDTM datasets…"):
                 gen = SDTMGenerator(study_id_inp, SDTM_OUT)
                 datasets = gen.run_all(SAMPLE_DATA)
-                st.session_state.sdtm_datasets  = datasets
+                st.session_state.sdtm_datasets = datasets
                 st.session_state.sdtm_generated = True
-                st.session_state.sdtm_gen_meta  = gen.generated_datasets
+                st.session_state.sdtm_gen_meta = gen.generated_datasets
                 if gen_define:
                     d = DefineXMLGenerator(study_id_inp, gen.generated_datasets)
                     d.generate(os.path.join(SDTM_OUT, "define.xml"))
                 if run_conf:
                     checker = SDTMConformanceChecker(datasets)
-                    issues  = checker.run_all()
+                    issues = checker.run_all()
                     summary = checker.summary()
-                    st.session_state.sdtm_conf_issues  = issues
+                    st.session_state.sdtm_conf_issues = issues
                     st.session_state.sdtm_conf_summary = summary
             st.success("SDTM generation complete!")
 
     if st.session_state.sdtm_generated:
-        st.markdown('<div class="section-hdr">Generated Datasets</div>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-hdr">Generated Datasets</div>', unsafe_allow_html=True
+        )
 
         for ds in st.session_state.get("sdtm_gen_meta", []):
             with st.expander(
@@ -468,12 +539,14 @@ elif page == "📦 SDTM Export":
         # Conformance results
         if "sdtm_conf_summary" in st.session_state:
             cs = st.session_state.sdtm_conf_summary
-            st.markdown('<div class="section-hdr">Conformance Check</div>',
-                        unsafe_allow_html=True)
+            st.markdown(
+                '<div class="section-hdr">Conformance Check</div>',
+                unsafe_allow_html=True,
+            )
             c1, c2, c3, c4 = st.columns(4)
-            c1.metric("Total Issues",  cs["total"])
-            c2.metric("Errors",        cs["errors"])
-            c3.metric("Warnings",      cs["warnings"])
+            c1.metric("Total Issues", cs["total"])
+            c2.metric("Errors", cs["errors"])
+            c3.metric("Warnings", cs["warnings"])
             c4.metric("Submission OK", "✅ Yes" if cs["submission_ready"] else "❌ No")
 
             if st.session_state.sdtm_conf_issues:
@@ -483,8 +556,8 @@ elif page == "📦 SDTM Export":
                         f'<div class="finding-row">'
                         f'{icon} <strong>{issue["domain"]}</strong> '
                         f'<code>[{issue["check_id"]}]</code> {issue["message"]}'
-                        f'</div>',
-                        unsafe_allow_html=True
+                        f"</div>",
+                        unsafe_allow_html=True,
                     )
             else:
                 st.success("✅ No conformance issues — datasets are submission-ready.")
@@ -544,8 +617,19 @@ elif page == "🔐 Audit Trail":
     ).fetchall()
     con.close()
 
-    cols = ["audit_id","timestamp","username","role","action",
-            "domain","record_id","field","old_value","new_value","reason"]
+    cols = [
+        "audit_id",
+        "timestamp",
+        "username",
+        "role",
+        "action",
+        "domain",
+        "record_id",
+        "field",
+        "old_value",
+        "new_value",
+        "reason",
+    ]
     df = pd.DataFrame(rows, columns=cols)
 
     if df.empty:
@@ -564,57 +648,69 @@ elif page == "🔐 Audit Trail":
             sel_domain = st.selectbox("Filter by domain", domains)
 
         filtered = df.copy()
-        if sel_user   != "All": 
+        if sel_user != "All":
             filtered = filtered[filtered["username"] == sel_user]
-        if sel_action != "All": 
-            filtered = filtered[filtered["action"]   == sel_action]
-        if sel_domain != "All": 
-            filtered = filtered[filtered["domain"]   == sel_domain]
+        if sel_action != "All":
+            filtered = filtered[filtered["action"] == sel_action]
+        if sel_domain != "All":
+            filtered = filtered[filtered["domain"] == sel_domain]
 
         st.markdown(f"**{len(filtered)}** entries")
 
         # Metrics
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Total entries",  len(df))
-        m2.metric("Unique users",   df["username"].nunique())
+        m1.metric("Total entries", len(df))
+        m2.metric("Unique users", df["username"].nunique())
         m3.metric("Domains touched", df["domain"].nunique())
-        m4.metric("Integrity",      "✅ OK" if integrity["integrity_ok"] else "❌ FAIL")
+        m4.metric("Integrity", "✅ OK" if integrity["integrity_ok"] else "❌ FAIL")
 
         # Action distribution chart
         action_counts = df["action"].value_counts().reset_index()
         action_counts.columns = ["Action", "Count"]
-        fig = px.bar(action_counts, x="Action", y="Count",
-                     color="Action",
-                     color_discrete_sequence=px.colors.qualitative.Pastel,
-                     title="Audit actions distribution")
-        fig.update_layout(showlegend=False, height=260,
-                          plot_bgcolor="#0f1117", paper_bgcolor="#0f1117",
-                          font_color="#e0e0e0")
+        fig = px.bar(
+            action_counts,
+            x="Action",
+            y="Count",
+            color="Action",
+            color_discrete_sequence=px.colors.qualitative.Pastel,
+            title="Audit actions distribution",
+        )
+        fig.update_layout(
+            showlegend=False,
+            height=260,
+            plot_bgcolor="#0f1117",
+            paper_bgcolor="#0f1117",
+            font_color="#e0e0e0",
+        )
         st.plotly_chart(fig, use_container_width=True)
 
         # Entries table (styled)
-        st.markdown('<div class="section-hdr">Audit Entries (newest first)</div>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-hdr">Audit Entries (newest first)</div>',
+            unsafe_allow_html=True,
+        )
 
         for _, row in filtered.head(50).iterrows():
             action = row["action"]
-            color  = ACTION_COLOR.get(action, "#888")
-            ts     = str(row["timestamp"])[:19]
+            color = ACTION_COLOR.get(action, "#888")
+            ts = str(row["timestamp"])[:19]
             change = ""
             if row["field"] and row["old_value"] != row["new_value"]:
-                change = (f'&nbsp;·&nbsp;<code>{row["field"]}</code>: '
-                          f'<span style="color:#ff7875">{row["old_value"]}</span>'
-                          f' → <span style="color:#95de64">{row["new_value"]}</span>')
+                change = (
+                    f'&nbsp;·&nbsp;<code>{row["field"]}</code>: '
+                    f'<span style="color:#ff7875">{row["old_value"]}</span>'
+                    f' → <span style="color:#95de64">{row["new_value"]}</span>'
+                )
             st.markdown(
                 f'<div class="audit-entry">'
                 f'<span style="color:{color};font-weight:600">{action}</span>'
                 f'&nbsp;&nbsp;<span style="color:#888;font-size:12px">{ts} UTC</span>'
                 f'&nbsp;&nbsp;<strong>{row["username"]}</strong>'
                 f'&nbsp;<span style="color:#888;font-size:11px">({row["role"]})</span>'
-                f'{change}'
+                f"{change}"
                 f'{"&nbsp;·&nbsp;<em>" + row["reason"] + "</em>" if row["reason"] else ""}'
-                f'</div>',
-                unsafe_allow_html=True
+                f"</div>",
+                unsafe_allow_html=True,
             )
 
         # Download full audit trail
@@ -648,11 +744,21 @@ elif page == "✍️ E-Signatures":
     ).fetchall()
     con.close()
 
-    sig_cols = ["sig_id","timestamp","display_name","role","domain",
-                "record_id","reason","manifest","sig_hash"]
+    sig_cols = [
+        "sig_id",
+        "timestamp",
+        "display_name",
+        "role",
+        "domain",
+        "record_id",
+        "reason",
+        "manifest",
+        "sig_hash",
+    ]
 
-    st.markdown('<div class="section-hdr">Applied Signatures</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-hdr">Applied Signatures</div>', unsafe_allow_html=True
+    )
 
     if not sigs:
         st.info("No signatures yet. Apply one below.")
@@ -669,13 +775,14 @@ elif page == "✍️ E-Signatures":
                 f'Record: <code>{sd["record_id"][:30]}</code></span><br>'
                 f'<span style="color:#555;font-size:11px;font-family:monospace">'
                 f'{sd["manifest"][:180]}…</span>'
-                f'</div>',
-                unsafe_allow_html=True
+                f"</div>",
+                unsafe_allow_html=True,
             )
 
     # Apply new signature
-    st.markdown('<div class="section-hdr">Apply New Signature</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-hdr">Apply New Signature</div>', unsafe_allow_html=True
+    )
 
     # Get or create a demo record
     crm = ClinicalRecordManager(DB_PATH)
@@ -687,29 +794,38 @@ elif page == "✍️ E-Signatures":
 
     if not records:
         # Create a demo record
-        demo_data = {"USUBJID": "STUDY001-001-001", "AETERM": "Headache",
-                     "AESTDTC": "2024-02-10", "AESEV": "MILD", "AESER": "N"}
+        demo_data = {
+            "USUBJID": "STUDY001-001-001",
+            "AETERM": "Headache",
+            "AESTDTC": "2024-02-10",
+            "AESEV": "MILD",
+            "AESER": "N",
+        }
         rec_id = crm.create_record(
-            "STUDY001-001-001", "AE", "WEEK 4", demo_data,
-            user["user_id"], user["username"], user["role"],
+            "STUDY001-001-001",
+            "AE",
+            "WEEK 4",
+            demo_data,
+            user["user_id"],
+            user["username"],
+            user["role"],
             session_id=user["session_id"],
         )
         records = [(rec_id, "AE", "STUDY001-001-001", "WEEK 4")]
 
-    record_opts = {
-        f'{r[1]} · {r[2]} · {r[3]}': r[0] for r in records
-    }
+    record_opts = {f"{r[1]} · {r[2]} · {r[3]}": r[0] for r in records}
 
     sc1, sc2 = st.columns(2)
     with sc1:
         sel_record = st.selectbox("Select record", list(record_opts.keys()))
-        sel_reason = st.selectbox("Signature reason",
-                                  [r.value for r in SignatureReason])
+        sel_reason = st.selectbox(
+            "Signature reason", [r.value for r in SignatureReason]
+        )
     with sc2:
         sig_password = st.text_input(
             "Re-enter your password (§11.200(b))",
             type="password",
-            help="Password re-entry is required for every e-signature per 21 CFR Part 11 §11.200(b)"
+            help="Password re-entry is required for every e-signature per 21 CFR Part 11 §11.200(b)",
         )
 
     if st.button("✍️ Apply Signature", type="primary", use_container_width=True):
@@ -717,18 +833,18 @@ elif page == "✍️ E-Signatures":
             st.error("Password is required (§11.200(b))")
         else:
             record_id = record_opts[sel_record]
-            rec       = crm.get_record(record_id)
-            esig_eng  = ESignatureEngine(DB_PATH)
+            rec = crm.get_record(record_id)
+            esig_eng = ESignatureEngine(DB_PATH)
             try:
                 result = esig_eng.sign_record(
-                    user_id     = user["user_id"],
-                    password    = sig_password,
-                    record_id   = record_id,
-                    domain      = rec["domain"],
-                    reason      = SignatureReason(sel_reason),
-                    record_data = rec["data"],
-                    session_id  = user.get("session_id", ""),
-                    ip_address  = "127.0.0.1",
+                    user_id=user["user_id"],
+                    password=sig_password,
+                    record_id=record_id,
+                    domain=rec["domain"],
+                    reason=SignatureReason(sel_reason),
+                    record_data=rec["data"],
+                    session_id=user.get("session_id", ""),
+                    ip_address="127.0.0.1",
                 )
                 st.success(
                     f"✅ Signature applied by **{result['signer']}** at {result['timestamp'][:19]} UTC"
@@ -753,53 +869,77 @@ elif page == "👥 Users":
     ).fetchall()
     con.close()
 
-    ucols = ["Username","Display Name","Role","Email",
-             "Failed","Locked","Last Login","Created","Active"]
+    ucols = [
+        "Username",
+        "Display Name",
+        "Role",
+        "Email",
+        "Failed",
+        "Locked",
+        "Last Login",
+        "Created",
+        "Active",
+    ]
     df_u = pd.DataFrame(users, columns=ucols)
 
     # Metrics
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total users",   len(df_u))
-    m2.metric("Active",        int(df_u["Active"].sum()))
-    m3.metric("Locked",        int(df_u["Locked"].sum()))
-    m4.metric("Roles",         df_u["Role"].nunique())
+    m1.metric("Total users", len(df_u))
+    m2.metric("Active", int(df_u["Active"].sum()))
+    m3.metric("Locked", int(df_u["Locked"].sum()))
+    m4.metric("Roles", df_u["Role"].nunique())
 
     # Role distribution
     role_counts = df_u["Role"].value_counts().reset_index()
-    role_counts.columns = ["Role","Count"]
-    fig = px.pie(role_counts, names="Role", values="Count",
-                 hole=0.5, title="Users by role",
-                 color_discrete_sequence=px.colors.qualitative.Set3)
-    fig.update_layout(height=250,
-                      plot_bgcolor="#0f1117", paper_bgcolor="#0f1117",
-                      font_color="#e0e0e0")
+    role_counts.columns = ["Role", "Count"]
+    fig = px.pie(
+        role_counts,
+        names="Role",
+        values="Count",
+        hole=0.5,
+        title="Users by role",
+        color_discrete_sequence=px.colors.qualitative.Set3,
+    )
+    fig.update_layout(
+        height=250,
+        plot_bgcolor="#0f1117",
+        paper_bgcolor="#0f1117",
+        font_color="#e0e0e0",
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     # Users table
     st.dataframe(
         df_u.style.apply(
-            lambda col: ["background-color:#4a1515" if v else "" for v in col]
-            if col.name == "Locked" else [""] * len(col),
-            axis=0
+            lambda col: (
+                ["background-color:#4a1515" if v else "" for v in col]
+                if col.name == "Locked"
+                else [""] * len(col)
+            ),
+            axis=0,
         ),
         use_container_width=True,
     )
 
     # Create new user form
-    st.markdown('<div class="section-hdr">Create New User</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-hdr">Create New User</div>', unsafe_allow_html=True
+    )
 
     with st.form("new_user_form"):
         nc1, nc2 = st.columns(2)
         with nc1:
             new_username = st.text_input("Username")
-            new_display  = st.text_input("Display name")
-            new_email    = st.text_input("Email")
+            new_display = st.text_input("Display name")
+            new_email = st.text_input("Email")
         with nc2:
             new_role = st.selectbox("Role", [r.value for r in Role])
-            new_pw   = st.text_input("Password", type="password",
-                                     help="Min 12 chars, upper+lower+digit+special")
-            new_pw2  = st.text_input("Confirm password", type="password")
+            new_pw = st.text_input(
+                "Password",
+                type="password",
+                help="Min 12 chars, upper+lower+digit+special",
+            )
+            new_pw2 = st.text_input("Confirm password", type="password")
 
         submitted = st.form_submit_button("Create User", use_container_width=True)
         if submitted:
@@ -811,8 +951,11 @@ elif page == "👥 Users":
                 um = UserManager(DB_PATH)
                 try:
                     uid = um.create_user(
-                        new_username, new_display,
-                        Role(new_role), new_email, new_pw,
+                        new_username,
+                        new_display,
+                        Role(new_role),
+                        new_email,
+                        new_pw,
                         created_by="admin",
                     )
                     st.success(f"User **{new_username}** created (ID: {uid[:8]}…)")
@@ -840,8 +983,10 @@ elif page == "📊 Reports":
     report = generate_compliance_report(DB_PATH)
 
     # 21 CFR Part 11 compliance table
-    st.markdown('<div class="section-hdr">21 CFR Part 11 Compliance Status</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-hdr">21 CFR Part 11 Compliance Status</div>',
+        unsafe_allow_html=True,
+    )
 
     for req, met in report["requirements_met"].items():
         icon = "✅" if met else "❌"
@@ -850,45 +995,53 @@ elif page == "📊 Reports":
             f'<div style="padding:6px 12px;margin:3px 0;border-radius:6px;'
             f'background:#1a1d27;border:1px solid #2a2d3a;font-size:13px">'
             f'<span style="color:{color}">{icon}</span>&nbsp;&nbsp;{req}</div>',
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
-    st.markdown('<div class="section-hdr">Statistics</div>',
-                unsafe_allow_html=True)
+    st.markdown('<div class="section-hdr">Statistics</div>', unsafe_allow_html=True)
 
     stats = report["statistics"]
     mc1, mc2, mc3, mc4, mc5 = st.columns(5)
-    mc1.metric("Users",         stats["users"])
-    mc2.metric("Sessions",      stats["sessions"])
+    mc1.metric("Users", stats["users"])
+    mc2.metric("Sessions", stats["sessions"])
     mc3.metric("Audit entries", stats["audit_entries"])
-    mc4.metric("E-signatures",  stats["e_signatures"])
-    mc5.metric("CRF records",   stats["crf_records"])
+    mc4.metric("E-signatures", stats["e_signatures"])
+    mc5.metric("CRF records", stats["crf_records"])
 
     # Audit action breakdown
     if report["audit_actions"]:
-        st.markdown('<div class="section-hdr">Audit Activity</div>',
-                    unsafe_allow_html=True)
-        action_df = pd.DataFrame([
-            {"Action": k, "Count": v}
-            for k, v in report["audit_actions"].items()
-        ])
-        fig = px.bar(action_df, x="Action", y="Count",
-                     color="Action",
-                     color_discrete_sequence=px.colors.qualitative.Pastel,
-                     title="Audit actions")
-        fig.update_layout(showlegend=False, height=300,
-                          plot_bgcolor="#0f1117", paper_bgcolor="#0f1117",
-                          font_color="#e0e0e0")
+        st.markdown(
+            '<div class="section-hdr">Audit Activity</div>', unsafe_allow_html=True
+        )
+        action_df = pd.DataFrame(
+            [{"Action": k, "Count": v} for k, v in report["audit_actions"].items()]
+        )
+        fig = px.bar(
+            action_df,
+            x="Action",
+            y="Count",
+            color="Action",
+            color_discrete_sequence=px.colors.qualitative.Pastel,
+            title="Audit actions",
+        )
+        fig.update_layout(
+            showlegend=False,
+            height=300,
+            plot_bgcolor="#0f1117",
+            paper_bgcolor="#0f1117",
+            font_color="#e0e0e0",
+        )
         st.plotly_chart(fig, use_container_width=True)
 
     # Integrity report
-    st.markdown('<div class="section-hdr">Chain Integrity Report</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-hdr">Chain Integrity Report</div>', unsafe_allow_html=True
+    )
     integ = report["integrity"]
     ic1, ic2, ic3 = st.columns(3)
-    ic1.metric("Total entries",  integ["total_entries"])
-    ic2.metric("Tampered",       integ["tampered_count"])
-    ic3.metric("Integrity",      "✅ OK" if integ["integrity_ok"] else "❌ FAIL")
+    ic1.metric("Total entries", integ["total_entries"])
+    ic2.metric("Tampered", integ["tampered_count"])
+    ic3.metric("Integrity", "✅ OK" if integ["integrity_ok"] else "❌ FAIL")
 
     # Download full JSON report
     st.download_button(
@@ -899,10 +1052,11 @@ elif page == "📊 Reports":
     )
 
     # Re-run all validation and show combined summary
-    st.markdown('<div class="section-hdr">Live Validation Summary</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-hdr">Live Validation Summary</div>', unsafe_allow_html=True
+    )
     if st.button("🔄 Re-run CDISC validation"):
         validator = CDISCValidator()
-        findings  = validator.run_all(SAMPLE_DATA)
-        summary   = validator.summary()
+        findings = validator.run_all(SAMPLE_DATA)
+        summary = validator.summary()
         st.json(summary)

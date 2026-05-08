@@ -8,8 +8,8 @@ import sqlite3
 import os
 from datetime import datetime
 
-BASE    = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, '..', 'sql', 'cdm_phase3.db')
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 
 
 def get_conn():
@@ -91,16 +91,19 @@ def init_db():
 def load_subjects(df):
     conn = get_conn()
     for _, row in df.iterrows():
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR IGNORE INTO subjects (usubjid, siteid, age, gender, weight_kg)
             VALUES (?, ?, ?, ?, ?)
-        """, (
-            str(row.get("Subject_ID", "")),
-            str(row.get("Site_ID", "")),
-            row.get("Age"),
-            row.get("Gender"),
-            row.get("Weight_kg"),
-        ))
+        """,
+            (
+                str(row.get("Subject_ID", "")),
+                str(row.get("Site_ID", "")),
+                row.get("Age"),
+                row.get("Gender"),
+                row.get("Weight_kg"),
+            ),
+        )
     conn.commit()
     conn.close()
     print(f"[DB] Loaded {len(df)} subjects")
@@ -109,15 +112,18 @@ def load_subjects(df):
 def load_visits(df):
     conn = get_conn()
     for _, row in df.iterrows():
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO visits (usubjid, visit_date, drug_name, dose_mg)
             VALUES (?, ?, ?, ?)
-        """, (
-            str(row.get("Subject_ID", "")),
-            str(row.get("Visit_Date", "")),
-            row.get("Drug_Name"),
-            row.get("Dose_mg"),
-        ))
+        """,
+            (
+                str(row.get("Subject_ID", "")),
+                str(row.get("Visit_Date", "")),
+                row.get("Drug_Name"),
+                row.get("Dose_mg"),
+            ),
+        )
     conn.commit()
     conn.close()
     print(f"[DB] Loaded {len(df)} visits")
@@ -131,18 +137,21 @@ def load_adverse_events(df):
         if ae and str(ae).strip() and str(ae).strip().lower() != "nan":
             sev = str(row.get("AE_Severity", "")).upper()
             flag = "PENDING" if sev == "SEVERE" else "OK"
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO adverse_events (usubjid, siteid, aeterm, aesev, aeser, aestdtc, report_flag)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                str(row.get("Subject_ID", "")),
-                str(row.get("Site_ID", "")),
-                str(ae),
-                sev,
-                "Y" if sev == "SEVERE" else "N",
-                str(row.get("Visit_Date", "")),
-                flag,
-            ))
+            """,
+                (
+                    str(row.get("Subject_ID", "")),
+                    str(row.get("Site_ID", "")),
+                    str(ae),
+                    sev,
+                    "Y" if sev == "SEVERE" else "N",
+                    str(row.get("Visit_Date", "")),
+                    flag,
+                ),
+            )
             count += 1
     conn.commit()
     conn.close()
@@ -155,29 +164,39 @@ def open_queries(issues):
     for issue in issues:
         usubjid = str(issue.get("usubjid", "")).strip()
         # Ensure subject exists
-        exists = conn.execute("SELECT 1 FROM subjects WHERE usubjid=?", (usubjid,)).fetchone()
+        exists = conn.execute(
+            "SELECT 1 FROM subjects WHERE usubjid=?", (usubjid,)
+        ).fetchone()
         if not exists:
-            conn.execute("INSERT OR IGNORE INTO subjects (usubjid, siteid) VALUES (?, ?)",
-                         (usubjid, issue.get("siteid", "UNKNOWN")))
+            conn.execute(
+                "INSERT OR IGNORE INTO subjects (usubjid, siteid) VALUES (?, ?)",
+                (usubjid, issue.get("siteid", "UNKNOWN")),
+            )
 
         query_id = issue.get("query_id", f"QRY-{count+1:04d}")
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR IGNORE INTO queries
             (query_id, usubjid, siteid, field_name, severity, status, issue_description, created_at)
             VALUES (?, ?, ?, ?, ?, 'Open', ?, ?)
-        """, (
-            query_id,
-            usubjid,
-            issue.get("siteid", ""),
-            issue.get("field", ""),
-            issue.get("severity", "Minor"),
-            issue.get("issue", ""),
-            datetime.now().isoformat(),
-        ))
-        conn.execute("""
+        """,
+            (
+                query_id,
+                usubjid,
+                issue.get("siteid", ""),
+                issue.get("field", ""),
+                issue.get("severity", "Minor"),
+                issue.get("issue", ""),
+                datetime.now().isoformat(),
+            ),
+        )
+        conn.execute(
+            """
             INSERT INTO audit_trail (event_time, action, table_name, record_id, field_name, new_value, performed_by)
             VALUES (?, 'QUERY_OPEN', 'queries', ?, 'status', 'Open', 'SYSTEM')
-        """, (datetime.now().isoformat(), query_id))
+        """,
+            (datetime.now().isoformat(), query_id),
+        )
         count += 1
     conn.commit()
     conn.close()
@@ -186,12 +205,17 @@ def open_queries(issues):
 
 def answer_query(query_id, answer_text, answered_by):
     conn = get_conn()
-    conn.execute("UPDATE queries SET status='Answered', resolved_at=? WHERE query_id=?",
-                 (datetime.now().isoformat(), query_id))
-    conn.execute("""
+    conn.execute(
+        "UPDATE queries SET status='Answered', resolved_at=? WHERE query_id=?",
+        (datetime.now().isoformat(), query_id),
+    )
+    conn.execute(
+        """
         INSERT INTO audit_trail (event_time, action, table_name, record_id, field_name, old_value, new_value, performed_by)
         VALUES (?, 'QUERY_ANSWER', 'queries', ?, 'status', 'Open', ?, ?)
-    """, (datetime.now().isoformat(), query_id, answer_text, answered_by))
+    """,
+        (datetime.now().isoformat(), query_id, answer_text, answered_by),
+    )
     conn.commit()
     conn.close()
     print(f"[DB] Query {query_id} answered by {answered_by}")
@@ -199,12 +223,17 @@ def answer_query(query_id, answer_text, answered_by):
 
 def close_query(query_id, closed_by, reason=""):
     conn = get_conn()
-    conn.execute("UPDATE queries SET status='Closed', resolved_at=? WHERE query_id=?",
-                 (datetime.now().isoformat(), query_id))
-    conn.execute("""
+    conn.execute(
+        "UPDATE queries SET status='Closed', resolved_at=? WHERE query_id=?",
+        (datetime.now().isoformat(), query_id),
+    )
+    conn.execute(
+        """
         INSERT INTO audit_trail (event_time, action, table_name, record_id, field_name, old_value, new_value, performed_by)
         VALUES (?, 'QUERY_CLOSE', 'queries', ?, 'status', 'Answered', ?, ?)
-    """, (datetime.now().isoformat(), query_id, reason, closed_by))
+    """,
+        (datetime.now().isoformat(), query_id, reason, closed_by),
+    )
     conn.commit()
     conn.close()
     print(f"[DB] Query {query_id} closed by {closed_by}")
@@ -212,7 +241,9 @@ def close_query(query_id, closed_by, reason=""):
 
 def query_summary():
     conn = get_conn()
-    rows = conn.execute("SELECT status, COUNT(*) FROM queries GROUP BY status").fetchall()
+    rows = conn.execute(
+        "SELECT status, COUNT(*) FROM queries GROUP BY status"
+    ).fetchall()
     conn.close()
     print("\n[REPORT] Query Summary:")
     for r in rows:
@@ -221,7 +252,9 @@ def query_summary():
 
 def open_queries_report():
     conn = get_conn()
-    rows = conn.execute("SELECT query_id, usubjid, field_name, severity, issue_description FROM v_open_queries LIMIT 10").fetchall()
+    rows = conn.execute(
+        "SELECT query_id, usubjid, field_name, severity, issue_description FROM v_open_queries LIMIT 10"
+    ).fetchall()
     conn.close()
     print(f"\n[REPORT] Open Queries ({len(rows)} shown):")
     for r in rows:
@@ -239,7 +272,9 @@ def sae_report():
 
 def audit_report(limit=15):
     conn = get_conn()
-    rows = conn.execute(f"SELECT event_time, action, record_id, performed_by FROM audit_trail LIMIT {limit}").fetchall()
+    rows = conn.execute(
+        f"SELECT event_time, action, record_id, performed_by FROM audit_trail LIMIT {limit}"
+    ).fetchall()
     conn.close()
     print(f"\n[REPORT] Audit Trail (last {limit}):")
     for r in rows:

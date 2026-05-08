@@ -11,8 +11,8 @@ import os
 import hashlib
 from datetime import datetime
 
-BASE    = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, '..', 'sql', 'cdm_phase3.db')
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 
 
 def init_lock_table():
@@ -57,7 +57,7 @@ def _verify_user(user_id: str, password: str) -> bool:
     try:
         row = conn.execute(
             "SELECT password_hash FROM users WHERE user_id=? AND is_active=1",
-            (user_id,)
+            (user_id,),
         ).fetchone()
         conn.close()
         if row:
@@ -95,26 +95,37 @@ def lock_database(locked_by: str, password: str, reason: str, lock_type: str = "
         return False, "❌ Invalid credentials — lock rejected"
 
     checksum = _compute_checksum()
-    sig_hash = hashlib.sha256(f"{locked_by}{reason}{datetime.now().isoformat()}".encode()).hexdigest()
+    sig_hash = hashlib.sha256(
+        f"{locked_by}{reason}{datetime.now().isoformat()}".encode()
+    ).hexdigest()
 
     conn = sqlite3.connect(DB_PATH)
 
     # Insert lock record
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO data_lock (lock_type, locked_by, lock_reason, locked_at, is_active, db_checksum, signature_hash)
         VALUES (?, ?, ?, ?, 1, ?, ?)
-    """, (lock_type, locked_by, reason, datetime.now().isoformat(), checksum, sig_hash))
+    """,
+        (lock_type, locked_by, reason, datetime.now().isoformat(), checksum, sig_hash),
+    )
 
     # Log in audit trail
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO audit_trail (event_time, action, table_name, record_id, field_name, new_value, performed_by)
         VALUES (?, 'DATA_LOCK', 'data_lock', 'ALL_TABLES', 'lock_status', ?, ?)
-    """, (datetime.now().isoformat(), f"LOCKED ({lock_type})", locked_by))
+    """,
+        (datetime.now().isoformat(), f"LOCKED ({lock_type})", locked_by),
+    )
 
     conn.commit()
     conn.close()
 
-    return True, f"✅ Database LOCKED ({lock_type}) by {locked_by} at {datetime.now().strftime('%d %b %Y %H:%M')}"
+    return (
+        True,
+        f"✅ Database LOCKED ({lock_type}) by {locked_by} at {datetime.now().strftime('%d %b %Y %H:%M')}",
+    )
 
 
 def unlock_database(unlocked_by: str, password: str, reason: str):
@@ -130,20 +141,29 @@ def unlock_database(unlocked_by: str, password: str, reason: str):
         return False, "❌ Invalid credentials — unlock rejected"
 
     conn = sqlite3.connect(DB_PATH)
-    conn.execute("""
+    conn.execute(
+        """
         UPDATE data_lock SET is_active=0, unlocked_by=?, unlocked_at=?
         WHERE is_active=1
-    """, (unlocked_by, datetime.now().isoformat()))
+    """,
+        (unlocked_by, datetime.now().isoformat()),
+    )
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO audit_trail (event_time, action, table_name, record_id, field_name, new_value, performed_by)
         VALUES (?, 'DATA_UNLOCK', 'data_lock', 'ALL_TABLES', 'lock_status', 'UNLOCKED', ?)
-    """, (datetime.now().isoformat(), unlocked_by))
+    """,
+        (datetime.now().isoformat(), unlocked_by),
+    )
 
     conn.commit()
     conn.close()
 
-    return True, f"✅ Database UNLOCKED by {unlocked_by} at {datetime.now().strftime('%d %b %Y %H:%M')}"
+    return (
+        True,
+        f"✅ Database UNLOCKED by {unlocked_by} at {datetime.now().strftime('%d %b %Y %H:%M')}",
+    )
 
 
 def verify_integrity():
@@ -162,7 +182,7 @@ def verify_integrity():
     conn.close()
 
     current = _compute_checksum()
-    stored  = locked_checksum[0] if locked_checksum else None
+    stored = locked_checksum[0] if locked_checksum else None
     return current == stored, current, stored
 
 
@@ -171,7 +191,7 @@ def get_lock_history():
     init_lock_table()
     conn = sqlite3.connect(DB_PATH)
     try:
-        df_import = __import__('pandas')
+        df_import = __import__("pandas")
         df = df_import.read_sql_query(
             "SELECT * FROM data_lock ORDER BY locked_at DESC", conn
         )
@@ -184,9 +204,9 @@ def get_lock_history():
 
 def print_lock_status():
     """Print current lock status to console."""
-    print("\n" + "="*55)
+    print("\n" + "=" * 55)
     print("  DATA LOCK STATUS")
-    print("="*55)
+    print("=" * 55)
 
     locked, info = is_locked()
     if locked:
@@ -198,7 +218,9 @@ def print_lock_status():
         match, cur, stored = verify_integrity()
         if match is not None:
             icon = "✅" if match else "⚠️"
-            print(f"\n  {icon} DB Integrity : {'VERIFIED — No changes since lock' if match else 'WARNING — Data may have changed!'}")
+            print(
+                f"\n  {icon} DB Integrity : {'VERIFIED — No changes since lock' if match else 'WARNING — Data may have changed!'}"
+            )
             print(f"  Checksum    : {cur[:20]}...")
     else:
         print("  🔓 STATUS    : UNLOCKED")
@@ -211,10 +233,14 @@ if __name__ == "__main__":
 
     print("To lock the database, call:")
     print("  from data_lock import lock_database")
-    print("  ok, msg = lock_database('DM_JOHN', 'dm123', 'Final database lock after DBL meeting')")
+    print(
+        "  ok, msg = lock_database('DM_JOHN', 'dm123', 'Final database lock after DBL meeting')"
+    )
     print("  print(msg)")
 
     print("\nTo unlock:")
     print("  from data_lock import unlock_database")
-    print("  ok, msg = unlock_database('ADMIN', 'admin123', 'Emergency unlock approved by sponsor')")
+    print(
+        "  ok, msg = unlock_database('ADMIN', 'admin123', 'Emergency unlock approved by sponsor')"
+    )
     print("  print(msg)")

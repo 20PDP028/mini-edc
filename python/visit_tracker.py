@@ -9,24 +9,31 @@ import sqlite3
 import os
 import pandas as pd
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from datetime import datetime
 import matplotlib.patches as mpatches
 
-BASE        = os.path.dirname(os.path.abspath(__file__))
-DB_PATH     = os.path.join(BASE, '..', 'sql', 'cdm_phase3.db')
-REPORTS_DIR = os.path.join(BASE, '..', 'reports')
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
+REPORTS_DIR = os.path.join(BASE, "..", "reports")
 
-NAVY  = "#0D2B55"
-TEAL  = "#00897B"
-RED   = "#C62828"
+NAVY = "#0D2B55"
+TEAL = "#00897B"
+RED = "#C62828"
 AMBER = "#F57F17"
 LGRAY = "#F5F5F5"
 
 # Expected visits in a trial — customise as needed
 EXPECTED_VISITS = [
-    "Screening", "Baseline", "Week 2", "Week 4", "Week 8", "Week 12", "End of Study"
+    "Screening",
+    "Baseline",
+    "Week 2",
+    "Week 4",
+    "Week 8",
+    "Week 12",
+    "End of Study",
 ]
 
 
@@ -59,10 +66,13 @@ def init_visit_table():
         visit_names = ["Screening", "Baseline", "Week 4", "Week 8", "End of Study"]
         for i, (subj, site, vdate) in enumerate(visits):
             vname = visit_names[i % len(visit_names)]
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO visit_completion (usubjid, siteid, visit_name, visit_date, status, recorded_at)
                 VALUES (?, ?, ?, ?, 'Completed', ?)
-            """, (subj, site or "UNKNOWN", vname, vdate, datetime.now().isoformat()))
+            """,
+                (subj, site or "UNKNOWN", vname, vdate, datetime.now().isoformat()),
+            )
 
     conn.commit()
     conn.close()
@@ -71,7 +81,7 @@ def init_visit_table():
 def get_completion_matrix():
     """Returns a subject × visit completion matrix."""
     conn = sqlite3.connect(DB_PATH)
-    df_vc  = pd.read_sql_query("SELECT * FROM visit_completion", conn)
+    df_vc = pd.read_sql_query("SELECT * FROM visit_completion", conn)
     df_sub = pd.read_sql_query("SELECT usubjid, siteid FROM subjects", conn)
     print(f"Loaded {len(df_vc)} visit completion records and {len(df_sub)} subjects")
 
@@ -82,8 +92,7 @@ def get_completion_matrix():
 
     # Pivot: rows=subjects, cols=visit names
     matrix = df_vc.pivot_table(
-        index="usubjid", columns="visit_name",
-        values="status", aggfunc="first"
+        index="usubjid", columns="visit_name", values="status", aggfunc="first"
     ).fillna("Missing")
 
     return matrix
@@ -92,13 +101,16 @@ def get_completion_matrix():
 def completion_rate_by_site():
     """Returns completion % per site."""
     conn = sqlite3.connect(DB_PATH)
-    df = pd.read_sql_query("""
+    df = pd.read_sql_query(
+        """
         SELECT siteid,
                COUNT(*) as total,
                SUM(CASE WHEN status='Completed' THEN 1 ELSE 0 END) as completed
         FROM visit_completion
         GROUP BY siteid
-    """, conn)
+    """,
+        conn,
+    )
     conn.close()
     if not df.empty:
         df["rate"] = (df["completed"] / df["total"] * 100).round(1)
@@ -109,14 +121,18 @@ def print_visit_summary():
     """Print text summary of visit completion."""
     init_visit_table()
     conn = sqlite3.connect(DB_PATH)
-    total    = conn.execute("SELECT COUNT(*) FROM visit_completion").fetchone()[0]
-    complete = conn.execute("SELECT COUNT(*) FROM visit_completion WHERE status='Completed'").fetchone()[0]
-    missing  = conn.execute("SELECT COUNT(*) FROM visit_completion WHERE status='Missing'").fetchone()[0]
+    total = conn.execute("SELECT COUNT(*) FROM visit_completion").fetchone()[0]
+    complete = conn.execute(
+        "SELECT COUNT(*) FROM visit_completion WHERE status='Completed'"
+    ).fetchone()[0]
+    missing = conn.execute(
+        "SELECT COUNT(*) FROM visit_completion WHERE status='Missing'"
+    ).fetchone()[0]
     conn.close()
 
-    print("\n" + "="*55)
+    print("\n" + "=" * 55)
     print("  VISIT COMPLETION TRACKER")
-    print("="*55)
+    print("=" * 55)
     print(f"  Total Visits Recorded : {total}")
     print(f"  Completed             : {complete}")
     print(f"  Missing               : {missing}")
@@ -137,13 +153,14 @@ def generate_visit_chart():
     os.makedirs(REPORTS_DIR, exist_ok=True)
     init_visit_table()
 
-    matrix   = get_completion_matrix()
-    rate_df  = completion_rate_by_site()
+    matrix = get_completion_matrix()
+    rate_df = completion_rate_by_site()
 
     fig, axes = plt.subplots(1, 2, figsize=(16, 7))
     fig.patch.set_facecolor("white")
-    fig.suptitle("Visit Completion Tracker", fontsize=14,
-                 fontweight="bold", color=NAVY, y=0.98)
+    fig.suptitle(
+        "Visit Completion Tracker", fontsize=14, fontweight="bold", color=NAVY, y=0.98
+    )
 
     # ── Heatmap ───────────────────────────────────────────────
     ax1 = axes[0]
@@ -170,23 +187,29 @@ def generate_visit_chart():
             for j in range(len(matrix.columns)):
                 val = matrix.iloc[i, j]
                 ax1.text(
-                    j, i,
+                    j,
+                    i,
                     symbol_map.get(val, "?"),
-                    ha="center", va="center", fontsize=10,
+                    ha="center",
+                    va="center",
+                    fontsize=10,
                     color=text_color_map.get(val, "#333"),
                 )
 
         ax1.set_title(
             "Subject × Visit Completion Matrix",
-            fontsize=11, fontweight="bold", color=NAVY, pad=10,
+            fontsize=11,
+            fontweight="bold",
+            color=NAVY,
+            pad=10,
         )
         ax1.set_xlabel("Visit", fontsize=9, color="#555")
         ax1.set_ylabel("Subject ID", fontsize=9, color="#555")
 
         legend_handles = [
-            mpatches.Patch(fc=TEAL,  label="Completed"),
+            mpatches.Patch(fc=TEAL, label="Completed"),
             mpatches.Patch(fc=AMBER, label="Partial"),
-            mpatches.Patch(fc=RED,   label="Missing"),
+            mpatches.Patch(fc=RED, label="Missing"),
         ]
         ax1.legend(handles=legend_handles, loc="upper right", fontsize=8)
 
@@ -196,25 +219,48 @@ def generate_visit_chart():
     # ── Bar chart: completion rate by site ────────────────────
     ax2 = axes[1]
     if not rate_df.empty:
-        colors = [TEAL if r >= 80 else AMBER if r >= 60 else RED
-                  for r in rate_df["rate"]]
-        bars = ax2.bar(rate_df["siteid"], rate_df["rate"],
-                       color=colors, edgecolor="white", linewidth=0.5)
-        ax2.axhline(y=80, color=TEAL, linestyle="--",
-                    linewidth=1.5, alpha=0.7, label="80% Target")
+        colors = [
+            TEAL if r >= 80 else AMBER if r >= 60 else RED for r in rate_df["rate"]
+        ]
+        bars = ax2.bar(
+            rate_df["siteid"],
+            rate_df["rate"],
+            color=colors,
+            edgecolor="white",
+            linewidth=0.5,
+        )
+        ax2.axhline(
+            y=80,
+            color=TEAL,
+            linestyle="--",
+            linewidth=1.5,
+            alpha=0.7,
+            label="80% Target",
+        )
         ax2.set_ylim(0, 110)
-        ax2.set_title("Visit Completion Rate by Site",
-                      fontsize=11, fontweight="bold", color=NAVY, pad=10)
+        ax2.set_title(
+            "Visit Completion Rate by Site",
+            fontsize=11,
+            fontweight="bold",
+            color=NAVY,
+            pad=10,
+        )
         ax2.set_xlabel("Site", fontsize=9, color="#555")
         ax2.set_ylabel("Completion %", fontsize=9, color="#555")
         ax2.set_facecolor(LGRAY)
         ax2.tick_params(colors="#555")
         ax2.legend(fontsize=8)
         for bar, val in zip(bars, rate_df["rate"]):
-            ax2.text(bar.get_x() + bar.get_width()/2,
-                     bar.get_height() + 1,
-                     f"{val}%", ha="center", va="bottom",
-                     fontsize=9, fontweight="bold", color=NAVY)
+            ax2.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 1,
+                f"{val}%",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+                fontweight="bold",
+                color=NAVY,
+            )
     else:
         ax2.text(0.5, 0.5, "No site data", ha="center", va="center")
 

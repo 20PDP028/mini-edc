@@ -10,75 +10,113 @@ import os
 import pandas as pd
 from datetime import datetime
 
-BASE    = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, '..', 'sql', 'cdm_phase3.db')
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 
 # ── Built-in MedDRA dictionary (subset) ──────────────────────
 # Format: "raw term": ("MedDRA Preferred Term", "System Organ Class", "MedDRA Code")
 MEDDRA_DICT = {
     # Cardiac
-    "chest pain":           ("Chest pain",                    "Cardiac disorders",                     "10008479"),
-    "chest tightness":      ("Chest discomfort",              "Cardiac disorders",                     "10008469"),
-    "palpitations":         ("Palpitations",                  "Cardiac disorders",                     "10033557"),
-    "arrhythmia":           ("Arrhythmia",                    "Cardiac disorders",                     "10003119"),
-    "heart failure":        ("Cardiac failure",               "Cardiac disorders",                     "10007554"),
-
+    "chest pain": ("Chest pain", "Cardiac disorders", "10008479"),
+    "chest tightness": ("Chest discomfort", "Cardiac disorders", "10008469"),
+    "palpitations": ("Palpitations", "Cardiac disorders", "10033557"),
+    "arrhythmia": ("Arrhythmia", "Cardiac disorders", "10003119"),
+    "heart failure": ("Cardiac failure", "Cardiac disorders", "10007554"),
     # Gastrointestinal
-    "nausea":               ("Nausea",                        "Gastrointestinal disorders",             "10028813"),
-    "vomiting":             ("Vomiting",                      "Gastrointestinal disorders",             "10047700"),
-    "diarrhoea":            ("Diarrhoea",                     "Gastrointestinal disorders",             "10012735"),
-    "diarrhea":             ("Diarrhoea",                     "Gastrointestinal disorders",             "10012735"),
-    "abdominal pain":       ("Abdominal pain",                "Gastrointestinal disorders",             "10000081"),
-    "constipation":         ("Constipation",                  "Gastrointestinal disorders",             "10010774"),
-
+    "nausea": ("Nausea", "Gastrointestinal disorders", "10028813"),
+    "vomiting": ("Vomiting", "Gastrointestinal disorders", "10047700"),
+    "diarrhoea": ("Diarrhoea", "Gastrointestinal disorders", "10012735"),
+    "diarrhea": ("Diarrhoea", "Gastrointestinal disorders", "10012735"),
+    "abdominal pain": ("Abdominal pain", "Gastrointestinal disorders", "10000081"),
+    "constipation": ("Constipation", "Gastrointestinal disorders", "10010774"),
     # Nervous system
-    "headache":             ("Headache",                      "Nervous system disorders",               "10019211"),
-    "dizziness":            ("Dizziness",                     "Nervous system disorders",               "10013573"),
-    "seizure":              ("Seizure",                       "Nervous system disorders",               "10039906"),
-    "tremor":               ("Tremor",                        "Nervous system disorders",               "10044562"),
-    "syncope":              ("Syncope",                       "Nervous system disorders",               "10042772"),
-
+    "headache": ("Headache", "Nervous system disorders", "10019211"),
+    "dizziness": ("Dizziness", "Nervous system disorders", "10013573"),
+    "seizure": ("Seizure", "Nervous system disorders", "10039906"),
+    "tremor": ("Tremor", "Nervous system disorders", "10044562"),
+    "syncope": ("Syncope", "Nervous system disorders", "10042772"),
     # Respiratory
-    "dyspnoea":             ("Dyspnoea",                      "Respiratory, thoracic and mediastinal disorders", "10013968"),
-    "dyspnea":              ("Dyspnoea",                      "Respiratory, thoracic and mediastinal disorders", "10013968"),
-    "cough":                ("Cough",                         "Respiratory, thoracic and mediastinal disorders", "10011224"),
-    "pneumonia":            ("Pneumonia",                     "Infections and infestations",            "10035664"),
-
+    "dyspnoea": (
+        "Dyspnoea",
+        "Respiratory, thoracic and mediastinal disorders",
+        "10013968",
+    ),
+    "dyspnea": (
+        "Dyspnoea",
+        "Respiratory, thoracic and mediastinal disorders",
+        "10013968",
+    ),
+    "cough": ("Cough", "Respiratory, thoracic and mediastinal disorders", "10011224"),
+    "pneumonia": ("Pneumonia", "Infections and infestations", "10035664"),
     # Blood / haematology
-    "anaemia":              ("Anaemia",                       "Blood and lymphatic system disorders",   "10002034"),
-    "anemia":               ("Anaemia",                       "Blood and lymphatic system disorders",   "10002034"),
-    "thrombocytopenia":     ("Thrombocytopenia",              "Blood and lymphatic system disorders",   "10043554"),
-    "neutropenia":          ("Neutropenia",                   "Blood and lymphatic system disorders",   "10029354"),
-
+    "anaemia": ("Anaemia", "Blood and lymphatic system disorders", "10002034"),
+    "anemia": ("Anaemia", "Blood and lymphatic system disorders", "10002034"),
+    "thrombocytopenia": (
+        "Thrombocytopenia",
+        "Blood and lymphatic system disorders",
+        "10043554",
+    ),
+    "neutropenia": ("Neutropenia", "Blood and lymphatic system disorders", "10029354"),
     # Skin
-    "rash":                 ("Rash",                          "Skin and subcutaneous tissue disorders", "10037844"),
-    "pruritus":             ("Pruritus",                      "Skin and subcutaneous tissue disorders", "10037087"),
-    "urticaria":            ("Urticaria",                     "Skin and subcutaneous tissue disorders", "10046735"),
-
+    "rash": ("Rash", "Skin and subcutaneous tissue disorders", "10037844"),
+    "pruritus": ("Pruritus", "Skin and subcutaneous tissue disorders", "10037087"),
+    "urticaria": ("Urticaria", "Skin and subcutaneous tissue disorders", "10046735"),
     # Immune
-    "anaphylaxis":          ("Anaphylactic reaction",         "Immune system disorders",               "10002198"),
-    "allergic reaction":    ("Hypersensitivity",              "Immune system disorders",               "10020751"),
-
+    "anaphylaxis": ("Anaphylactic reaction", "Immune system disorders", "10002198"),
+    "allergic reaction": ("Hypersensitivity", "Immune system disorders", "10020751"),
     # Musculoskeletal
-    "arthralgia":           ("Arthralgia",                    "Musculoskeletal and connective tissue disorders", "10003239"),
-    "myalgia":              ("Myalgia",                       "Musculoskeletal and connective tissue disorders", "10028411"),
-    "back pain":            ("Back pain",                     "Musculoskeletal and connective tissue disorders", "10003988"),
-
+    "arthralgia": (
+        "Arthralgia",
+        "Musculoskeletal and connective tissue disorders",
+        "10003239",
+    ),
+    "myalgia": (
+        "Myalgia",
+        "Musculoskeletal and connective tissue disorders",
+        "10028411",
+    ),
+    "back pain": (
+        "Back pain",
+        "Musculoskeletal and connective tissue disorders",
+        "10003988",
+    ),
     # General
-    "fatigue":              ("Fatigue",                       "General disorders and administration site conditions", "10016256"),
-    "fever":                ("Pyrexia",                       "General disorders and administration site conditions", "10037660"),
-    "pyrexia":              ("Pyrexia",                       "General disorders and administration site conditions", "10037660"),
-    "oedema":               ("Oedema peripheral",             "General disorders and administration site conditions", "10030124"),
-    "edema":                ("Oedema peripheral",             "General disorders and administration site conditions", "10030124"),
-    "pain":                 ("Pain",                          "General disorders and administration site conditions", "10033371"),
-
+    "fatigue": (
+        "Fatigue",
+        "General disorders and administration site conditions",
+        "10016256",
+    ),
+    "fever": (
+        "Pyrexia",
+        "General disorders and administration site conditions",
+        "10037660",
+    ),
+    "pyrexia": (
+        "Pyrexia",
+        "General disorders and administration site conditions",
+        "10037660",
+    ),
+    "oedema": (
+        "Oedema peripheral",
+        "General disorders and administration site conditions",
+        "10030124",
+    ),
+    "edema": (
+        "Oedema peripheral",
+        "General disorders and administration site conditions",
+        "10030124",
+    ),
+    "pain": (
+        "Pain",
+        "General disorders and administration site conditions",
+        "10033371",
+    ),
     # Hepatic
-    "jaundice":             ("Jaundice",                      "Hepatobiliary disorders",               "10023126"),
-    "hepatitis":            ("Hepatitis",                     "Hepatobiliary disorders",               "10019717"),
-
+    "jaundice": ("Jaundice", "Hepatobiliary disorders", "10023126"),
+    "hepatitis": ("Hepatitis", "Hepatobiliary disorders", "10019717"),
     # Renal
-    "renal failure":        ("Acute kidney injury",           "Renal and urinary disorders",           "10069339"),
-    "haematuria":           ("Haematuria",                    "Renal and urinary disorders",           "10018867"),
+    "renal failure": ("Acute kidney injury", "Renal and urinary disorders", "10069339"),
+    "haematuria": ("Haematuria", "Renal and urinary disorders", "10018867"),
 }
 
 
@@ -138,9 +176,7 @@ def code_all_adverse_events():
     init_coding_table()
     conn = sqlite3.connect(DB_PATH)
 
-    aes = conn.execute(
-        "SELECT ae_id, usubjid, aeterm FROM adverse_events"
-    ).fetchall()
+    aes = conn.execute("SELECT ae_id, usubjid, aeterm FROM adverse_events").fetchall()
 
     results = []
     coded = 0
@@ -153,21 +189,35 @@ def code_all_adverse_events():
         pt, soc, code, match_type = fuzzy_match(str(aeterm))
 
         # Insert/replace coding
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR REPLACE INTO ae_coding
             (ae_id, usubjid, raw_term, meddra_pt, meddra_soc, meddra_code, match_type, coded_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (ae_id, usubjid, aeterm, pt, soc, code, match_type, datetime.now().isoformat()))
+        """,
+            (
+                ae_id,
+                usubjid,
+                aeterm,
+                pt,
+                soc,
+                code,
+                match_type,
+                datetime.now().isoformat(),
+            ),
+        )
 
-        results.append({
-            "AE ID":       ae_id,
-            "Subject":     usubjid,
-            "Raw Term":    aeterm,
-            "MedDRA PT":   pt,
-            "SOC":         soc,
-            "Code":        code,
-            "Match Type":  match_type,
-        })
+        results.append(
+            {
+                "AE ID": ae_id,
+                "Subject": usubjid,
+                "Raw Term": aeterm,
+                "MedDRA PT": pt,
+                "SOC": soc,
+                "Code": code,
+                "Match Type": match_type,
+            }
+        )
 
         if match_type != "No Match":
             coded += 1
@@ -183,13 +233,16 @@ def get_soc_summary():
     """Returns count of AEs per System Organ Class."""
     conn = sqlite3.connect(DB_PATH)
     try:
-        df = pd.read_sql_query("""
+        df = pd.read_sql_query(
+            """
             SELECT meddra_soc as SOC, COUNT(*) as Count
             FROM ae_coding
             WHERE meddra_soc != 'UNCODED'
             GROUP BY meddra_soc
             ORDER BY Count DESC
-        """, conn)
+        """,
+            conn,
+        )
     except Exception as e:
         print(f"Error fetching SOC summary: {e}")
         df = pd.DataFrame()
@@ -202,20 +255,24 @@ def print_coding_report():
     df, coded, uncoded = code_all_adverse_events()
     total = coded + uncoded
 
-    print("\n" + "="*65)
+    print("\n" + "=" * 65)
     print("  MEDICAL CODING REPORT — MedDRA")
-    print("="*65)
+    print("=" * 65)
     print(f"  Total AEs Processed : {total}")
-    print(f"  Successfully Coded  : {coded}  ({round(coded/total*100,1) if total else 0}%)")
+    print(
+        f"  Successfully Coded  : {coded}  ({round(coded/total*100,1) if total else 0}%)"
+    )
     print(f"  Uncoded (Review)    : {uncoded}")
 
     if not df.empty:
         print("\n  Coding Results:")
         print(f"  {'Raw Term':<20} {'MedDRA PT':<30} {'Match':<10}")
-        print("  " + "-"*60)
+        print("  " + "-" * 60)
         for _, row in df.iterrows():
             status = "✅" if row["Match Type"] != "No Match" else "❌"
-            print(f"  {status} {row['Raw Term']:<18} {row['MedDRA PT']:<30} {row['Match Type']}")
+            print(
+                f"  {status} {row['Raw Term']:<18} {row['MedDRA PT']:<30} {row['Match Type']}"
+            )
 
     soc_df = get_soc_summary()
     if not soc_df.empty:

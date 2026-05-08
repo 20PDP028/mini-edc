@@ -12,15 +12,15 @@ sys.path.insert(0, os.path.dirname(__file__))
 from validation import validate_dataset
 
 QUERY_TEMPLATES = {
-    "Duplicate Subject_ID":     "Duplicate Subject ID detected. Please confirm this is a unique patient record and correct if necessary.",
-    "Age":                      "Please verify the recorded age. Value appears to be out of acceptable range (1–120 years).",
-    "Weight_kg":                "Weight_kg is a required field. Please provide the subject's weight at this visit.",
-    "Gender":                   "Gender value is invalid or improperly formatted. Acceptable values are 'Male' or 'Female' only.",
-    "Lab_Hb":                   "Hemoglobin value is outside the expected physiological range (8–18 g/dL). Please verify with source document.",
-    "Lab_WBC":                  "WBC count is outside the expected range (4000–11000 cells/μL). Please verify with laboratory report.",
-    "Dose_mg":                  "Dose recorded is negative, which is not valid. Please confirm the correct dose administered.",
-    "Visit_Date":               "Visit date is in an incorrect format or represents an impossible date. Expected format: YYYY-MM-DD.",
-    "AE_Severity":              "An Adverse Event has been recorded but severity grade is missing. Please complete AE_Severity.",
+    "Duplicate Subject_ID": "Duplicate Subject ID detected. Please confirm this is a unique patient record and correct if necessary.",
+    "Age": "Please verify the recorded age. Value appears to be out of acceptable range (1–120 years).",
+    "Weight_kg": "Weight_kg is a required field. Please provide the subject's weight at this visit.",
+    "Gender": "Gender value is invalid or improperly formatted. Acceptable values are 'Male' or 'Female' only.",
+    "Lab_Hb": "Hemoglobin value is outside the expected physiological range (8–18 g/dL). Please verify with source document.",
+    "Lab_WBC": "WBC count is outside the expected range (4000–11000 cells/μL). Please verify with laboratory report.",
+    "Dose_mg": "Dose recorded is negative, which is not valid. Please confirm the correct dose administered.",
+    "Visit_Date": "Visit date is in an incorrect format or represents an impossible date. Expected format: YYYY-MM-DD.",
+    "AE_Severity": "An Adverse Event has been recorded but severity grade is missing. Please complete AE_Severity.",
 }
 
 STATUS_OPEN = "Open"
@@ -42,21 +42,23 @@ def generate_queries(issues: list[dict]) -> pd.DataFrame:
 
     for i, issue in enumerate(issues, 1):
         query_text = generate_query_text(issue["field"], issue["issue"])
-        records.append({
-            "Query_ID":        f"QRY-{i:04d}",
-            "Generated_Date":  now,
-            "Subject_ID":      issue["subject_id"],
-            "Row_Number":      issue["row"],
-            "Field":           issue["field"],
-            "Invalid_Value":   issue["value"],
-            "Issue_Detected":  issue["issue"],
-            "Severity":        issue["severity"],
-            "Query_Text":      query_text,
-            "Status":          STATUS_OPEN,
-            "Resolved_By":     "",
-            "Resolution_Date": "",
-            "Resolution_Note": "",
-        })
+        records.append(
+            {
+                "Query_ID": f"QRY-{i:04d}",
+                "Generated_Date": now,
+                "Subject_ID": issue["subject_id"],
+                "Row_Number": issue["row"],
+                "Field": issue["field"],
+                "Invalid_Value": issue["value"],
+                "Issue_Detected": issue["issue"],
+                "Severity": issue["severity"],
+                "Query_Text": query_text,
+                "Status": STATUS_OPEN,
+                "Resolved_By": "",
+                "Resolution_Date": "",
+                "Resolution_Note": "",
+            }
+        )
 
     return pd.DataFrame(records)
 
@@ -83,4 +85,8 @@ if __name__ == "__main__":
     print("Query Severity Summary:")
     print(summary.to_string(index=False))
     print()
-    print(query_df[["Query_ID", "Subject_ID", "Field", "Severity", "Status"]].to_string(index=False))
+    print(
+        query_df[["Query_ID", "Subject_ID", "Field", "Severity", "Status"]].to_string(
+            index=False
+        )
+    )

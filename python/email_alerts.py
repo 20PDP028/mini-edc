@@ -18,15 +18,15 @@ from email.mime.text import MIMEText
 from datetime import datetime
 
 # ── CONFIG — Edit these ───────────────────────────────────────
-SENDER_EMAIL    = "your_gmail@gmail.com"       # ← your Gmail
-SENDER_PASSWORD = "your_app_password_here"     # ← Gmail App Password
-MONITOR_EMAILS  = [
-    "monitor1@example.com",                    # ← add monitor emails
+SENDER_EMAIL = "your_gmail@gmail.com"  # ← your Gmail
+SENDER_PASSWORD = "your_app_password_here"  # ← Gmail App Password
+MONITOR_EMAILS = [
+    "monitor1@example.com",  # ← add monitor emails
     "monitor2@example.com",
 ]
 
-BASE    = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, '..', 'sql', 'cdm_phase3.db')
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 
 
 def _send_email(to_list: list, subject: str, html_body: str):
@@ -34,8 +34,8 @@ def _send_email(to_list: list, subject: str, html_body: str):
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"]    = SENDER_EMAIL
-        msg["To"]      = ", ".join(to_list)
+        msg["From"] = SENDER_EMAIL
+        msg["To"] = ", ".join(to_list)
         msg.attach(MIMEText(html_body, "html"))
 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
@@ -52,12 +52,19 @@ def _send_email(to_list: list, subject: str, html_body: str):
 def _log_alert(conn, alert_type, record_id, recipients, status):
     """Log every alert attempt in the audit trail."""
     try:
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO audit_trail
             (event_time, action, table_name, record_id, field_name, new_value, performed_by)
             VALUES (?, ?, 'email_alerts', ?, 'recipients', ?, 'EMAIL_SYSTEM')
-        """, (datetime.now().isoformat(), f"EMAIL_{alert_type}",
-              record_id, f"{recipients} → {status}"))
+        """,
+            (
+                datetime.now().isoformat(),
+                f"EMAIL_{alert_type}",
+                record_id,
+                f"{recipients} → {status}",
+            ),
+        )
         conn.commit()
     except Exception:
         pass
@@ -101,21 +108,27 @@ def send_sae_alert(sae: dict):
         color="#C62828",
         badge="REQUIRES 24-HOUR EXPEDITED REPORTING",
         rows={
-            "Subject ID":    sae.get("usubjid", ""),
-            "Site":          sae.get("siteid", ""),
-            "AE Term":       sae.get("aeterm", ""),
-            "Severity":      sae.get("aesev", ""),
-            "Serious":       sae.get("aeser", "Y"),
-            "Event Date":    sae.get("aestdtc", ""),
+            "Subject ID": sae.get("usubjid", ""),
+            "Site": sae.get("siteid", ""),
+            "AE Term": sae.get("aeterm", ""),
+            "Severity": sae.get("aesev", ""),
+            "Serious": sae.get("aeser", "Y"),
+            "Event Date": sae.get("aestdtc", ""),
             "Report Status": sae.get("report_flag", "PENDING"),
-            "Detected At":   datetime.now().strftime("%d %b %Y %H:%M"),
+            "Detected At": datetime.now().strftime("%d %b %Y %H:%M"),
         },
-        footer_note="This SAE requires expedited reporting within 24 hours per protocol. Please review immediately."
+        footer_note="This SAE requires expedited reporting within 24 hours per protocol. Please review immediately.",
     )
     ok = _send_email(MONITOR_EMAILS, subject, html)
 
     conn = sqlite3.connect(DB_PATH)
-    _log_alert(conn, "SAE_ALERT", sae.get("usubjid",""), str(MONITOR_EMAILS), "SENT" if ok else "FAILED")
+    _log_alert(
+        conn,
+        "SAE_ALERT",
+        sae.get("usubjid", ""),
+        str(MONITOR_EMAILS),
+        "SENT" if ok else "FAILED",
+    )
     conn.close()
     return ok
 
@@ -131,20 +144,26 @@ def send_critical_query_alert(query: dict):
         color="#E65100",
         badge="CRITICAL SEVERITY — ACTION REQUIRED",
         rows={
-            "Query ID":   query.get("query_id", ""),
+            "Query ID": query.get("query_id", ""),
             "Subject ID": query.get("usubjid", ""),
-            "Site":       query.get("siteid", ""),
-            "Field":      query.get("field", ""),
-            "Severity":   query.get("severity", ""),
-            "Issue":      query.get("issue", ""),
-            "Raised At":  datetime.now().strftime("%d %b %Y %H:%M"),
+            "Site": query.get("siteid", ""),
+            "Field": query.get("field", ""),
+            "Severity": query.get("severity", ""),
+            "Issue": query.get("issue", ""),
+            "Raised At": datetime.now().strftime("%d %b %Y %H:%M"),
         },
-        footer_note="A critical data query has been raised. Please ensure the site responds within 24 hours."
+        footer_note="A critical data query has been raised. Please ensure the site responds within 24 hours.",
     )
     ok = _send_email(MONITOR_EMAILS, subject, html)
 
     conn = sqlite3.connect(DB_PATH)
-    _log_alert(conn, "CRITICAL_QUERY", query.get("query_id",""), str(MONITOR_EMAILS), "SENT" if ok else "FAILED")
+    _log_alert(
+        conn,
+        "CRITICAL_QUERY",
+        query.get("query_id", ""),
+        str(MONITOR_EMAILS),
+        "SENT" if ok else "FAILED",
+    )
     conn.close()
     return ok
 
@@ -155,10 +174,16 @@ def send_daily_summary():
     """
     conn = sqlite3.connect(DB_PATH)
     try:
-        open_q   = conn.execute("SELECT COUNT(*) FROM queries WHERE status='Open'").fetchone()[0]
-        crit_q   = conn.execute("SELECT COUNT(*) FROM queries WHERE status='Open' AND severity='Critical'").fetchone()[0]
-        sae_pend = conn.execute("SELECT COUNT(*) FROM adverse_events WHERE report_flag='PENDING'").fetchone()[0]
-        total_q  = conn.execute("SELECT COUNT(*) FROM queries").fetchone()[0]
+        open_q = conn.execute(
+            "SELECT COUNT(*) FROM queries WHERE status='Open'"
+        ).fetchone()[0]
+        crit_q = conn.execute(
+            "SELECT COUNT(*) FROM queries WHERE status='Open' AND severity='Critical'"
+        ).fetchone()[0]
+        sae_pend = conn.execute(
+            "SELECT COUNT(*) FROM adverse_events WHERE report_flag='PENDING'"
+        ).fetchone()[0]
+        total_q = conn.execute("SELECT COUNT(*) FROM queries").fetchone()[0]
     except Exception as e:
         print(f"Error fetching summary data: {e}")
         open_q = crit_q = sae_pend = total_q = 0
@@ -170,13 +195,13 @@ def send_daily_summary():
         color="#0D47A1",
         badge=f"AUTO-GENERATED · {datetime.now().strftime('%d %b %Y')}",
         rows={
-            "Total Queries":       total_q,
-            "Open Queries":        open_q,
-            "Critical (Open)":     crit_q,
+            "Total Queries": total_q,
+            "Open Queries": open_q,
+            "Critical (Open)": crit_q,
             "SAEs Pending Report": sae_pend,
-            "Report Date":         datetime.now().strftime("%d %b %Y %H:%M"),
+            "Report Date": datetime.now().strftime("%d %b %Y %H:%M"),
         },
-        footer_note="This is an automated daily summary from the Mini EDC System. Log in to take action on open items."
+        footer_note="This is an automated daily summary from the Mini EDC System. Log in to take action on open items.",
     )
     return _send_email(MONITOR_EMAILS, subject, html)
 
@@ -204,19 +229,34 @@ def check_and_alert_new_issues():
 
     conn.close()
 
-    print(f"\n[EMAIL] Checking alerts: {len(saes)} SAEs, {len(queries)} Critical queries")
+    print(
+        f"\n[EMAIL] Checking alerts: {len(saes)} SAEs, {len(queries)} Critical queries"
+    )
 
     for s in saes:
-        send_sae_alert({
-            "usubjid": s[0], "siteid": s[1], "aeterm": s[2],
-            "aesev": s[3], "aeser": s[4], "aestdtc": s[5], "report_flag": s[6]
-        })
+        send_sae_alert(
+            {
+                "usubjid": s[0],
+                "siteid": s[1],
+                "aeterm": s[2],
+                "aesev": s[3],
+                "aeser": s[4],
+                "aestdtc": s[5],
+                "report_flag": s[6],
+            }
+        )
 
     for q in queries:
-        send_critical_query_alert({
-            "query_id": q[0], "usubjid": q[1], "siteid": q[2],
-            "field": q[3], "severity": q[4], "issue": q[5]
-        })
+        send_critical_query_alert(
+            {
+                "query_id": q[0],
+                "usubjid": q[1],
+                "siteid": q[2],
+                "field": q[3],
+                "severity": q[4],
+                "issue": q[5],
+            }
+        )
 
 
 if __name__ == "__main__":

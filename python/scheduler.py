@@ -18,19 +18,21 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 
 # ── Config ────────────────────────────────────────────────────
-DB_PATH       = os.path.join(os.path.dirname(__file__), "..", "sql", "cdm_phase3.db")
-LOG_PATH      = os.path.join(os.path.dirname(__file__), "..", "reports", "scheduler_log.json")
-RUN_HOUR      = 6          # run at 06:00 daily
-CHECK_INTERVAL = 60        # check every 60 seconds if it's time to run
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "sql", "cdm_phase3.db")
+LOG_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "reports", "scheduler_log.json"
+)
+RUN_HOUR = 6  # run at 06:00 daily
+CHECK_INTERVAL = 60  # check every 60 seconds if it's time to run
 
 # Email config — update with your SMTP settings
 EMAIL_CONFIG = {
-    "smtp_host":   "smtp.gmail.com",
-    "smtp_port":   587,
-    "sender":      "cdm4sara@gmail.com",
-    "password":    "pxfq ezyw rwsm kmpj",   # Gmail App Password
-    "recipients":  ["yourname@gmail.com"],
-    "enabled":     True,   # Set True when SMTP is configured
+    "smtp_host": "smtp.gmail.com",
+    "smtp_port": 587,
+    "sender": "cdm4sara@gmail.com",
+    "password": "pxfq ezyw rwsm kmpj",  # Gmail App Password
+    "recipients": ["yourname@gmail.com"],
+    "enabled": True,  # Set True when SMTP is configured
 }
 
 os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
@@ -92,33 +94,48 @@ def get_summary():
         return {}
     with get_db() as conn:
         return {
-            "open":    conn.execute("SELECT COUNT(*) FROM queries WHERE status='Open'").fetchone()[0],
-            "critical":conn.execute("SELECT COUNT(*) FROM queries WHERE severity='Critical' AND status='Open'").fetchone()[0],
-            "saes":    conn.execute("SELECT COUNT(*) FROM adverse_events WHERE aeser='Y' AND report_flag='PENDING'").fetchone()[0],
-            "subjects":conn.execute("SELECT COUNT(*) FROM subjects").fetchone()[0],
+            "open": conn.execute(
+                "SELECT COUNT(*) FROM queries WHERE status='Open'"
+            ).fetchone()[0],
+            "critical": conn.execute(
+                "SELECT COUNT(*) FROM queries WHERE severity='Critical' AND status='Open'"
+            ).fetchone()[0],
+            "saes": conn.execute(
+                "SELECT COUNT(*) FROM adverse_events WHERE aeser='Y' AND report_flag='PENDING'"
+            ).fetchone()[0],
+            "subjects": conn.execute("SELECT COUNT(*) FROM subjects").fetchone()[0],
         }
 
 
 # ── Email ─────────────────────────────────────────────────────
 def build_email_html(saes, criticals, stale, summary):
     now = datetime.now().strftime("%d-%b-%Y %H:%M")
-    rows_sae = "".join(
-        f"<tr><td>{r['usubjid']}</td><td>{r['siteid']}</td>"
-        f"<td>{r['aeterm']}</td><td style='color:#C62828'>{r['aesev']}</td></tr>"
-        for r in saes
-    ) or "<tr><td colspan='4' style='color:#388E3C'>None — all clear</td></tr>"
+    rows_sae = (
+        "".join(
+            f"<tr><td>{r['usubjid']}</td><td>{r['siteid']}</td>"
+            f"<td>{r['aeterm']}</td><td style='color:#C62828'>{r['aesev']}</td></tr>"
+            for r in saes
+        )
+        or "<tr><td colspan='4' style='color:#388E3C'>None — all clear</td></tr>"
+    )
 
-    rows_crit = "".join(
-        f"<tr><td>{r['query_id']}</td><td>{r['usubjid']}</td>"
-        f"<td>{r['siteid']}</td><td>{r['field_name']}</td><td>{r['issue_description'][:60]}</td></tr>"
-        for r in criticals
-    ) or "<tr><td colspan='5' style='color:#388E3C'>None — all clear</td></tr>"
+    rows_crit = (
+        "".join(
+            f"<tr><td>{r['query_id']}</td><td>{r['usubjid']}</td>"
+            f"<td>{r['siteid']}</td><td>{r['field_name']}</td><td>{r['issue_description'][:60]}</td></tr>"
+            for r in criticals
+        )
+        or "<tr><td colspan='5' style='color:#388E3C'>None — all clear</td></tr>"
+    )
 
-    rows_stale = "".join(
-        f"<tr><td>{r['query_id']}</td><td>{r['usubjid']}</td>"
-        f"<td>{r['siteid']}</td><td>{r['severity']}</td><td>{r['created_at'][:10]}</td></tr>"
-        for r in stale
-    ) or "<tr><td colspan='5' style='color:#388E3C'>None</td></tr>"
+    rows_stale = (
+        "".join(
+            f"<tr><td>{r['query_id']}</td><td>{r['usubjid']}</td>"
+            f"<td>{r['siteid']}</td><td>{r['severity']}</td><td>{r['created_at'][:10]}</td></tr>"
+            for r in stale
+        )
+        or "<tr><td colspan='5' style='color:#388E3C'>None</td></tr>"
+    )
 
     return f"""
     <html><body style='font-family:Arial,sans-serif;max-width:700px;margin:auto'>
@@ -177,20 +194,26 @@ def build_email_html(saes, criticals, stale, summary):
 
 def send_email(saes, criticals, stale, summary):
     if not EMAIL_CONFIG["enabled"]:
-        print("[SCHEDULER] Email disabled — set EMAIL_CONFIG['enabled']=True with SMTP details")
+        print(
+            "[SCHEDULER] Email disabled — set EMAIL_CONFIG['enabled']=True with SMTP details"
+        )
         return
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"[CDM ALERT] {len(saes)} SAEs | {len(criticals)} Critical Queries — {datetime.now().strftime('%d-%b-%Y')}"
-    msg["From"]    = EMAIL_CONFIG["sender"]
-    msg["To"]      = ", ".join(EMAIL_CONFIG["recipients"])
+    msg["Subject"] = (
+        f"[CDM ALERT] {len(saes)} SAEs | {len(criticals)} Critical Queries — {datetime.now().strftime('%d-%b-%Y')}"
+    )
+    msg["From"] = EMAIL_CONFIG["sender"]
+    msg["To"] = ", ".join(EMAIL_CONFIG["recipients"])
     msg.attach(MIMEText(build_email_html(saes, criticals, stale, summary), "html"))
 
     try:
         with smtplib.SMTP(EMAIL_CONFIG["smtp_host"], EMAIL_CONFIG["smtp_port"]) as s:
             s.starttls()
             s.login(EMAIL_CONFIG["sender"], EMAIL_CONFIG["password"])
-            s.sendmail(EMAIL_CONFIG["sender"], EMAIL_CONFIG["recipients"], msg.as_string())
+            s.sendmail(
+                EMAIL_CONFIG["sender"], EMAIL_CONFIG["recipients"], msg.as_string()
+            )
         print(f"[SCHEDULER] Email sent to {EMAIL_CONFIG['recipients']}")
     except Exception as e:
         print(f"[SCHEDULER] Email failed: {e}")
@@ -198,12 +221,14 @@ def send_email(saes, criticals, stale, summary):
 
 # ── Main Job ──────────────────────────────────────────────────
 def run_job():
-    print(f"\n[SCHEDULER] Job started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(
+        f"\n[SCHEDULER] Job started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
 
-    saes      = check_new_saes()
+    saes = check_new_saes()
     criticals = check_critical_queries()
-    stale     = check_stale_queries(days=7)
-    summary   = get_summary()
+    stale = check_stale_queries(days=7)
+    summary = get_summary()
 
     print(f"[SCHEDULER] SAEs pending report : {len(saes)}")
     print(f"[SCHEDULER] Critical open queries: {len(criticals)}")
@@ -212,12 +237,12 @@ def run_job():
 
     # Log run to JSON file
     log_entry = {
-        "timestamp":     datetime.now().isoformat(),
-        "saes":          len(saes),
-        "criticals":     len(criticals),
-        "stale":         len(stale),
-        "summary":       summary,
-        "email_sent":    EMAIL_CONFIG["enabled"],
+        "timestamp": datetime.now().isoformat(),
+        "saes": len(saes),
+        "criticals": len(criticals),
+        "stale": len(stale),
+        "summary": summary,
+        "email_sent": EMAIL_CONFIG["enabled"],
     }
     logs = []
     if os.path.exists(LOG_PATH):
@@ -228,7 +253,7 @@ def run_job():
                 logs = []
     logs.append(log_entry)
     with open(LOG_PATH, "w") as f:
-        json.dump(logs[-100:], f, indent=2)   # keep last 100 runs
+        json.dump(logs[-100:], f, indent=2)  # keep last 100 runs
     print(f"[SCHEDULER] Log saved → {LOG_PATH}")
 
     # Send email if anything needs attention
@@ -260,7 +285,9 @@ def run_daemon():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CDM Automated Scheduler")
-    parser.add_argument("--now", action="store_true", help="Run job immediately instead of waiting")
+    parser.add_argument(
+        "--now", action="store_true", help="Run job immediately instead of waiting"
+    )
     args = parser.parse_args()
 
     if args.now:

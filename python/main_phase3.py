@@ -6,25 +6,34 @@ Save in: Mini_EDC_Project/python/main_phase3.py
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 import pandas as pd
 from db_manager import (
-    init_db, load_subjects, load_visits, load_adverse_events,
-    open_queries, answer_query, close_query,
-    query_summary, open_queries_report, sae_report, audit_report
+    init_db,
+    load_subjects,
+    load_visits,
+    load_adverse_events,
+    open_queries,
+    answer_query,
+    close_query,
+    query_summary,
+    open_queries_report,
+    sae_report,
+    audit_report,
 )
-from validation_phase2 import validate   # your Phase 2 engine
+from validation_phase2 import validate  # your Phase 2 engine
 
 # ── Config ────────────────────────────────────────────────────
-BASE       = os.path.dirname(os.path.abspath(__file__))
-DATA_FILE  = os.path.join(BASE, '..', 'data', 'raw_clinical_data.xlsx')
+BASE = os.path.dirname(os.path.abspath(__file__))
+DATA_FILE = os.path.join(BASE, "..", "data", "raw_clinical_data.xlsx")
 SHEET_NAME = "Clinical_Data"
 
 # ── Step 1: Initialise Database ───────────────────────────────
-print("\n" + "="*65)
+print("\n" + "=" * 65)
 print("  PHASE 3 — SQLite CDM + Query Lifecycle")
-print("="*65)
+print("=" * 65)
 
 init_db()
 
@@ -52,13 +61,17 @@ open_queries(issues)
 print("\n[STEP 4] Simulating query lifecycle...")
 
 # Site answers QRY-0001
-answer_query("QRY-0001", "Subject withdrew consent before weight was recorded", "SITE_001")
+answer_query(
+    "QRY-0001", "Subject withdrew consent before weight was recorded", "SITE_001"
+)
 
 # DM closes QRY-0001 after review
 close_query("QRY-0001", closed_by="DM_JOHN", reason="Explanation accepted")
 
 # Site answers QRY-0002
-answer_query("QRY-0002", "Age confirmed as 145 — data entry error, correcting to 45", "SITE_002")
+answer_query(
+    "QRY-0002", "Age confirmed as 145 — data entry error, correcting to 45", "SITE_002"
+)
 
 # ── Step 5: Reports ───────────────────────────────────────────
 print("\n[STEP 5] Generating reports...")
@@ -68,6 +81,6 @@ open_queries_report()
 sae_report()
 audit_report(limit=15)
 
-print("\n" + "="*65)
+print("\n" + "=" * 65)
 print("  PHASE 3 COMPLETE")
-print("="*65 + "\n")
+print("=" * 65 + "\n")

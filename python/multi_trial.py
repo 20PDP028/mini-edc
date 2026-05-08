@@ -10,8 +10,8 @@ import os
 import pandas as pd
 from datetime import datetime
 
-BASE    = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, '..', 'sql', 'cdm_phase3.db')
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 
 
 def init_trial_tables():
@@ -54,23 +54,42 @@ def init_trial_tables():
     """)
 
     # Insert default trial (current project)
-    conn.execute("""
+    conn.execute(
+        """
         INSERT OR IGNORE INTO trials
         (trial_id, trial_name, protocol_number, phase, indication,
          sponsor, status, start_date, created_at, created_by)
         VALUES (?,?,?,?,?,?,?,?,?,?)
-    """, ("CARDIO-P2", "CARDIO-PHASE2 Trial", "PROTO-CARDIO-002",
-          "Phase 2", "Cardiovascular Disease",
-          "MiniPharma Ltd", "Active",
-          "2024-01-01", datetime.now().isoformat(), "ADMIN"))
+    """,
+        (
+            "CARDIO-P2",
+            "CARDIO-PHASE2 Trial",
+            "PROTO-CARDIO-002",
+            "Phase 2",
+            "Cardiovascular Disease",
+            "MiniPharma Ltd",
+            "Active",
+            "2024-01-01",
+            datetime.now().isoformat(),
+            "ADMIN",
+        ),
+    )
 
     conn.commit()
     conn.close()
     print("[TRIAL] Multi-trial tables initialised")
 
 
-def create_trial(trial_id, trial_name, protocol, phase,
-                 indication, sponsor, start_date, created_by="ADMIN"):
+def create_trial(
+    trial_id,
+    trial_name,
+    protocol,
+    phase,
+    indication,
+    sponsor,
+    start_date,
+    created_by="ADMIN",
+):
     """Register a new clinical trial."""
     init_trial_tables()
     conn = sqlite3.connect(DB_PATH)
@@ -83,20 +102,43 @@ def create_trial(trial_id, trial_name, protocol, phase,
         conn.close()
         return False, f"Trial {trial_id} already exists"
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO trials
         (trial_id, trial_name, protocol_number, phase, indication,
          sponsor, status, start_date, created_at, created_by)
         VALUES (?,?,?,?,?,?,?,?,?,?)
-    """, (trial_id, trial_name, protocol, phase, indication,
-          sponsor, "Active", start_date, datetime.now().isoformat(), created_by))
+    """,
+        (
+            trial_id,
+            trial_name,
+            protocol,
+            phase,
+            indication,
+            sponsor,
+            "Active",
+            start_date,
+            datetime.now().isoformat(),
+            created_by,
+        ),
+    )
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO audit_trail
         (event_time, action, table_name, record_id, field_name, new_value, performed_by)
         VALUES (?,?,?,?,?,?,?)
-    """, (datetime.now().isoformat(), "TRIAL_CREATED", "trials",
-          trial_id, "status", "Active", created_by))
+    """,
+        (
+            datetime.now().isoformat(),
+            "TRIAL_CREATED",
+            "trials",
+            trial_id,
+            "status",
+            "Active",
+            created_by,
+        ),
+    )
 
     conn.commit()
     conn.close()
@@ -107,11 +149,14 @@ def create_trial(trial_id, trial_name, protocol, phase,
 def add_site(trial_id, siteid, site_name, pi_name, country="IND"):
     """Add a site to a trial."""
     conn = sqlite3.connect(DB_PATH)
-    conn.execute("""
+    conn.execute(
+        """
         INSERT OR IGNORE INTO trial_sites
         (trial_id, siteid, site_name, pi_name, country, activated_at)
         VALUES (?,?,?,?,?,?)
-    """, (trial_id, siteid, site_name, pi_name, country, datetime.now().isoformat()))
+    """,
+        (trial_id, siteid, site_name, pi_name, country, datetime.now().isoformat()),
+    )
     conn.commit()
     conn.close()
     print(f"[TRIAL] Site {siteid} added to {trial_id}")
@@ -122,17 +167,20 @@ def enrol_subject(trial_id, usubjid, siteid):
     conn = sqlite3.connect(DB_PATH)
     existing = conn.execute(
         "SELECT 1 FROM trial_subjects WHERE trial_id=? AND usubjid=?",
-        (trial_id, usubjid)
+        (trial_id, usubjid),
     ).fetchone()
 
     if existing:
         conn.close()
         return False, f"{usubjid} already enrolled in {trial_id}"
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO trial_subjects (trial_id, usubjid, siteid, enrolled_at)
         VALUES (?,?,?,?)
-    """, (trial_id, usubjid, siteid, datetime.now().isoformat()))
+    """,
+        (trial_id, usubjid, siteid, datetime.now().isoformat()),
+    )
     conn.commit()
     conn.close()
     return True, f"{usubjid} enrolled in {trial_id}"
@@ -143,15 +191,23 @@ def get_trial_dashboard():
     init_trial_tables()
     conn = sqlite3.connect(DB_PATH)
     try:
-        trials = pd.read_sql_query("SELECT * FROM trials ORDER BY start_date DESC", conn)
-        subjects_per_trial = pd.read_sql_query("""
+        trials = pd.read_sql_query(
+            "SELECT * FROM trials ORDER BY start_date DESC", conn
+        )
+        subjects_per_trial = pd.read_sql_query(
+            """
             SELECT trial_id, COUNT(*) as enrolled
             FROM trial_subjects GROUP BY trial_id
-        """, conn)
-        sites_per_trial = pd.read_sql_query("""
+        """,
+            conn,
+        )
+        sites_per_trial = pd.read_sql_query(
+            """
             SELECT trial_id, COUNT(*) as sites
             FROM trial_sites GROUP BY trial_id
-        """, conn)
+        """,
+            conn,
+        )
     except Exception as e:
         print(f"Error fetching trial dashboard data: {e}")
         trials = pd.DataFrame()
@@ -165,7 +221,7 @@ def get_trial_dashboard():
         if not sites_per_trial.empty:
             trials = trials.merge(sites_per_trial, on="trial_id", how="left")
         trials["enrolled"] = trials.get("enrolled", 0).fillna(0).astype(int)
-        trials["sites"]    = trials.get("sites",    0).fillna(0).astype(int)
+        trials["sites"] = trials.get("sites", 0).fillna(0).astype(int)
 
     return trials
 
@@ -189,9 +245,9 @@ def print_trial_report():
     """Print multi-trial summary."""
     df = get_trial_dashboard()
 
-    print("\n" + "="*75)
+    print("\n" + "=" * 75)
     print("  MULTI-TRIAL REGISTRY")
-    print("="*75)
+    print("=" * 75)
 
     if df.empty:
         print("  No trials registered.")
@@ -199,7 +255,9 @@ def print_trial_report():
 
     for _, row in df.iterrows():
         status_icon = "🟢" if row.get("status") == "Active" else "🔴"
-        print(f"\n  {status_icon} {row.get('trial_id',''):<15} {row.get('trial_name','')}")
+        print(
+            f"\n  {status_icon} {row.get('trial_id',''):<15} {row.get('trial_name','')}"
+        )
         print(f"     Protocol  : {row.get('protocol_number','')}")
         print(f"     Phase     : {row.get('phase','')}")
         print(f"     Indication: {row.get('indication','')}")
@@ -224,13 +282,13 @@ if __name__ == "__main__":
         indication="Non-Small Cell Lung Cancer",
         sponsor="MiniPharma Ltd",
         start_date="2024-06-01",
-        created_by="ADMIN"
+        created_by="ADMIN",
     )
 
     # Add sites to second trial
-    add_site("ONCO-P3", "SITE01", "City Cancer Centre",    "Dr. Meera Rao",   "IND")
-    add_site("ONCO-P3", "SITE04", "Regional Cancer Inst.", "Dr. Ajay Kumar",  "IND")
-    add_site("ONCO-P3", "SITE05", "National Cancer Hosp.", "Dr. Sarah Chen",  "SGP")
+    add_site("ONCO-P3", "SITE01", "City Cancer Centre", "Dr. Meera Rao", "IND")
+    add_site("ONCO-P3", "SITE04", "Regional Cancer Inst.", "Dr. Ajay Kumar", "IND")
+    add_site("ONCO-P3", "SITE05", "National Cancer Hosp.", "Dr. Sarah Chen", "SGP")
 
     # Enrol existing subjects into default trial
     enrol_existing_subjects()

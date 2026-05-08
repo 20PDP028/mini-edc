@@ -12,8 +12,8 @@ import hashlib
 import pandas as pd
 from datetime import datetime
 
-BASE    = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, '..', 'sql', 'cdm_phase3.db')
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 
 # ── Trial Arms — customise as needed ─────────────────────────
 TREATMENT_ARMS = {
@@ -23,7 +23,7 @@ TREATMENT_ARMS = {
 }
 
 ALLOCATION_RATIO = {
-    "TRT-A": 2,   # 2:2:1 ratio
+    "TRT-A": 2,  # 2:2:1 ratio
     "TRT-B": 2,
     "TRT-C": 1,
 }
@@ -79,7 +79,6 @@ def generate_randomisation_list(seed: int = 42, subjects_per_site: int = 20):
     block_pattern = []
     for arm, count in ALLOCATION_RATIO.items():
         block_pattern.extend([arm] * count)
-    
 
     rand_number = 1
     for site in sites:
@@ -89,11 +88,14 @@ def generate_randomisation_list(seed: int = 42, subjects_per_site: int = 20):
             block = block_pattern.copy()
             random.shuffle(block)
             for arm in block:
-                conn.execute("""
+                conn.execute(
+                    """
                     INSERT OR IGNORE INTO randomisation_list
                     (rand_number, siteid, arm_code, is_used)
                     VALUES (?, ?, ?, 0)
-                """, (rand_number, site, arm))
+                """,
+                    (rand_number, site, arm),
+                )
                 rand_number += 1
                 needed -= 1
                 if needed <= 0:
@@ -101,7 +103,9 @@ def generate_randomisation_list(seed: int = 42, subjects_per_site: int = 20):
 
     conn.commit()
     conn.close()
-    print(f"[RAND] Randomisation list generated: {rand_number-1} slots across {len(sites)} sites")
+    print(
+        f"[RAND] Randomisation list generated: {rand_number-1} slots across {len(sites)} sites"
+    )
     return rand_number - 1
 
 
@@ -115,51 +119,80 @@ def randomise_subject(usubjid: str, siteid: str, randomised_by: str = "DM"):
 
     # Check if subject already randomised
     existing = conn.execute(
-        "SELECT rand_code, arm_code FROM randomisation WHERE usubjid=?",
-        (usubjid,)
+        "SELECT rand_code, arm_code FROM randomisation WHERE usubjid=?", (usubjid,)
     ).fetchone()
     if existing:
         conn.close()
         return False, existing[1], TREATMENT_ARMS.get(existing[1], ""), existing[0]
 
     # Get next available slot for this site
-    slot = conn.execute("""
+    slot = conn.execute(
+        """
         SELECT list_id, rand_number, arm_code FROM randomisation_list
         WHERE siteid=? AND is_used=0
         ORDER BY rand_number ASC LIMIT 1
-    """, (siteid,)).fetchone()
+    """,
+        (siteid,),
+    ).fetchone()
 
     if not slot:
         conn.close()
         return False, None, "No randomisation slots available for this site", None
 
     list_id, rand_number, arm_code = slot
-    arm_desc  = TREATMENT_ARMS.get(arm_code, arm_code)
+    arm_desc = TREATMENT_ARMS.get(arm_code, arm_code)
     rand_code = f"RAND-{rand_number:05d}"
-    seed_hash = hashlib.md5(f"{usubjid}{arm_code}{datetime.now().isoformat()}".encode()).hexdigest()[:12]
+    seed_hash = hashlib.md5(
+        f"{usubjid}{arm_code}{datetime.now().isoformat()}".encode()
+    ).hexdigest()[:12]
 
     # Mark slot as used
-    conn.execute("""
+    conn.execute(
+        """
         UPDATE randomisation_list SET is_used=1, used_by=?, used_at=? WHERE list_id=?
-    """, (usubjid, datetime.now().isoformat(), list_id))
+    """,
+        (usubjid, datetime.now().isoformat(), list_id),
+    )
 
     # Record randomisation
     block_id = (rand_number - 1) // sum(ALLOCATION_RATIO.values()) + 1
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO randomisation
         (rand_code, usubjid, siteid, arm_code, arm_description,
          randomised_at, randomised_by, block_id, seed_hash)
         VALUES (?,?,?,?,?,?,?,?,?)
-    """, (rand_code, usubjid, siteid, arm_code, arm_desc,
-          datetime.now().isoformat(), randomised_by, block_id, seed_hash))
+    """,
+        (
+            rand_code,
+            usubjid,
+            siteid,
+            arm_code,
+            arm_desc,
+            datetime.now().isoformat(),
+            randomised_by,
+            block_id,
+            seed_hash,
+        ),
+    )
 
     # Audit trail
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO audit_trail
         (event_time, action, table_name, record_id, field_name, new_value, performed_by)
         VALUES (?,?,?,?,?,?,?)
-    """, (datetime.now().isoformat(), "RANDOMISED", "randomisation",
-          rand_code, "arm_code", arm_code, randomised_by))
+    """,
+        (
+            datetime.now().isoformat(),
+            "RANDOMISED",
+            "randomisation",
+            rand_code,
+            "arm_code",
+            arm_code,
+            randomised_by,
+        ),
+    )
 
     conn.commit()
     conn.close()
@@ -187,13 +220,16 @@ def get_arm_balance():
     """Check treatment arm balance across sites."""
     conn = sqlite3.connect(DB_PATH)
     try:
-        df = pd.read_sql_query("""
+        df = pd.read_sql_query(
+            """
             SELECT siteid, arm_code, arm_description, COUNT(*) as n
             FROM randomisation
             WHERE status='Active'
             GROUP BY siteid, arm_code
             ORDER BY siteid, arm_code
-        """, conn)
+        """,
+            conn,
+        )
     except Exception as e:
         print(f"Error fetching arm balance: {e}")
         df = pd.DataFrame()
@@ -216,9 +252,9 @@ def print_randomisation_report():
         print(f"Error fetching randomisation summary: {e}")
     conn.close()
 
-    print("\n" + "="*65)
+    print("\n" + "=" * 65)
     print("  RANDOMISATION REPORT")
-    print("="*65)
+    print("=" * 65)
     print(f"  Total Randomised Subjects : {total}")
 
     if by_arm:
@@ -231,7 +267,9 @@ def print_randomisation_report():
     if not balance_df.empty:
         print("\n  Balance by Site:")
         for site, grp in balance_df.groupby("siteid"):
-            arms = " | ".join([f"{r['arm_code']}:n={r['n']}" for _, r in grp.iterrows()])
+            arms = " | ".join(
+                [f"{r['arm_code']}:n={r['n']}" for _, r in grp.iterrows()]
+            )
             print(f"  {site:10} — {arms}")
     print()
 

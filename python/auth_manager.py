@@ -10,34 +10,49 @@ import os
 import secrets
 from datetime import datetime
 
-BASE    = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, '..', 'sql', 'cdm_phase3.db')
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 
 # ── Roles & Permissions ───────────────────────────────────────
 ROLES = {
-    "DM":      "Data Manager",
+    "DM": "Data Manager",
     "MONITOR": "Clinical Monitor",
-    "SITE":    "Site Staff",
-    "ADMIN":   "System Administrator",
+    "SITE": "Site Staff",
+    "ADMIN": "System Administrator",
 }
 
 PERMISSIONS = {
     "DM": [
-        "view_dashboard", "view_queries", "view_saes", "view_audit",
-        "close_query", "answer_query", "generate_pdf", "lock_data",
-        "view_signatures"
+        "view_dashboard",
+        "view_queries",
+        "view_saes",
+        "view_audit",
+        "close_query",
+        "answer_query",
+        "generate_pdf",
+        "lock_data",
+        "view_signatures",
     ],
     "MONITOR": [
-        "view_dashboard", "view_queries", "view_saes", "view_audit",
-        "generate_pdf", "view_signatures"
+        "view_dashboard",
+        "view_queries",
+        "view_saes",
+        "view_audit",
+        "generate_pdf",
+        "view_signatures",
     ],
-    "SITE": [
-        "view_dashboard", "view_queries", "answer_query"
-    ],
+    "SITE": ["view_dashboard", "view_queries", "answer_query"],
     "ADMIN": [
-        "view_dashboard", "view_queries", "view_saes", "view_audit",
-        "close_query", "answer_query", "generate_pdf", "lock_data",
-        "view_signatures", "manage_users"
+        "view_dashboard",
+        "view_queries",
+        "view_saes",
+        "view_audit",
+        "close_query",
+        "answer_query",
+        "generate_pdf",
+        "lock_data",
+        "view_signatures",
+        "manage_users",
     ],
 }
 
@@ -81,16 +96,19 @@ def init_auth_tables():
 
     # Default users
     default_users = [
-        ("DM_JOHN",    "John Smith",     "DM",      "dm123"),
-        ("MONITOR_01", "Sarah Jones",    "MONITOR", "monitor123"),
-        ("SITE_001",   "Site Staff A",   "SITE",    "site123"),
-        ("ADMIN",      "System Admin",   "ADMIN",   "admin123"),
+        ("DM_JOHN", "John Smith", "DM", "dm123"),
+        ("MONITOR_01", "Sarah Jones", "MONITOR", "monitor123"),
+        ("SITE_001", "Site Staff A", "SITE", "site123"),
+        ("ADMIN", "System Admin", "ADMIN", "admin123"),
     ]
     for uid, name, role, pwd in default_users:
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR IGNORE INTO users (user_id, full_name, role, password_hash, created_at)
             VALUES (?, ?, ?, ?, ?)
-        """, (uid, name, role, _hash(pwd), datetime.now().isoformat()))
+        """,
+            (uid, name, role, _hash(pwd), datetime.now().isoformat()),
+        )
 
     conn.commit()
     conn.close()
@@ -98,11 +116,11 @@ def init_auth_tables():
 
 
 def login(user_id: str, password: str):
-    """Returns (success, user_dict, token) """
+    """Returns (success, user_dict, token)"""
     conn = sqlite3.connect(DB_PATH)
     row = conn.execute(
         "SELECT user_id, full_name, role, password_hash, is_active FROM users WHERE user_id=?",
-        (user_id,)
+        (user_id,),
     ).fetchone()
 
     if not row:
@@ -121,17 +139,26 @@ def login(user_id: str, password: str):
 
     # Create session token
     token = secrets.token_hex(32)
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO sessions (token, user_id, created_at)
         VALUES (?, ?, ?)
-    """, (token, uid, datetime.now().isoformat()))
-    conn.execute("UPDATE users SET last_login=? WHERE user_id=?",
-                 (datetime.now().isoformat(), uid))
+    """,
+        (token, uid, datetime.now().isoformat()),
+    )
+    conn.execute(
+        "UPDATE users SET last_login=? WHERE user_id=?",
+        (datetime.now().isoformat(), uid),
+    )
     conn.commit()
     conn.close()
 
-    user = {"user_id": uid, "full_name": name, "role": role,
-            "permissions": PERMISSIONS.get(role, [])}
+    user = {
+        "user_id": uid,
+        "full_name": name,
+        "role": role,
+        "permissions": PERMISSIONS.get(role, []),
+    }
     return True, user, token
 
 
@@ -146,8 +173,7 @@ def esign(user_id: str, password: str, action: str, record_id: str, meaning: str
     """
     conn = sqlite3.connect(DB_PATH)
     row = conn.execute(
-        "SELECT full_name, role, password_hash FROM users WHERE user_id=?",
-        (user_id,)
+        "SELECT full_name, role, password_hash FROM users WHERE user_id=?", (user_id,)
     ).fetchone()
 
     if not row:
@@ -160,27 +186,37 @@ def esign(user_id: str, password: str, action: str, record_id: str, meaning: str
         conn.close()
         return False, "Invalid password — signature rejected"
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO esignatures (user_id, full_name, role, action, record_id, meaning, signed_at, password_verified)
         VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-    """, (user_id, name, role, action, record_id, meaning, datetime.now().isoformat()))
+    """,
+        (user_id, name, role, action, record_id, meaning, datetime.now().isoformat()),
+    )
 
     # Also log in audit trail
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO audit_trail (event_time, action, table_name, record_id, field_name, new_value, performed_by)
         VALUES (?, ?, 'esignatures', ?, 'e-signature', ?, ?)
-    """, (datetime.now().isoformat(), f"ESIGN_{action}", record_id, meaning, user_id))
+    """,
+        (datetime.now().isoformat(), f"ESIGN_{action}", record_id, meaning, user_id),
+    )
 
     conn.commit()
     conn.close()
-    return True, f"✅ E-Signature recorded for {name} ({role}) at {datetime.now().strftime('%d-%b-%Y %H:%M')}"
+    return (
+        True,
+        f"✅ E-Signature recorded for {name} ({role}) at {datetime.now().strftime('%d-%b-%Y %H:%M')}",
+    )
 
 
 def get_signatures(record_id: str = None):
     conn = sqlite3.connect(DB_PATH)
     if record_id:
         rows = conn.execute(
-            "SELECT * FROM esignatures WHERE record_id=? ORDER BY signed_at DESC", (record_id,)
+            "SELECT * FROM esignatures WHERE record_id=? ORDER BY signed_at DESC",
+            (record_id,),
         ).fetchall()
     else:
         rows = conn.execute(
