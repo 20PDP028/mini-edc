@@ -1,4 +1,3 @@
-
 # Mini EDC — Phase E: REST API with Swagger / OpenAPI 3.0 docs
 # FastAPI-based, auto-generates /docs (Swagger UI) and /redoc
 
@@ -235,9 +234,10 @@ def validate_domain(domain: str, records: list) -> list:
                 try:
                     if not (0 < int(age) <= 120):
                         add("DM004", uid, "ERROR", f"AGE {age} outside plausible range (1–120)", "AGE")
-                except:
+                except ValueError:
                     add("DM004", uid, "ERROR", "AGE is non-numeric", "AGE")
-            rfst = r.get("RFSTDTC",""); consent = r.get("DMDTC","")
+            rfst = r.get("RFSTDTC", "")
+            consent = r.get("DMDTC", "")
             if rfst and consent and rfst < consent:
                 add("DM005", uid, "CRITICAL", "First dose before consent date — protocol violation", "RFSTDTC")
 
@@ -262,14 +262,14 @@ def validate_domain(domain: str, records: list) -> list:
                 try:
                     if float(sys_bp) <= float(dia_bp):
                         add("VS001", uid, "ERROR", f"Systolic {sys_bp} ≤ Diastolic {dia_bp}", "VSORRES")
-                except:
+                except ValueError:
                     pass
             hr = r.get("VSORRES_HR")
             if hr:
                 try:
                     if not (20 <= float(hr) <= 300):
                         add("VS002", uid, "ERROR", f"Heart rate {hr} outside plausible range (20–300)", "VSORRES")
-                except: 
+                except ValueError:
                     add("VS002", uid, "WARNING", "Heart rate is non-numeric", "VSORRES")
 
         elif domain == "LB":
@@ -278,18 +278,19 @@ def validate_domain(domain: str, records: list) -> list:
                 uln_alt = float(r.get("LBSTNRHI_ALT", 40) or 40)
                 if alt > 3 * uln_alt:
                     add("LB001", uid, "CRITICAL", f"ALT {alt} > 3× ULN ({uln_alt}) — hepatotoxicity signal", "LBORRES")
-            except:
+            except ValueError:
                 pass
             try:
                 ast = float(r.get("LBORRES_AST", 0) or 0)
                 uln_ast = float(r.get("LBSTNRHI_AST", 40) or 40)
                 if ast > 3 * uln_ast:
                     add("LB002", uid, "CRITICAL", f"AST {ast} > 3× ULN ({uln_ast}) — hepatotoxicity signal", "LBORRES")
-            except: 
+            except ValueError:
                 pass
 
         elif domain == "EX":
-            exst = r.get("EXSTDTC",""); consent = r.get("DMDTC","")
+            exst = r.get("EXSTDTC","")
+            consent = r.get("DMDTC","")
             if exst and consent and exst < consent:
                 add("EX001", uid, "CRITICAL", "Dose administered before consent — protocol violation", "EXSTDTC")
             dose = r.get("EXDOSE")
@@ -297,7 +298,7 @@ def validate_domain(domain: str, records: list) -> list:
                 try:
                     if float(dose) < 0:
                         add("EX002", uid, "ERROR", f"Negative dose value: {dose}", "EXDOSE")
-                except: 
+                except ValueError:
                     add("EX002", uid, "WARNING", "EXDOSE is non-numeric", "EXDOSE")
 
     return findings
@@ -410,8 +411,10 @@ def list_subjects(
     current_user: dict = Depends(get_current_user)
 ):
     results = list(SUBJECTS.values())
-    if site_id:  results = [s for s in results if s["site_id"] == site_id]
-    if status:   results = [s for s in results if s["status"] == status]
+    if site_id:
+        results = [s for s in results if s["site_id"] == site_id]
+    if status:
+        results = [s for s in results if s["status"] == status]
     return results
 
 @app.get("/subjects/{usubjid}", response_model=SubjectOut, tags=["subjects"],
@@ -509,9 +512,12 @@ def get_audit_trail(
     current_user: dict = Depends(get_current_user)
 ):
     results = AUDIT_LOG.copy()
-    if user:   results = [e for e in results if e["user"] == user]
-    if action: results = [e for e in results if e["action"] == action]
-    if domain: results = [e for e in results if e["domain"] == domain]
+    if user:
+        results = [e for e in results if e["user"] == user]
+    if action:
+        results = [e for e in results if e["action"] == action]
+    if domain:
+        results = [e for e in results if e["domain"] == domain]
     return results[-limit:]
 
 @app.get("/audit/integrity", tags=["audit"],
@@ -553,8 +559,10 @@ def list_queries(
     current_user: dict = Depends(get_current_user)
 ):
     results = list(QUERIES.values())
-    if status:  results = [q for q in results if q["status"] == status.value]
-    if usubjid: results = [q for q in results if q["usubjid"] == usubjid]
+    if status:
+        results = [q for q in results if q["status"] == status.value]
+    if usubjid:
+        results = [q for q in results if q["usubjid"] == usubjid]
     return results
 
 @app.patch("/queries/{query_id}/respond", response_model=QueryOut, tags=["queries"],
@@ -565,8 +573,10 @@ def respond_to_query(
     current_user: dict = Depends(get_current_user)
 ):
     q = QUERIES.get(query_id)
-    if not q: raise HTTPException(404, detail=f"Query {query_id} not found")
-    if q["status"] != "OPEN": raise HTTPException(400, detail="Query is not OPEN")
+    if not q:
+        raise HTTPException(404, detail=f"Query {query_id} not found")
+    if q["status"] != "OPEN":
+        raise HTTPException(400, detail="Query is not OPEN")
     q["response"] = response
     q["status"] = "ANSWERED"
     log_audit(current_user["username"], "QUERY_ANSWERED", q["domain"], q["usubjid"],
@@ -577,8 +587,10 @@ def respond_to_query(
            summary="Close an answered query")
 def close_query(query_id: str, current_user: dict = Depends(get_current_user)):
     q = QUERIES.get(query_id)
-    if not q: raise HTTPException(404, detail=f"Query {query_id} not found")
-    if q["status"] != "ANSWERED": raise HTTPException(400, detail="Only ANSWERED queries can be closed")
+    if not q:
+        raise HTTPException(404, detail=f"Query {query_id} not found")
+    if q["status"] != "ANSWERED":
+        raise HTTPException(400, detail="Only ANSWERED queries can be closed")
     q["status"] = "CLOSED"
     q["closed_at"] = datetime.utcnow().isoformat() + "Z"
     log_audit(current_user["username"], "QUERY_CLOSED", q["domain"], q["usubjid"],
