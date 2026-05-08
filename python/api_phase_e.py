@@ -10,7 +10,6 @@ from datetime import datetime, date
 import hashlib
 import hmac
 import uuid
-import io
 from enum import Enum
 
 # ── App setup ─────────────────────────────────────────────────────────────────
