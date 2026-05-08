@@ -88,12 +88,12 @@ if __name__ == "__main__":
     cleaned.to_csv("../data/cleaned_data.csv", index=False)
 
     print(f"\n{'='*60}")
-    print(f"  DATA CLEANING SUMMARY")
+    print("  DATA CLEANING SUMMARY")
     print(f"{'='*60}")
     print(f"  Original records : {len(df)}")
     print(f"  Removed (critical errors): {len(removed)}")
     print(f"  Cleaned records  : {len(cleaned)}")
-    print(f"  Saved to         : ../data/cleaned_data.csv\n")
+    print("  Saved to         : ../data/cleaned_data.csv\n")
 
     print("─── AE Frequency ──────────────────────────────────────")
     print(ae_frequency(cleaned).to_string(index=False))

@@ -10,8 +10,6 @@ Test: http://localhost:5000/api/queries
 from flask import Flask, request, jsonify, g
 import sqlite3
 import os
-import hashlib
-import json
 from datetime import datetime
 from functools import wraps
 
