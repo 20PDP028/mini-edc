@@ -141,6 +141,7 @@ def export_lb():
             FROM subjects s
             LEFT JOIN visits v ON s.usubjid = v.usubjid
         """, conn)
+        print(f"Loaded {len(df)} subject-visit records for LB export")
     except Exception as e:
         print(f"Error loading subjects/visits for LB export: {e}")
     conn.close()

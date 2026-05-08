@@ -72,6 +72,8 @@ def get_completion_matrix():
     conn = sqlite3.connect(DB_PATH)
     df_vc  = pd.read_sql_query("SELECT * FROM visit_completion", conn)
     df_sub = pd.read_sql_query("SELECT usubjid, siteid FROM subjects", conn)
+    print(f"Loaded {len(df_vc)} visit completion records and {len(df_sub)} subjects")
+
     conn.close()
 
     if df_vc.empty:
@@ -145,28 +147,48 @@ def generate_visit_chart():
     # ── Heatmap ───────────────────────────────────────────────
     ax1 = axes[0]
     if not matrix.empty:
-        color_map = {"Completed": TEAL, "Missing": RED, "Partial": AMBER}
-        numeric   = matrix.replace({"Completed": 1, "Missing": 0, "Partial": 0.5})
-        im = ax1.imshow(numeric.values.astype(float), cmap="RdYlGn",
-                        aspect="auto", vmin=0, vmax=1)
+        numeric = matrix.replace({"Completed": 1, "Missing": 0, "Partial": 0.5})
+
+        ax1.imshow(
+            numeric.values.astype(float),
+            cmap="RdYlGn",
+            aspect="auto",
+            vmin=0,
+            vmax=1,
+        )
+
         ax1.set_xticks(range(len(matrix.columns)))
         ax1.set_xticklabels(matrix.columns, rotation=30, ha="right", fontsize=8)
         ax1.set_yticks(range(len(matrix.index)))
         ax1.set_yticklabels(matrix.index, fontsize=8)
+
+        symbol_map = {"Completed": "✓", "Missing": "✗", "Partial": "~"}
+        text_color_map = {"Completed": "white", "Missing": "#333", "Partial": "#333"}
+
         for i in range(len(matrix.index)):
             for j in range(len(matrix.columns)):
                 val = matrix.iloc[i, j]
-                ax1.text(j, i, "✓" if val == "Completed" else "✗",
-                         ha="center", va="center", fontsize=10,
-                         color="white" if val == "Completed" else "#333")
-        ax1.set_title("Subject × Visit Completion Matrix",
-                      fontsize=11, fontweight="bold", color=NAVY, pad=10)
+                ax1.text(
+                    j, i,
+                    symbol_map.get(val, "?"),
+                    ha="center", va="center", fontsize=10,
+                    color=text_color_map.get(val, "#333"),
+                )
+
+        ax1.set_title(
+            "Subject × Visit Completion Matrix",
+            fontsize=11, fontweight="bold", color=NAVY, pad=10,
+        )
         ax1.set_xlabel("Visit", fontsize=9, color="#555")
         ax1.set_ylabel("Subject ID", fontsize=9, color="#555")
-        completed_patch = plt.Rectangle((0,0),1,1, fc=TEAL, label="Completed")
-        missing_patch   = plt.Rectangle((0,0),1,1, fc=RED,  label="Missing")
-        ax1.legend(handles=[completed_patch, missing_patch],
-                   loc="upper right", fontsize=8)
+
+        legend_handles = [
+            mpatches.Patch(fc=TEAL,  label="Completed"),
+            mpatches.Patch(fc=AMBER, label="Partial"),
+            mpatches.Patch(fc=RED,   label="Missing"),
+        ]
+        ax1.legend(handles=legend_handles, loc="upper right", fontsize=8)
+
     else:
         ax1.text(0.5, 0.5, "No visit data", ha="center", va="center")
 

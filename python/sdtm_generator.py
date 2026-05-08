@@ -10,7 +10,7 @@ import json
 import csv
 import os
 import xml.etree.ElementTree as ET
-from datetime import datetime,
+from datetime import datetime
 from typing import Optional
 
 
