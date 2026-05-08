@@ -12,6 +12,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from datetime import datetime
+import matplotlib.patches as mpatches
 
 BASE        = os.path.dirname(os.path.abspath(__file__))
 DB_PATH     = os.path.join(BASE, '..', 'sql', 'cdm_phase3.db')
