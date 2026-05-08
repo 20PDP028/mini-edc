@@ -235,7 +235,8 @@ def validate_domain(domain: str, records: list) -> list:
                 try:
                     if not (0 < int(age) <= 120):
                         add("DM004", uid, "ERROR", f"AGE {age} outside plausible range (1–120)", "AGE")
-                except: add("DM004", uid, "ERROR", "AGE is non-numeric", "AGE")
+                except:
+                    add("DM004", uid, "ERROR", "AGE is non-numeric", "AGE")
             rfst = r.get("RFSTDTC",""); consent = r.get("DMDTC","")
             if rfst and consent and rfst < consent:
                 add("DM005", uid, "CRITICAL", "First dose before consent date — protocol violation", "RFSTDTC")
@@ -261,13 +262,15 @@ def validate_domain(domain: str, records: list) -> list:
                 try:
                     if float(sys_bp) <= float(dia_bp):
                         add("VS001", uid, "ERROR", f"Systolic {sys_bp} ≤ Diastolic {dia_bp}", "VSORRES")
-                except: pass
+                except:
+                    pass
             hr = r.get("VSORRES_HR")
             if hr:
                 try:
                     if not (20 <= float(hr) <= 300):
                         add("VS002", uid, "ERROR", f"Heart rate {hr} outside plausible range (20–300)", "VSORRES")
-                except: add("VS002", uid, "WARNING", "Heart rate is non-numeric", "VSORRES")
+                except: 
+                    add("VS002", uid, "WARNING", "Heart rate is non-numeric", "VSORRES")
 
         elif domain == "LB":
             try:
@@ -275,13 +278,15 @@ def validate_domain(domain: str, records: list) -> list:
                 uln_alt = float(r.get("LBSTNRHI_ALT", 40) or 40)
                 if alt > 3 * uln_alt:
                     add("LB001", uid, "CRITICAL", f"ALT {alt} > 3× ULN ({uln_alt}) — hepatotoxicity signal", "LBORRES")
-            except: pass
+            except:
+                pass
             try:
                 ast = float(r.get("LBORRES_AST", 0) or 0)
                 uln_ast = float(r.get("LBSTNRHI_AST", 40) or 40)
                 if ast > 3 * uln_ast:
                     add("LB002", uid, "CRITICAL", f"AST {ast} > 3× ULN ({uln_ast}) — hepatotoxicity signal", "LBORRES")
-            except: pass
+            except: 
+                pass
 
         elif domain == "EX":
             exst = r.get("EXSTDTC",""); consent = r.get("DMDTC","")
@@ -292,7 +297,8 @@ def validate_domain(domain: str, records: list) -> list:
                 try:
                     if float(dose) < 0:
                         add("EX002", uid, "ERROR", f"Negative dose value: {dose}", "EXDOSE")
-                except: add("EX002", uid, "WARNING", "EXDOSE is non-numeric", "EXDOSE")
+                except: 
+                    add("EX002", uid, "WARNING", "EXDOSE is non-numeric", "EXDOSE")
 
     return findings
 
