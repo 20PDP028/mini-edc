@@ -68,7 +68,8 @@ def export_ae():
             "SELECT ae_id, meddra_pt, meddra_soc, meddra_code FROM ae_coding", conn
         )
         df = df.merge(coding, on="ae_id", how="left")
-    except:
+    except Exception as e:
+        print(f"Error loading AE coding: {e}")
         df["meddra_pt"]  = ""
         df["meddra_soc"] = ""
         df["meddra_code"]= ""
@@ -140,8 +141,8 @@ def export_lb():
             FROM subjects s
             LEFT JOIN visits v ON s.usubjid = v.usubjid
         """, conn)
-    except:
-        df = pd.DataFrame()
+    except Exception as e:
+        print(f"Error loading subjects/visits for LB export: {e}")
     conn.close()
 
     # Try to get labs from raw data if available
@@ -150,7 +151,8 @@ def export_lb():
         try:
             raw = pd.read_excel(raw_path, sheet_name="Clinical_Data")
             raw = raw.rename(columns={"Subject_ID": "usubjid"})
-        except:
+        except Exception as e:
+            print(f"Error loading raw clinical data for labs: {e}")
             raw = pd.DataFrame()
     else:
         raw = pd.DataFrame()
@@ -266,7 +268,7 @@ def run_full_export():
   </Study>
 </ODM>
 """)
-    print(f"  ✅ define.xml stub generated")
+    print("  ✅ define.xml stub generated")
     print(f"\n  Export folder: {EXPORTS_DIR}")
     print("="*55)
     return exported
@@ -275,4 +277,4 @@ def run_full_export():
 if __name__ == "__main__":
     run_full_export()
     print("\n✅ SDTM export complete.")
-    print(f"   Open reports/sdtm_export/ to view CSV files.")
+    print("   Open reports/sdtm_export/ to view CSV files.")

@@ -10,11 +10,9 @@ import json
 import csv
 import os
 import xml.etree.ElementTree as ET
-from xml.dom import minidom
-from datetime import datetime, date
-from dataclasses import dataclass, field
+from datetime import datetime,
 from typing import Optional
-from io import StringIO
+
 
 
 # ─── SDTM Domain Metadata ─────────────────────────────────────────────────────
@@ -522,20 +520,20 @@ class DefineXMLGenerator:
         now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         lines = [
             '<?xml version="1.0" encoding="UTF-8"?>',
-            f'<ODM xmlns="http://www.cdisc.org/ns/odm/v1.3"',
-            f'     xmlns:def="http://www.cdisc.org/ns/def/v2.0"',
-            f'     xmlns:xlink="http://www.w3.org/1999/xlink"',
+            '<ODM xmlns="http://www.cdisc.org/ns/odm/v1.3"',
+            '     xmlns:def="http://www.cdisc.org/ns/def/v2.0"',
+            '     xmlns:xlink="http://www.w3.org/1999/xlink"',
             f'     FileType="Snapshot" FileOID="{self.study_id}.define"',
             f'     CreationDateTime="{now}" AsOfDateTime="{now}"',
-            f'     ODMVersion="1.3.2">',
+            '     ODMVersion="1.3.2">',
             f'  <Study OID="{self.study_id}">',
-            f'    <GlobalVariables>',
+            '    <GlobalVariables>',
             f'      <StudyName>{self.study_id}</StudyName>',
             f'      <StudyDescription>Clinical Study {self.study_id}</StudyDescription>',
             f'      <ProtocolName>{self.study_id}</ProtocolName>',
-            f'    </GlobalVariables>',
+            '    </GlobalVariables>',
             f'    <MetaDataVersion OID="{self.study_id}.MDV" Name="SDTM Metadata"',
-            f'      def:DefineVersion="2.0.0" def:StandardName="SDTM" def:StandardVersion="1.8">',
+            '      def:DefineVersion="2.0.0" def:StandardName="SDTM" def:StandardVersion="1.8">',
         ]
 
         # Dataset leaves
@@ -546,7 +544,7 @@ class DefineXMLGenerator:
                 f'xlink:href="{domain.lower()}.csv">'
             )
             lines.append(f'        <def:title>{domain} — {ds["label"]}</def:title>')
-            lines.append(f'      </def:leaf>')
+            lines.append('      </def:leaf>')
 
         # ItemGroupDefs
         for ds in self.datasets:
@@ -566,7 +564,7 @@ class DefineXMLGenerator:
                     f'        <ItemRef ItemOID="IT.{domain}.{var_name}" '
                     f'Mandatory="{"Yes" if required else "No"}" OrderNumber="{idx}"/>'
                 )
-            lines.append(f'      </ItemGroupDef>')
+            lines.append('      </ItemGroupDef>')
 
         # ItemDefs
         for ds in self.datasets:
@@ -578,10 +576,10 @@ class DefineXMLGenerator:
                     f'      <ItemDef OID="IT.{domain}.{var_name}" Name="{var_name}"',
                     f'        DataType="{dtype}"{length} SASFieldName="{var_name}"',
                     f'        def:Label="{var_label}">',
-                    f'        <Description>',
+                    '        <Description>',
                     f'          <TranslatedText xml:lang="en">{var_label}</TranslatedText>',
-                    f'        </Description>',
-                    f'      </ItemDef>',
+                    '        </Description>',
+                    '      </ItemDef>',
                 ]
 
         lines += [
@@ -725,7 +723,7 @@ if __name__ == "__main__":
     summary = checker.summary()
 
     print(f"\n{'='*60}")
-    print(f"  SDTM Conformance Check Results")
+    print("  SDTM Conformance Check Results")
     print(f"{'='*60}")
     print(f"  Total issues  : {summary['total']}")
     print(f"  Errors        : {summary['errors']}")

@@ -9,7 +9,6 @@ Run daemon: python scheduler.py
 
 import sqlite3
 import os
-import sys
 import time
 import argparse
 import smtplib
@@ -238,16 +237,16 @@ def run_job():
     else:
         print("[SCHEDULER] No alerts — skipping email")
 
-    print(f"[SCHEDULER] Job complete\n")
+    print("[SCHEDULER] Job complete\n")
     return log_entry
 
 
 # ── Daemon loop ───────────────────────────────────────────────
 def run_daemon():
     print(f"\n{'='*60}")
-    print(f"  CDM Automated Scheduler — Feature 17")
+    print("  CDM Automated Scheduler — Feature 17")
     print(f"  Runs daily at {RUN_HOUR:02d}:00")
-    print(f"  Press Ctrl+C to stop")
+    print("  Press Ctrl+C to stop")
     print(f"{'='*60}\n")
 
     last_run_date = None

@@ -159,7 +159,8 @@ def send_daily_summary():
         crit_q   = conn.execute("SELECT COUNT(*) FROM queries WHERE status='Open' AND severity='Critical'").fetchone()[0]
         sae_pend = conn.execute("SELECT COUNT(*) FROM adverse_events WHERE report_flag='PENDING'").fetchone()[0]
         total_q  = conn.execute("SELECT COUNT(*) FROM queries").fetchone()[0]
-    except:
+    except Exception as e:
+        print(f"Error fetching summary data: {e}")
         open_q = crit_q = sae_pend = total_q = 0
     conn.close()
 
