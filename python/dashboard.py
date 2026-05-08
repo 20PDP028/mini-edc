@@ -7,7 +7,8 @@ Run with: python -m streamlit run dashboard.py
 import streamlit as st
 import sqlite3
 import pandas as pd
-import os, sys
+import os
+import sys
 from datetime import datetime
 
 st.set_page_config(page_title="Mini EDC | CDM System", page_icon="🏥", layout="wide", initial_sidebar_state="expanded")
@@ -38,7 +39,7 @@ DB_PATH = os.path.join(BASE, '..', 'sql', 'cdm_phase3.db')
 sys.path.insert(0, BASE)
 
 try:
-    from auth_manager import init_auth_tables, login, has_permission, esign, get_signatures, get_all_users, ROLES, PERMISSIONS
+    from auth_manager import init_auth_tables, login, esign, get_signatures, get_all_users, PERMISSIONS
     if os.path.exists(DB_PATH):
         init_auth_tables()
     AUTH_AVAILABLE = True
@@ -115,13 +116,20 @@ with st.sidebar:
 
     st.markdown("---")
     pages = []
-    if can("view_dashboard"):  pages.append("📊 Dashboard")
-    if can("view_queries"):    pages.append("🔍 Query Management")
-    if can("view_saes"):       pages.append("⚠️ SAE Monitor")
-    if can("view_audit"):      pages.append("📋 Audit Trail")
-    if can("view_signatures"): pages.append("✍️ E-Signatures")
-    if can("generate_pdf"):    pages.append("📄 Generate PDF")
-    if can("manage_users"):    pages.append("👥 User Management")
+    if can("view_dashboard"):
+        pages.append("📊 Dashboard")
+    if can("view_queries"):
+        pages.append("🔍 Query Management")
+    if can("view_saes"):
+        pages.append("⚠️ SAE Monitor")
+    if can("view_audit"):
+        pages.append("📋 Audit Trail")
+    if can("view_signatures"):
+        pages.append("✍️ E-Signatures")
+    if can("generate_pdf"):
+        pages.append("📄 Generate PDF")
+    if can("manage_users"):
+         pages.append("👥 User Management")
     page = st.radio("Navigation", pages, label_visibility="collapsed")
 
     st.markdown("---")
@@ -132,12 +140,14 @@ with st.sidebar:
     st.success("✅ DB connected") if os.path.exists(DB_PATH) else st.warning("⚠️ Demo mode")
 
 def load_df(table):
-    if not os.path.exists(DB_PATH): return pd.DataFrame()
+    if not os.path.exists(DB_PATH):
+        return pd.DataFrame()
     try:
         conn = sqlite3.connect(DB_PATH)
         df = pd.read_sql_query(f"SELECT * FROM {table}", conn)
         conn.close(); return df
-    except: return pd.DataFrame()
+    except Exception as e: 
+        return pd.DataFrame()
 
 df_queries  = load_df("queries")
 df_saes     = load_df("adverse_events")
@@ -148,10 +158,19 @@ df_subjects = load_df("subjects")
 if page == "📊 Dashboard":
     st.markdown(f"<h1 style='font-family:IBM Plex Mono,monospace;font-size:1.6rem;color:#E8EDF5;'>CDM Dashboard</h1><div style='color:#4A7AAF;font-size:0.8rem;margin-bottom:24px;'>Welcome back, {user['full_name']} · {datetime.now().strftime('%d %b %Y %H:%M')}</div>", unsafe_allow_html=True)
 
-    open_q = len(df_queries[df_queries["status"]=="Open"]) if "status" in df_queries.columns else 0
-    ans_q  = len(df_queries[df_queries["status"]=="Answered"]) if "status" in df_queries.columns else 0
-    cls_q  = len(df_queries[df_queries["status"]=="Closed"]) if "status" in df_queries.columns else 0
-    pending_sae = len(df_saes[df_saes["report_flag"]=="PENDING"]) if "report_flag" in df_saes.columns else 0
+    if "status" in df_queries.columns:
+        open_q = len(df_queries[df_queries["status"] == "Open"])
+        ans_q = len(df_queries[df_queries["status"] == "Answered"])
+        cls_q = len(df_queries[df_queries["status"] == "Closed"])
+    else:
+        open_q = 0
+        ans_q = 0
+        cls_q = 0
+
+    if "report_flag" in df_saes.columns:
+        pending_sae = len(df_saes[df_saes["report_flag"] == "PENDING"])
+    else:
+        pending_sae = 0
 
     for col, val, label, color in zip(st.columns(6),
         [len(df_queries), open_q, ans_q, cls_q, len(df_saes), len(df_subjects)],

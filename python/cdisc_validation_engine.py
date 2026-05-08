@@ -7,7 +7,6 @@ Phase A: Real CDISC Validation Engine
 """
 
 import json
-import re
 from datetime import datetime, date
 from typing import Any, Optional
 from dataclasses import dataclass, field, asdict
@@ -817,7 +816,7 @@ if __name__ == "__main__":
     summary = validator.summary()
 
     print(f"\n{'='*60}")
-    print(f"  CDISC Phase A Validation Report")
+    print("  CDISC Phase A Validation Report")
     print(f"{'='*60}")
     print(f"  Total findings : {summary['total']}")
     print(f"  CRITICAL       : {summary['by_severity']['CRITICAL']}")
@@ -834,4 +833,4 @@ if __name__ == "__main__":
     # Save findings to JSON
     with open("/home/claude/Mini_EDC_Project/reports/phase_a_findings.json", "w") as fh:
         json.dump({"summary": summary, "findings": findings}, fh, indent=2)
-    print(f"\n✅ Findings saved to reports/phase_a_findings.json")
+    print("\n✅ Findings saved to reports/phase_a_findings.json")
