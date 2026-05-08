@@ -242,7 +242,8 @@ def validate_domain(domain: str, records: list) -> list:
                 add("DM005", uid, "CRITICAL", "First dose before consent date — protocol violation", "RFSTDTC")
 
         elif domain == "AE":
-            aestdt = r.get("AESTDTC",""); aeendt = r.get("AEENDTC","")
+            aestdt = r.get("AESTDTC","");
+            aeendt = r.get("AEENDTC","")
             if aestdt and aeendt and aeendt < aestdt:
                 add("AE001", uid, "ERROR", "AE end date before start date", "AEENDTC")
             sev = r.get("AESEV","").upper()
@@ -257,7 +258,8 @@ def validate_domain(domain: str, records: list) -> list:
                 add("AE005", uid, "ERROR", "AESDTH=Y but AEOUT is not FATAL — inconsistency", "AEOUT")
 
         elif domain == "VS":
-            sys_bp = r.get("VSORRES_SYSBP"); dia_bp = r.get("VSORRES_DIABP")
+            sys_bp = r.get("VSORRES_SYSBP");
+            dia_bp = r.get("VSORRES_DIABP")
             if sys_bp and dia_bp:
                 try:
                     if float(sys_bp) <= float(dia_bp):
@@ -308,7 +310,8 @@ def validate_domain(domain: str, records: list) -> list:
 def generate_sdtm_domain(domain: str, subject_ids: Optional[List[str]]) -> list:
     subs = subject_ids or ["STUDY001-001", "STUDY001-002", "STUDY001-003"]
     rows = []
-    studyid = "STUDY001"; domain_u = domain.upper()
+    studyid = "STUDY001"; 
+    domain_u = domain.upper()
 
     for i, uid in enumerate(subs):
         if domain_u == "DM":
