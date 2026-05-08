@@ -1,7 +1,6 @@
-""
-Mini EDC — Phase E: REST API with Swagger / OpenAPI 3.0 docs
-FastAPI-based, auto-generates /docs (Swagger UI) and /redoc
-"""
+
+# Mini EDC — Phase E: REST API with Swagger / OpenAPI 3.0 docs
+# FastAPI-based, auto-generates /docs (Swagger UI) and /redoc
 
 from fastapi import FastAPI, HTTPException, Depends, Query, Body
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,21 +18,21 @@ from enum import Enum
 app = FastAPI(
     title="Mini EDC REST API",
     description="""
-## Mini EDC System — Phase E REST API
+# ## Mini EDC System — Phase E REST API
 
-A **CDISC-compliant Electronic Data Capture** system exposing all core modules:
+# A **CDISC-compliant Electronic Data Capture** system exposing all core modules:
 
-| Module | Description |
-|--------|-------------|
-| 🔐 **Auth** | JWT-style token login, role-based access |
-| ✅ **Validation** | Phase A — 40+ CDISC edit checks across 7 domains |
-| 📦 **SDTM** | Phase B — SDTM v1.8 dataset generation |
-| 📋 **Audit** | Phase C — 21 CFR Part 11 immutable audit trail |
-| 📊 **Subjects** | Subject management (add, query, status) |
-| 🔔 **Queries** | Data query workflow (raise, respond, close) |
+# | Module | Description |
+# |--------|-------------|
+# | 🔐 **Auth** | JWT-style token login, role-based access |
+# | ✅ **Validation** | Phase A — 40+ CDISC edit checks across 7 domains |
+# | 📦 **SDTM** | Phase B — SDTM v1.8 dataset generation |
+# | 📋 **Audit** | Phase C — 21 CFR Part 11 immutable audit trail |
+# | 📊 **Subjects** | Subject management (add, query, status) |
+# | 🔔 **Queries** | Data query workflow (raise, respond, close) |
 
-> ⚙️ **Base URL**: `http://localhost:8000`  
-> 📖 **Docs**: `/docs` (Swagger UI) | `/redoc` (ReDoc)
+# > ⚙️ **Base URL**: `http://localhost:8000`  
+# > 📖 **Docs**: `/docs` (Swagger UI) | `/redoc` (ReDoc)
 """,
     version="1.0.0",
     contact={
@@ -347,19 +346,19 @@ def generate_sdtm_domain(domain: str, subject_ids: Optional[List[str]]) -> list:
 @app.post("/auth/login", response_model=LoginResponse, tags=["auth"],
           summary="Login and receive an auth token")
 def login(req: LoginRequest):
-    """
-    Authenticate with username and password.
 
-    Returns a **token** to pass as `?token=` on all protected endpoints.
+    # Authenticate with username and password.
 
-    **Demo credentials:**
-    | Username | Password | Role |
-    |----------|----------|------|
-    | admin | Admin@1234 | Admin |
-    | investigator | Invest@1234 | Investigator |
-    | datamanager | DataMgr@1234 | Data Manager |
-    | monitor | Monitor@1234 | Monitor |
-    """
+    # Returns a **token** to pass as `?token=` on all protected endpoints.
+
+    # **Demo credentials:**
+    # | Username | Password | Role |
+    # |----------|----------|------|
+    # | admin | Admin@1234 | Admin |
+    # | investigator | Invest@1234 | Investigator |
+    # | datamanager | DataMgr@1234 | Data Manager |
+    # | monitor | Monitor@1234 | Monitor |
+
     user = USERS.get(req.username)
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
