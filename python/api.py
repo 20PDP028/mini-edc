@@ -100,11 +100,14 @@ def get_queries():
     sql = "SELECT * FROM queries WHERE 1=1"
     params = []
     if status:
-        sql += " AND status=?";   params.append(status)
+        sql += " AND status=?"
+        params.append(status)
     if severity:
-        sql += " AND severity=?"; params.append(severity)
+        sql += " AND severity=?"
+        params.append(severity)
     if siteid:
-        sql += " AND siteid=?";   params.append(siteid)
+        sql += " AND siteid=?"
+        params.append(siteid)
     sql += " ORDER BY opened_at DESC"
 
     with get_db() as conn:
