@@ -196,7 +196,6 @@ def auto_detect_deviations():
         """).fetchall()
 
         for row in dose_issues:
-            qid    = row["query_id"]          if isinstance(row, dict) else row[0]
             subj   = row["usubjid"]           if isinstance(row, dict) else row[1]
             site   = row["siteid"]            if isinstance(row, dict) else row[2]
             issue  = row["issue_description"] if isinstance(row, dict) else row[3]
