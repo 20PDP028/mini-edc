@@ -249,6 +249,7 @@ df_queries = load_df("queries")
 df_saes = load_df("adverse_events")
 df_audit = load_df("audit_trail")
 
+
 # Load subjects from edc_subjects (written by staff portal via FastAPI)
 # Fall back to legacy subjects table if edc_subjects is empty
 def load_subjects():
@@ -258,14 +259,17 @@ def load_subjects():
         conn.close()
         if not df.empty:
             # Normalise column names to match what dashboard expects
-            df = df.rename(columns={
-                "site_id": "siteid",
-                "enrolled_at": "created_at",
-            })
+            df = df.rename(
+                columns={
+                    "site_id": "siteid",
+                    "enrolled_at": "created_at",
+                }
+            )
             return df
     except Exception:
         pass
     return load_df("subjects")
+
 
 df_subjects = load_subjects()
 
