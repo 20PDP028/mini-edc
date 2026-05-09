@@ -65,7 +65,7 @@ def _ph():
 
 def init_auth_tables():
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
 
     if is_postgres():
         cur.execute("""
@@ -133,10 +133,10 @@ def init_auth_tables():
     # Default users
     ph = _ph()
     default_users = [
-        ("DM_JOHN",    "John Smith",   "DM",      "dm123"),
-        ("MONITOR_01", "Sarah Jones",  "MONITOR", "monitor123"),
-        ("SITE_001",   "Site Staff A", "SITE",    "site123"),
-        ("ADMIN",      "System Admin", "ADMIN",   "admin123"),
+        ("DM_JOHN", "John Smith", "DM", "dm123"),
+        ("MONITOR_01", "Sarah Jones", "MONITOR", "monitor123"),
+        ("SITE_001", "Site Staff A", "SITE", "site123"),
+        ("ADMIN", "System Admin", "ADMIN", "admin123"),
     ]
     for uid, name, role, pwd in default_users:
         if is_postgres():
@@ -164,9 +164,9 @@ def init_auth_tables():
 
 def login(user_id: str, password: str):
     """Returns (success, user_dict, token)"""
-    ph   = _ph()
+    ph = _ph()
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     cur.execute(
         f"SELECT user_id, full_name, role, password_hash, is_active FROM users WHERE user_id={ph}",
         (user_id,),
@@ -177,11 +177,11 @@ def login(user_id: str, password: str):
         conn.close()
         return False, None, None
 
-    row   = dict(row)
-    uid   = row["user_id"]
-    name  = row["full_name"]
-    role  = row["role"]
-    active= row["is_active"]
+    row = dict(row)
+    uid = row["user_id"]
+    name = row["full_name"]
+    role = row["role"]
+    active = row["is_active"]
     pwd_hash = row["password_hash"]
 
     if not active:
@@ -205,9 +205,9 @@ def login(user_id: str, password: str):
     conn.close()
 
     user = {
-        "user_id":     uid,
-        "full_name":   name,
-        "role":        role,
+        "user_id": uid,
+        "full_name": name,
+        "role": role,
         "permissions": PERMISSIONS.get(role, []),
     }
     return True, user, token
@@ -222,9 +222,9 @@ def esign(user_id: str, password: str, action: str, record_id: str, meaning: str
     Creates a 21 CFR Part 11 compliant electronic signature.
     Returns (success, message)
     """
-    ph   = _ph()
+    ph = _ph()
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     cur.execute(
         f"SELECT full_name, role, password_hash FROM users WHERE user_id={ph}",
         (user_id,),
@@ -235,9 +235,9 @@ def esign(user_id: str, password: str, action: str, record_id: str, meaning: str
         conn.close()
         return False, "User not found"
 
-    row      = dict(row)
-    name     = row["full_name"]
-    role     = row["role"]
+    row = dict(row)
+    name = row["full_name"]
+    role = row["role"]
     pwd_hash = row["password_hash"]
 
     if pwd_hash != _hash(password):
@@ -270,9 +270,9 @@ def esign(user_id: str, password: str, action: str, record_id: str, meaning: str
 
 
 def get_signatures(record_id: str = None):
-    ph   = _ph()
+    ph = _ph()
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     if record_id:
         cur.execute(
             f"SELECT * FROM esignatures WHERE record_id={ph} ORDER BY signed_at DESC",
@@ -287,7 +287,7 @@ def get_signatures(record_id: str = None):
 
 def get_all_users():
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     cur.execute("SELECT user_id, full_name, role, is_active, last_login FROM users")
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()

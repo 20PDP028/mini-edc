@@ -62,10 +62,12 @@ def score_site(conn, siteid):
         stale_expr = "julianday('now') - julianday(created_at) > 7"
 
     # 1. Critical open queries
-    crit = _fetchone(conn.execute(
-        f"SELECT COUNT(*) FROM queries WHERE siteid={ph} AND severity='Critical' AND status='Open'",
-        (siteid,),
-    ))
+    crit = _fetchone(
+        conn.execute(
+            f"SELECT COUNT(*) FROM queries WHERE siteid={ph} AND severity='Critical' AND status='Open'",
+            (siteid,),
+        )
+    )
     pts = min(crit * WEIGHTS["critical_queries"], 40)
     score += pts
     if crit:
@@ -79,14 +81,16 @@ def score_site(conn, siteid):
         )
 
     # 2. SAE pending report
-    sae = _fetchone(conn.execute(
-        f"""
+    sae = _fetchone(
+        conn.execute(
+            f"""
         SELECT COUNT(*) FROM adverse_events ae
         JOIN subjects s USING(usubjid)
         WHERE s.siteid={ph} AND ae.aeser='Y' AND ae.report_flag='PENDING'
     """,
-        (siteid,),
-    ))
+            (siteid,),
+        )
+    )
     pts = min(sae * WEIGHTS["sae_pending"], 40)
     score += pts
     if sae:
@@ -100,10 +104,12 @@ def score_site(conn, siteid):
         )
 
     # 3. Major open queries
-    major = _fetchone(conn.execute(
-        f"SELECT COUNT(*) FROM queries WHERE siteid={ph} AND severity='Major' AND status='Open'",
-        (siteid,),
-    ))
+    major = _fetchone(
+        conn.execute(
+            f"SELECT COUNT(*) FROM queries WHERE siteid={ph} AND severity='Major' AND status='Open'",
+            (siteid,),
+        )
+    )
     pts = min(major * WEIGHTS["major_queries"], 20)
     score += pts
     if major:
@@ -117,14 +123,16 @@ def score_site(conn, siteid):
         )
 
     # 4. Stale queries (7+ days)
-    stale = _fetchone(conn.execute(
-        f"""
+    stale = _fetchone(
+        conn.execute(
+            f"""
         SELECT COUNT(*) FROM queries
         WHERE siteid={ph} AND status='Open'
           AND {stale_expr}
     """,
-        (siteid,),
-    ))
+            (siteid,),
+        )
+    )
     pts = min(stale * WEIGHTS["stale_queries_7d"], 20)
     score += pts
     if stale:
@@ -138,12 +146,15 @@ def score_site(conn, siteid):
         )
 
     # 5. Unanswered rate
-    total_q = _fetchone(conn.execute(
-        f"SELECT COUNT(*) FROM queries WHERE siteid={ph}", (siteid,)
-    ))
-    open_q = _fetchone(conn.execute(
-        f"SELECT COUNT(*) FROM queries WHERE siteid={ph} AND status='Open'", (siteid,)
-    ))
+    total_q = _fetchone(
+        conn.execute(f"SELECT COUNT(*) FROM queries WHERE siteid={ph}", (siteid,))
+    )
+    open_q = _fetchone(
+        conn.execute(
+            f"SELECT COUNT(*) FROM queries WHERE siteid={ph} AND status='Open'",
+            (siteid,),
+        )
+    )
     unans_rate = (open_q / total_q * 100) if total_q else 0
     pts = min(int(unans_rate * WEIGHTS["unanswered_rate"] / 100), 20)
     score += pts
@@ -175,9 +186,9 @@ def score_site(conn, siteid):
         icon = "🟢"
 
     # Site stats
-    subjects = _fetchone(conn.execute(
-        f"SELECT COUNT(*) FROM subjects WHERE siteid={ph}", (siteid,)
-    ))
+    subjects = _fetchone(
+        conn.execute(f"SELECT COUNT(*) FROM subjects WHERE siteid={ph}", (siteid,))
+    )
 
     return {
         "siteid": siteid,

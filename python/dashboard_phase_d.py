@@ -75,11 +75,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
 # ═════════════════════════════════════════════════════════════════════════════
 def ss(key, default=None):
     if key not in st.session_state:
         st.session_state[key] = default
     return st.session_state[key]
+
 
 ss("validation_findings", [])
 ss("validation_summary", {})
@@ -95,19 +97,43 @@ def get_db():
 
 
 def ensure_demo_users():
-    um  = UserManager(DB_PATH)
+    um = UserManager(DB_PATH)
     con = get_db()
     cur = con.cursor()
     cur.execute("SELECT COUNT(*) FROM users")
     n = cur.fetchone()
-    n = list(n.values())[0] if hasattr(n, 'keys') else n[0]
+    n = list(n.values())[0] if hasattr(n, "keys") else n[0]
     con.close()
     if n == 0:
         try:
-            um.create_user("dr_sharma",  "Dr. Priya Sharma", Role.INVESTIGATOR, "sharma@site1.com",  "Sharma@Trial2024!")
-            um.create_user("cdm_raj",    "Raj Kumar",        Role.DATA_MANAGER,  "raj@cro.com",       "CdmRaj@Trial2024!")
-            um.create_user("monitor1",   "Sarah Chen",       Role.MONITOR,       "chen@sponsor.com",  "Monitor@Trial2024!")
-            um.create_user("admin",      "System Admin",     Role.ADMIN,         "admin@trial.com",   "Admin@Trial2024!")
+            um.create_user(
+                "dr_sharma",
+                "Dr. Priya Sharma",
+                Role.INVESTIGATOR,
+                "sharma@site1.com",
+                "Sharma@Trial2024!",
+            )
+            um.create_user(
+                "cdm_raj",
+                "Raj Kumar",
+                Role.DATA_MANAGER,
+                "raj@cro.com",
+                "CdmRaj@Trial2024!",
+            )
+            um.create_user(
+                "monitor1",
+                "Sarah Chen",
+                Role.MONITOR,
+                "chen@sponsor.com",
+                "Monitor@Trial2024!",
+            )
+            um.create_user(
+                "admin",
+                "System Admin",
+                Role.ADMIN,
+                "admin@trial.com",
+                "Admin@Trial2024!",
+            )
         except Exception:
             pass
 
@@ -115,12 +141,17 @@ def ensure_demo_users():
 init_db(DB_PATH)
 ensure_demo_users()
 
-SEV_ICON  = {"CRITICAL": "🔴", "MAJOR": "🟡", "MINOR": "🔵"}
+SEV_ICON = {"CRITICAL": "🔴", "MAJOR": "🟡", "MINOR": "🔵"}
 SEV_COLOR = {"CRITICAL": "#ff4d4f", "MAJOR": "#faad14", "MINOR": "#1890ff"}
 ACTION_COLOR = {
-    "CREATE": "#52c41a", "UPDATE": "#1890ff", "SIGN": "#722ed1",
-    "LOGIN": "#faad14", "LOGIN_FAIL": "#ff4d4f", "ACCOUNT_LOCK": "#ff4d4f",
-    "EXPORT": "#13c2c2", "LOCK": "#eb2f96",
+    "CREATE": "#52c41a",
+    "UPDATE": "#1890ff",
+    "SIGN": "#722ed1",
+    "LOGIN": "#faad14",
+    "LOGIN_FAIL": "#ff4d4f",
+    "ACCOUNT_LOCK": "#ff4d4f",
+    "EXPORT": "#13c2c2",
+    "LOCK": "#eb2f96",
 }
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -132,8 +163,15 @@ with st.sidebar:
     st.markdown("---")
     page = st.radio(
         "Navigation",
-        ["🏠 Home", "✅ Validation", "📦 SDTM Export", "🔐 Audit Trail",
-         "✍️ E-Signatures", "👥 Users", "📊 Reports"],
+        [
+            "🏠 Home",
+            "✅ Validation",
+            "📦 SDTM Export",
+            "🔐 Audit Trail",
+            "✍️ E-Signatures",
+            "👥 Users",
+            "📊 Reports",
+        ],
         label_visibility="collapsed",
     )
     st.markdown("---")
@@ -167,36 +205,63 @@ if page == "👥 Users":
     users = [dict(r) for r in cur.fetchall()]
     con.close()
 
-    ucols = ["Username","Display Name","Role","Email","Failed","Locked","Last Login","Created","Active"]
-    df_u  = pd.DataFrame(users, columns=ucols) if users else pd.DataFrame(columns=ucols)
+    ucols = [
+        "Username",
+        "Display Name",
+        "Role",
+        "Email",
+        "Failed",
+        "Locked",
+        "Last Login",
+        "Created",
+        "Active",
+    ]
+    df_u = pd.DataFrame(users, columns=ucols) if users else pd.DataFrame(columns=ucols)
 
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total users", len(df_u))
-    m2.metric("Active",  int(df_u["Active"].sum())  if not df_u.empty else 0)
-    m3.metric("Locked",  int(df_u["Locked"].sum())  if not df_u.empty else 0)
-    m4.metric("Roles",   df_u["Role"].nunique()      if not df_u.empty else 0)
+    m2.metric("Active", int(df_u["Active"].sum()) if not df_u.empty else 0)
+    m3.metric("Locked", int(df_u["Locked"].sum()) if not df_u.empty else 0)
+    m4.metric("Roles", df_u["Role"].nunique() if not df_u.empty else 0)
 
     if not df_u.empty:
         role_counts = df_u["Role"].value_counts().reset_index()
         role_counts.columns = ["Role", "Count"]
-        fig = px.pie(role_counts, names="Role", values="Count", hole=0.5,
-                     title="Users by role", color_discrete_sequence=px.colors.qualitative.Set3)
-        fig.update_layout(height=250, plot_bgcolor="#0f1117", paper_bgcolor="#0f1117", font_color="#e0e0e0")
+        fig = px.pie(
+            role_counts,
+            names="Role",
+            values="Count",
+            hole=0.5,
+            title="Users by role",
+            color_discrete_sequence=px.colors.qualitative.Set3,
+        )
+        fig.update_layout(
+            height=250,
+            plot_bgcolor="#0f1117",
+            paper_bgcolor="#0f1117",
+            font_color="#e0e0e0",
+        )
         st.plotly_chart(fig, use_container_width=True)
 
     st.dataframe(df_u, use_container_width=True)
 
-    st.markdown('<div class="section-hdr">Create New User</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-hdr">Create New User</div>', unsafe_allow_html=True
+    )
     with st.form("new_user_form"):
         nc1, nc2 = st.columns(2)
         with nc1:
             new_username = st.text_input("Username")
-            new_display  = st.text_input("Display name")
-            new_email    = st.text_input("Email")
+            new_display = st.text_input("Display name")
+            new_email = st.text_input("Email")
         with nc2:
             new_role = st.selectbox("Role", [r.value for r in Role])
-            new_pw   = st.text_input("Password", type="password", help="Min 12 chars, upper+lower+digit+special")
-            new_pw2  = st.text_input("Confirm password", type="password")
+            new_pw = st.text_input(
+                "Password",
+                type="password",
+                help="Min 12 chars, upper+lower+digit+special",
+            )
+            new_pw2 = st.text_input("Confirm password", type="password")
 
         submitted = st.form_submit_button("Create User", use_container_width=True)
         if submitted:
@@ -207,7 +272,14 @@ if page == "👥 Users":
             else:
                 um = UserManager(DB_PATH)
                 try:
-                    uid = um.create_user(new_username, new_display, Role(new_role), new_email, new_pw, created_by="admin")
+                    uid = um.create_user(
+                        new_username,
+                        new_display,
+                        Role(new_role),
+                        new_email,
+                        new_pw,
+                        created_by="admin",
+                    )
                     st.success(f"User **{new_username}** created (ID: {uid[:8]}…)")
                     st.rerun()
                 except ValueError as e:
@@ -229,9 +301,12 @@ elif page == "📊 Reports":
     st.title("📊 Compliance Reports")
     report = generate_compliance_report(DB_PATH)
 
-    st.markdown('<div class="section-hdr">21 CFR Part 11 Compliance Status</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-hdr">21 CFR Part 11 Compliance Status</div>',
+        unsafe_allow_html=True,
+    )
     for req, met in report["requirements_met"].items():
-        icon  = "✅" if met else "❌"
+        icon = "✅" if met else "❌"
         color = "#52c41a" if met else "#ff4d4f"
         st.markdown(
             f'<div style="padding:6px 12px;margin:3px 0;border-radius:6px;background:#1a1d27;border:1px solid #2a2d3a;font-size:13px">'
@@ -249,14 +324,32 @@ elif page == "📊 Reports":
     mc5.metric("CRF records", stats["crf_records"])
 
     if report["audit_actions"]:
-        st.markdown('<div class="section-hdr">Audit Activity</div>', unsafe_allow_html=True)
-        action_df = pd.DataFrame([{"Action": k, "Count": v} for k, v in report["audit_actions"].items()])
-        fig = px.bar(action_df, x="Action", y="Count", color="Action",
-                     color_discrete_sequence=px.colors.qualitative.Pastel, title="Audit actions")
-        fig.update_layout(showlegend=False, height=300, plot_bgcolor="#0f1117", paper_bgcolor="#0f1117", font_color="#e0e0e0")
+        st.markdown(
+            '<div class="section-hdr">Audit Activity</div>', unsafe_allow_html=True
+        )
+        action_df = pd.DataFrame(
+            [{"Action": k, "Count": v} for k, v in report["audit_actions"].items()]
+        )
+        fig = px.bar(
+            action_df,
+            x="Action",
+            y="Count",
+            color="Action",
+            color_discrete_sequence=px.colors.qualitative.Pastel,
+            title="Audit actions",
+        )
+        fig.update_layout(
+            showlegend=False,
+            height=300,
+            plot_bgcolor="#0f1117",
+            paper_bgcolor="#0f1117",
+            font_color="#e0e0e0",
+        )
         st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown('<div class="section-hdr">Chain Integrity Report</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-hdr">Chain Integrity Report</div>', unsafe_allow_html=True
+    )
     integ = report["integrity"]
     ic1, ic2, ic3 = st.columns(3)
     ic1.metric("Total entries", integ["total_entries"])
@@ -270,9 +363,11 @@ elif page == "📊 Reports":
         mime="application/json",
     )
 
-    st.markdown('<div class="section-hdr">Live Validation Summary</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-hdr">Live Validation Summary</div>', unsafe_allow_html=True
+    )
     if st.button("🔄 Re-run CDISC validation"):
         validator = CDISCValidator()
-        findings  = validator.run_all(SAMPLE_DATA)
-        summary   = validator.summary()
+        findings = validator.run_all(SAMPLE_DATA)
+        summary = validator.summary()
         st.json(summary)

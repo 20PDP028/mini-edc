@@ -5,7 +5,6 @@ Save in: Mini_EDC_Project/python/multi_trial.py
 Run with: python multi_trial.py
 """
 
-
 import pandas as pd
 from datetime import datetime
 from db_connection import get_conn, is_postgres
@@ -95,18 +94,22 @@ def init_trial_tables():
 
     # Insert default trial (current project)
     conn.execute(
-        f"""
+        (
+            f"""
         INSERT INTO trials
         (trial_id, trial_name, protocol_number, phase, indication,
          sponsor, status, start_date, created_at, created_by)
         VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
         ON CONFLICT (trial_id) DO NOTHING
-    """ if is_postgres() else """
+    """
+            if is_postgres()
+            else """
         INSERT OR IGNORE INTO trials
         (trial_id, trial_name, protocol_number, phase, indication,
          sponsor, status, start_date, created_at, created_by)
         VALUES (?,?,?,?,?,?,?,?,?,?)
-    """,
+    """
+        ),
         (
             "CARDIO-P2",
             "CARDIO-PHASE2 Trial",

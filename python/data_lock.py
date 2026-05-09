@@ -18,7 +18,7 @@ def _ph():
 
 def init_lock_table():
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     if is_postgres():
         cur.execute("""
             CREATE TABLE IF NOT EXISTS data_lock (
@@ -54,8 +54,8 @@ def init_lock_table():
 
 
 def _compute_checksum():
-    conn   = get_conn()
-    cur    = conn.cursor()
+    conn = get_conn()
+    cur = conn.cursor()
     tables = ["subjects", "visits", "adverse_events", "queries", "audit_trail"]
     combined = ""
     for table in tables:
@@ -69,9 +69,9 @@ def _compute_checksum():
 
 
 def _verify_user(user_id: str, password: str) -> bool:
-    ph   = _ph()
+    ph = _ph()
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     try:
         cur.execute(
             f"SELECT password_hash FROM users WHERE user_id={ph} AND is_active=1",
@@ -91,7 +91,7 @@ def _verify_user(user_id: str, password: str) -> bool:
 def is_locked():
     init_lock_table()
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     cur.execute(
         "SELECT lock_id, lock_type, locked_by, locked_at FROM data_lock WHERE is_active=1"
     )
@@ -106,7 +106,10 @@ def lock_database(locked_by: str, password: str, reason: str, lock_type: str = "
 
     locked, info = is_locked()
     if locked:
-        return False, f"❌ Database already locked by {info['locked_by']} at {info['locked_at']}"
+        return (
+            False,
+            f"❌ Database already locked by {info['locked_by']} at {info['locked_at']}",
+        )
 
     if not _verify_user(locked_by, password):
         return False, "❌ Invalid credentials — lock rejected"
@@ -117,7 +120,7 @@ def lock_database(locked_by: str, password: str, reason: str, lock_type: str = "
     ).hexdigest()
 
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     cur.execute(
         f"""
         INSERT INTO data_lock (lock_type, locked_by, lock_reason, locked_at, is_active, db_checksum, signature_hash)
@@ -134,7 +137,10 @@ def lock_database(locked_by: str, password: str, reason: str, lock_type: str = "
     )
     conn.commit()
     conn.close()
-    return True, f"✅ Database LOCKED ({lock_type}) by {locked_by} at {datetime.now().strftime('%d %b %Y %H:%M')}"
+    return (
+        True,
+        f"✅ Database LOCKED ({lock_type}) by {locked_by} at {datetime.now().strftime('%d %b %Y %H:%M')}",
+    )
 
 
 def unlock_database(unlocked_by: str, password: str, reason: str):
@@ -147,7 +153,7 @@ def unlock_database(unlocked_by: str, password: str, reason: str):
         return False, "❌ Invalid credentials — unlock rejected"
 
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     cur.execute(
         f"UPDATE data_lock SET is_active=0, unlocked_by={ph}, unlocked_at={ph} WHERE is_active=1",
         (unlocked_by, datetime.now().isoformat()),
@@ -161,7 +167,10 @@ def unlock_database(unlocked_by: str, password: str, reason: str):
     )
     conn.commit()
     conn.close()
-    return True, f"✅ Database UNLOCKED by {unlocked_by} at {datetime.now().strftime('%d %b %Y %H:%M')}"
+    return (
+        True,
+        f"✅ Database UNLOCKED by {unlocked_by} at {datetime.now().strftime('%d %b %Y %H:%M')}",
+    )
 
 
 def verify_integrity():
@@ -170,13 +179,13 @@ def verify_integrity():
         return None, None, None
 
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     cur.execute("SELECT db_checksum FROM data_lock WHERE is_active=1")
     row = cur.fetchone()
     conn.close()
 
     current = _compute_checksum()
-    stored  = dict(row)["db_checksum"] if row else None
+    stored = dict(row)["db_checksum"] if row else None
     return current == stored, current, stored
 
 
@@ -185,6 +194,7 @@ def get_lock_history():
     conn = get_conn()
     try:
         import pandas as pd
+
         df = pd.read_sql_query("SELECT * FROM data_lock ORDER BY locked_at DESC", conn)
     except Exception as e:
         print(f"Error loading lock history: {e}")
@@ -206,7 +216,9 @@ def print_lock_status():
         match, cur, stored = verify_integrity()
         if match is not None:
             icon = "✅" if match else "⚠️"
-            print(f"\n  {icon} DB Integrity : {'VERIFIED — No changes since lock' if match else 'WARNING — Data may have changed!'}")
+            print(
+                f"\n  {icon} DB Integrity : {'VERIFIED — No changes since lock' if match else 'WARNING — Data may have changed!'}"
+            )
             print(f"  Checksum    : {cur[:20]}...")
     else:
         print("  🔓 STATUS    : UNLOCKED")
@@ -218,9 +230,13 @@ if __name__ == "__main__":
     print_lock_status()
     print("To lock the database, call:")
     print("  from data_lock import lock_database")
-    print("  ok, msg = lock_database('DM_JOHN', 'dm123', 'Final database lock after DBL meeting')")
+    print(
+        "  ok, msg = lock_database('DM_JOHN', 'dm123', 'Final database lock after DBL meeting')"
+    )
     print("  print(msg)")
     print("\nTo unlock:")
     print("  from data_lock import unlock_database")
-    print("  ok, msg = unlock_database('ADMIN', 'admin123', 'Emergency unlock approved by sponsor')")
+    print(
+        "  ok, msg = unlock_database('ADMIN', 'admin123', 'Emergency unlock approved by sponsor')"
+    )
     print("  print(msg)")

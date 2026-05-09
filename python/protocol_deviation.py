@@ -5,7 +5,6 @@ Save in: Mini_EDC_Project/python/protocol_deviation.py
 Run with: python protocol_deviation.py
 """
 
-
 import pandas as pd
 from datetime import datetime
 from db_connection import get_conn, is_postgres
@@ -106,8 +105,19 @@ def log_deviation(
             VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
             ON CONFLICT (pd_code) DO NOTHING
         """,
-            (code, usubjid, siteid, dev_type, cat, severity, description,
-             action_taken, reported_by, datetime.now().isoformat(), capa),
+            (
+                code,
+                usubjid,
+                siteid,
+                dev_type,
+                cat,
+                severity,
+                description,
+                action_taken,
+                reported_by,
+                datetime.now().isoformat(),
+                capa,
+            ),
         )
     else:
         conn.execute(
@@ -117,8 +127,19 @@ def log_deviation(
              severity, description, action_taken, reported_by, reported_at, capa)
             VALUES (?,?,?,?,?,?,?,?,?,?,?)
         """,
-            (code, usubjid, siteid, dev_type, cat, severity, description,
-             action_taken, reported_by, datetime.now().isoformat(), capa),
+            (
+                code,
+                usubjid,
+                siteid,
+                dev_type,
+                cat,
+                severity,
+                description,
+                action_taken,
+                reported_by,
+                datetime.now().isoformat(),
+                capa,
+            ),
         )
 
     conn.execute(
@@ -196,9 +217,9 @@ def auto_detect_deviations():
         """).fetchall()
 
         for row in dose_issues:
-            subj   = row["usubjid"]           if isinstance(row, dict) else row[1]
-            site   = row["siteid"]            if isinstance(row, dict) else row[2]
-            issue  = row["issue_description"] if isinstance(row, dict) else row[3]
+            subj = row["usubjid"] if isinstance(row, dict) else row[1]
+            site = row["siteid"] if isinstance(row, dict) else row[2]
+            issue = row["issue_description"] if isinstance(row, dict) else row[3]
             code = _next_pd_code(conn)
             if is_postgres():
                 conn.execute(
@@ -209,8 +230,17 @@ def auto_detect_deviations():
                     VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
                     ON CONFLICT (pd_code) DO NOTHING
                 """,
-                    (code, subj, site or "UNKNOWN", "DOS", "Dosing Error", "Major",
-                     f"Auto-detected: {issue}", "SYSTEM", datetime.now().isoformat()),
+                    (
+                        code,
+                        subj,
+                        site or "UNKNOWN",
+                        "DOS",
+                        "Dosing Error",
+                        "Major",
+                        f"Auto-detected: {issue}",
+                        "SYSTEM",
+                        datetime.now().isoformat(),
+                    ),
                 )
             else:
                 conn.execute(
@@ -220,8 +250,17 @@ def auto_detect_deviations():
                      severity, description, reported_by, reported_at)
                     VALUES (?,?,?,?,?,?,?,?,?)
                 """,
-                    (code, subj, site or "UNKNOWN", "DOS", "Dosing Error", "Major",
-                     f"Auto-detected: {issue}", "SYSTEM", datetime.now().isoformat()),
+                    (
+                        code,
+                        subj,
+                        site or "UNKNOWN",
+                        "DOS",
+                        "Dosing Error",
+                        "Major",
+                        f"Auto-detected: {issue}",
+                        "SYSTEM",
+                        datetime.now().isoformat(),
+                    ),
                 )
             detected += 1
     except Exception as e:
@@ -236,10 +275,10 @@ def auto_detect_deviations():
         """).fetchall()
 
         for row in date_issues:
-            
-            subj   = row["usubjid"]           if isinstance(row, dict) else row[1]
-            site   = row["siteid"]            if isinstance(row, dict) else row[2]
-            issue  = row["issue_description"] if isinstance(row, dict) else row[3]
+
+            subj = row["usubjid"] if isinstance(row, dict) else row[1]
+            site = row["siteid"] if isinstance(row, dict) else row[2]
+            issue = row["issue_description"] if isinstance(row, dict) else row[3]
             code = _next_pd_code(conn)
             if is_postgres():
                 conn.execute(
@@ -250,9 +289,17 @@ def auto_detect_deviations():
                     VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
                     ON CONFLICT (pd_code) DO NOTHING
                 """,
-                    (code, subj, site or "UNKNOWN", "VW", "Visit Window Violation",
-                     "Minor", f"Auto-detected: {issue}", "SYSTEM",
-                     datetime.now().isoformat()),
+                    (
+                        code,
+                        subj,
+                        site or "UNKNOWN",
+                        "VW",
+                        "Visit Window Violation",
+                        "Minor",
+                        f"Auto-detected: {issue}",
+                        "SYSTEM",
+                        datetime.now().isoformat(),
+                    ),
                 )
             else:
                 conn.execute(
@@ -262,9 +309,17 @@ def auto_detect_deviations():
                      severity, description, reported_by, reported_at)
                     VALUES (?,?,?,?,?,?,?,?,?)
                 """,
-                    (code, subj, site or "UNKNOWN", "VW", "Visit Window Violation",
-                     "Minor", f"Auto-detected: {issue}", "SYSTEM",
-                     datetime.now().isoformat()),
+                    (
+                        code,
+                        subj,
+                        site or "UNKNOWN",
+                        "VW",
+                        "Visit Window Violation",
+                        "Minor",
+                        f"Auto-detected: {issue}",
+                        "SYSTEM",
+                        datetime.now().isoformat(),
+                    ),
                 )
             detected += 1
     except Exception as e:

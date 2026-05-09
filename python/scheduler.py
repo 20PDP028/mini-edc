@@ -58,7 +58,9 @@ def check_new_saes():
             JOIN subjects s USING(usubjid)
             WHERE ae.aeser='Y' AND ae.report_flag='PENDING'
         """).fetchall()
-    return [dict(zip(["usubjid", "siteid", "aeterm", "aesev", "aestdtc"], r)) for r in rows]
+    return [
+        dict(zip(["usubjid", "siteid", "aeterm", "aesev", "aestdtc"], r)) for r in rows
+    ]
 
 
 def check_critical_queries():
@@ -70,7 +72,22 @@ def check_critical_queries():
             WHERE severity='Critical' AND status='Open'
             ORDER BY created_at ASC
         """).fetchall()
-    return [dict(zip(["query_id", "usubjid", "siteid", "field_name", "issue_description", "created_at"], r)) for r in rows]
+    return [
+        dict(
+            zip(
+                [
+                    "query_id",
+                    "usubjid",
+                    "siteid",
+                    "field_name",
+                    "issue_description",
+                    "created_at",
+                ],
+                r,
+            )
+        )
+        for r in rows
+    ]
 
 
 def check_stale_queries(days=7):
@@ -84,7 +101,22 @@ def check_stale_queries(days=7):
               AND {stale_expr}
             ORDER BY created_at ASC
         """).fetchall()
-    return [dict(zip(["query_id", "usubjid", "siteid", "field_name", "severity", "created_at"], r)) for r in rows]
+    return [
+        dict(
+            zip(
+                [
+                    "query_id",
+                    "usubjid",
+                    "siteid",
+                    "field_name",
+                    "severity",
+                    "created_at",
+                ],
+                r,
+            )
+        )
+        for r in rows
+    ]
 
 
 def get_summary():

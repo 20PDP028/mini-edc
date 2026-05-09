@@ -22,7 +22,7 @@ def get_conn():
 
 def init_db():
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
 
     if is_postgres():
         statements = [
@@ -76,8 +76,12 @@ def init_db():
         for sql in statements:
             cur.execute(sql)
         # Views — PostgreSQL syntax
-        cur.execute("CREATE OR REPLACE VIEW v_open_queries AS SELECT * FROM queries WHERE status = 'Open'")
-        cur.execute("CREATE OR REPLACE VIEW v_sae_pending AS SELECT * FROM adverse_events WHERE report_flag = 'PENDING'")
+        cur.execute(
+            "CREATE OR REPLACE VIEW v_open_queries AS SELECT * FROM queries WHERE status = 'Open'"
+        )
+        cur.execute(
+            "CREATE OR REPLACE VIEW v_sae_pending AS SELECT * FROM adverse_events WHERE report_flag = 'PENDING'"
+        )
         cur.execute("""
             CREATE OR REPLACE VIEW v_query_summary AS
             SELECT status, severity, COUNT(*) as count FROM queries GROUP BY status, severity
@@ -145,19 +149,31 @@ def init_db():
 
 
 def load_subjects(df):
-    ph   = _ph()
+    ph = _ph()
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     for _, row in df.iterrows():
         if is_postgres():
             cur.execute(
                 f"INSERT INTO subjects (usubjid,siteid,age,gender,weight_kg) VALUES ({ph},{ph},{ph},{ph},{ph}) ON CONFLICT (usubjid) DO NOTHING",
-                (str(row.get("Subject_ID","")), str(row.get("Site_ID","")), row.get("Age"), row.get("Gender"), row.get("Weight_kg")),
+                (
+                    str(row.get("Subject_ID", "")),
+                    str(row.get("Site_ID", "")),
+                    row.get("Age"),
+                    row.get("Gender"),
+                    row.get("Weight_kg"),
+                ),
             )
         else:
             cur.execute(
                 f"INSERT OR IGNORE INTO subjects (usubjid,siteid,age,gender,weight_kg) VALUES ({ph},{ph},{ph},{ph},{ph})",
-                (str(row.get("Subject_ID","")), str(row.get("Site_ID","")), row.get("Age"), row.get("Gender"), row.get("Weight_kg")),
+                (
+                    str(row.get("Subject_ID", "")),
+                    str(row.get("Site_ID", "")),
+                    row.get("Age"),
+                    row.get("Gender"),
+                    row.get("Weight_kg"),
+                ),
             )
     conn.commit()
     conn.close()
@@ -165,13 +181,18 @@ def load_subjects(df):
 
 
 def load_visits(df):
-    ph   = _ph()
+    ph = _ph()
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     for _, row in df.iterrows():
         cur.execute(
             f"INSERT INTO visits (usubjid,visit_date,drug_name,dose_mg) VALUES ({ph},{ph},{ph},{ph})",
-            (str(row.get("Subject_ID","")), str(row.get("Visit_Date","")), row.get("Drug_Name"), row.get("Dose_mg")),
+            (
+                str(row.get("Subject_ID", "")),
+                str(row.get("Visit_Date", "")),
+                row.get("Drug_Name"),
+                row.get("Dose_mg"),
+            ),
         )
     conn.commit()
     conn.close()
@@ -179,18 +200,26 @@ def load_visits(df):
 
 
 def load_adverse_events(df):
-    ph    = _ph()
-    conn  = get_conn()
-    cur   = conn.cursor()
+    ph = _ph()
+    conn = get_conn()
+    cur = conn.cursor()
     count = 0
     for _, row in df.iterrows():
         ae = row.get("Adverse_Event")
         if ae and str(ae).strip() and str(ae).strip().lower() != "nan":
-            sev  = str(row.get("AE_Severity","")).upper()
+            sev = str(row.get("AE_Severity", "")).upper()
             flag = "PENDING" if sev == "SEVERE" else "OK"
             cur.execute(
                 f"INSERT INTO adverse_events (usubjid,siteid,aeterm,aesev,aeser,aestdtc,report_flag) VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph})",
-                (str(row.get("Subject_ID","")), str(row.get("Site_ID","")), str(ae), sev, "Y" if sev=="SEVERE" else "N", str(row.get("Visit_Date","")), flag),
+                (
+                    str(row.get("Subject_ID", "")),
+                    str(row.get("Site_ID", "")),
+                    str(ae),
+                    sev,
+                    "Y" if sev == "SEVERE" else "N",
+                    str(row.get("Visit_Date", "")),
+                    flag,
+                ),
             )
             count += 1
     conn.commit()
@@ -199,30 +228,52 @@ def load_adverse_events(df):
 
 
 def open_queries(issues):
-    ph    = _ph()
-    conn  = get_conn()
-    cur   = conn.cursor()
+    ph = _ph()
+    conn = get_conn()
+    cur = conn.cursor()
     count = 0
     for issue in issues:
-        usubjid  = str(issue.get("usubjid","")).strip()
+        usubjid = str(issue.get("usubjid", "")).strip()
         cur.execute(f"SELECT 1 FROM subjects WHERE usubjid={ph}", (usubjid,))
         exists = cur.fetchone()
         if not exists:
             if is_postgres():
-                cur.execute(f"INSERT INTO subjects (usubjid,siteid) VALUES ({ph},{ph}) ON CONFLICT DO NOTHING", (usubjid, issue.get("siteid","UNKNOWN")))
+                cur.execute(
+                    f"INSERT INTO subjects (usubjid,siteid) VALUES ({ph},{ph}) ON CONFLICT DO NOTHING",
+                    (usubjid, issue.get("siteid", "UNKNOWN")),
+                )
             else:
-                cur.execute(f"INSERT OR IGNORE INTO subjects (usubjid,siteid) VALUES ({ph},{ph})", (usubjid, issue.get("siteid","UNKNOWN")))
+                cur.execute(
+                    f"INSERT OR IGNORE INTO subjects (usubjid,siteid) VALUES ({ph},{ph})",
+                    (usubjid, issue.get("siteid", "UNKNOWN")),
+                )
 
         query_id = issue.get("query_id", f"QRY-{count+1:04d}")
         if is_postgres():
             cur.execute(
                 f"INSERT INTO queries (query_id,usubjid,siteid,field_name,severity,status,issue_description,created_at) VALUES ({ph},{ph},{ph},{ph},{ph},'Open',{ph},{ph}) ON CONFLICT (query_id) DO NOTHING",
-                (query_id, usubjid, issue.get("siteid",""), issue.get("field",""), issue.get("severity","Minor"), issue.get("issue",""), datetime.now().isoformat()),
+                (
+                    query_id,
+                    usubjid,
+                    issue.get("siteid", ""),
+                    issue.get("field", ""),
+                    issue.get("severity", "Minor"),
+                    issue.get("issue", ""),
+                    datetime.now().isoformat(),
+                ),
             )
         else:
             cur.execute(
                 f"INSERT OR IGNORE INTO queries (query_id,usubjid,siteid,field_name,severity,status,issue_description,created_at) VALUES ({ph},{ph},{ph},{ph},{ph},'Open',{ph},{ph})",
-                (query_id, usubjid, issue.get("siteid",""), issue.get("field",""), issue.get("severity","Minor"), issue.get("issue",""), datetime.now().isoformat()),
+                (
+                    query_id,
+                    usubjid,
+                    issue.get("siteid", ""),
+                    issue.get("field", ""),
+                    issue.get("severity", "Minor"),
+                    issue.get("issue", ""),
+                    datetime.now().isoformat(),
+                ),
             )
         cur.execute(
             f"INSERT INTO audit_trail (event_time,action,table_name,record_id,field_name,new_value,performed_by) VALUES ({ph},'QUERY_OPEN','queries',{ph},'status','Open','SYSTEM')",
@@ -235,10 +286,13 @@ def open_queries(issues):
 
 
 def answer_query(query_id, answer_text, answered_by):
-    ph   = _ph()
+    ph = _ph()
     conn = get_conn()
-    cur  = conn.cursor()
-    cur.execute(f"UPDATE queries SET status='Answered', resolved_at={ph} WHERE query_id={ph}", (datetime.now().isoformat(), query_id))
+    cur = conn.cursor()
+    cur.execute(
+        f"UPDATE queries SET status='Answered', resolved_at={ph} WHERE query_id={ph}",
+        (datetime.now().isoformat(), query_id),
+    )
     cur.execute(
         f"INSERT INTO audit_trail (event_time,action,table_name,record_id,field_name,old_value,new_value,performed_by) VALUES ({ph},'QUERY_ANSWER','queries',{ph},'status','Open',{ph},{ph})",
         (datetime.now().isoformat(), query_id, answer_text, answered_by),
@@ -249,10 +303,13 @@ def answer_query(query_id, answer_text, answered_by):
 
 
 def close_query(query_id, closed_by, reason=""):
-    ph   = _ph()
+    ph = _ph()
     conn = get_conn()
-    cur  = conn.cursor()
-    cur.execute(f"UPDATE queries SET status='Closed', resolved_at={ph} WHERE query_id={ph}", (datetime.now().isoformat(), query_id))
+    cur = conn.cursor()
+    cur.execute(
+        f"UPDATE queries SET status='Closed', resolved_at={ph} WHERE query_id={ph}",
+        (datetime.now().isoformat(), query_id),
+    )
     cur.execute(
         f"INSERT INTO audit_trail (event_time,action,table_name,record_id,field_name,old_value,new_value,performed_by) VALUES ({ph},'QUERY_CLOSE','queries',{ph},'status','Answered',{ph},{ph})",
         (datetime.now().isoformat(), query_id, reason, closed_by),
@@ -264,7 +321,7 @@ def close_query(query_id, closed_by, reason=""):
 
 def query_summary():
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     cur.execute("SELECT status, COUNT(*) FROM queries GROUP BY status")
     rows = cur.fetchall()
     conn.close()
@@ -276,18 +333,22 @@ def query_summary():
 
 def open_queries_report():
     conn = get_conn()
-    cur  = conn.cursor()
-    cur.execute("SELECT query_id, usubjid, field_name, severity, issue_description FROM v_open_queries LIMIT 10")
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT query_id, usubjid, field_name, severity, issue_description FROM v_open_queries LIMIT 10"
+    )
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()
     print(f"\n[REPORT] Open Queries ({len(rows)} shown):")
     for r in rows:
-        print(f"         {r['query_id']} | {r['usubjid']} | {r['field_name']} | {r['severity']} | {str(r['issue_description'])[:50]}")
+        print(
+            f"         {r['query_id']} | {r['usubjid']} | {r['field_name']} | {r['severity']} | {str(r['issue_description'])[:50]}"
+        )
 
 
 def sae_report():
     conn = get_conn()
-    cur  = conn.cursor()
+    cur = conn.cursor()
     cur.execute("SELECT * FROM v_sae_pending")
     rows = cur.fetchall()
     conn.close()
@@ -298,10 +359,14 @@ def sae_report():
 
 def audit_report(limit=15):
     conn = get_conn()
-    cur  = conn.cursor()
-    cur.execute(f"SELECT event_time, action, record_id, performed_by FROM audit_trail LIMIT {limit}")
+    cur = conn.cursor()
+    cur.execute(
+        f"SELECT event_time, action, record_id, performed_by FROM audit_trail LIMIT {limit}"
+    )
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()
     print(f"\n[REPORT] Audit Trail (last {limit}):")
     for r in rows:
-        print(f"         {str(r['event_time'])[:16]} | {r['action']} | {r['record_id']} | {r['performed_by']}")
+        print(
+            f"         {str(r['event_time'])[:16]} | {r['action']} | {r['record_id']} | {r['performed_by']}"
+        )

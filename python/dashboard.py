@@ -76,6 +76,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.user = None
 
+
 # ── Helper ────────────────────────────────────────────────────
 def load_df(table):
     try:
@@ -86,6 +87,7 @@ def load_df(table):
     except Exception as e:
         st.error(f"Error loading data from {table}: {e}")
         return pd.DataFrame()
+
 
 # ══════════════════════════════════════════════════════════════
 # LOGIN

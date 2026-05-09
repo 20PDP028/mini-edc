@@ -44,6 +44,7 @@ def get_db():
         conn.execute("PRAGMA foreign_keys = ON")  # SQLite only
     return conn
 
+
 def rows_to_list(rows):
     return [dict(r) for r in rows]
 

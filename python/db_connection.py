@@ -17,23 +17,22 @@ import sqlite3
 
 # ── Detect environment ────────────────────────────────────────────────────────
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
-USE_POSTGRES  = bool(DATABASE_URL)
+USE_POSTGRES = bool(DATABASE_URL)
 
 if USE_POSTGRES:
     try:
         import psycopg2
         import psycopg2.extras
     except ImportError:
-        raise ImportError(
-            "psycopg2 not installed. Run: pip install psycopg2-binary"
-        )
+        raise ImportError("psycopg2 not installed. Run: pip install psycopg2-binary")
 
 # SQLite fallback path (local dev)
-BASE     = os.path.dirname(os.path.abspath(__file__))
-DB_PATH  = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
 
 def get_conn():
     """
@@ -46,7 +45,9 @@ def get_conn():
         conn.close()
     """
     if USE_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+        conn = psycopg2.connect(
+            DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor
+        )
         return conn
     else:
         conn = sqlite3.connect(DB_PATH)
@@ -103,16 +104,16 @@ def execute_upsert(conn, table, data, conflict_col):
     """
     cols = ", ".join(data.keys())
     vals = list(data.values())
-    cur  = conn.cursor()
+    cur = conn.cursor()
 
     if USE_POSTGRES:
-        ph  = ", ".join(["%s"] * len(data))
+        ph = ", ".join(["%s"] * len(data))
         sql = (
             f"INSERT INTO {table} ({cols}) VALUES ({ph}) "
             f"ON CONFLICT ({conflict_col}) DO NOTHING"
         )
     else:
-        ph  = ", ".join(["?"] * len(data))
+        ph = ", ".join(["?"] * len(data))
         sql = f"INSERT OR IGNORE INTO {table} ({cols}) VALUES ({ph})"
 
     cur.execute(sql, vals)
@@ -146,6 +147,7 @@ def db_info():
 
 
 # ── Schema helpers ────────────────────────────────────────────────────────────
+
 
 def create_table_safe(conn, sql_sqlite, sql_postgres=None):
     """

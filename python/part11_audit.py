@@ -40,17 +40,18 @@ _USE_POSTGRES = bool(_PART11_DB_URL)
 if _USE_POSTGRES:
     import psycopg2
     import psycopg2.extras
+
     _PH = "%s"
 else:
     import sqlite3
+
     _PH = "?"
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
 # SQLite fallback path
 DB_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "..", "reports", "part11_audit.db"
+    os.path.dirname(os.path.abspath(__file__)), "..", "reports", "part11_audit.db"
 )
 SECRET_KEY = secrets.token_hex(32)  # In production: load from secure vault
 HASH_ALG = "sha256"
@@ -352,6 +353,7 @@ def init_db(db_path: str = None):
 
 # ─── Row helper ───────────────────────────────────────────────────────────────
 
+
 def _row_to_dict(cur, row):
     """Convert a DB row to dict regardless of backend."""
     if row is None:
@@ -491,10 +493,22 @@ class AuditTrailEngine:
                 {_PH},{_PH}
             )""",
             (
-                row["audit_id"], row["timestamp_utc"], row["user_id"], row["username"],
-                row["user_role"], row["action"], row["domain"], row["record_id"],
-                row["field_name"], row["old_value"], row["new_value"], row["reason"],
-                row["ip_address"], row["session_id"], row["record_hash"], row["prev_hash"],
+                row["audit_id"],
+                row["timestamp_utc"],
+                row["user_id"],
+                row["username"],
+                row["user_role"],
+                row["action"],
+                row["domain"],
+                row["record_id"],
+                row["field_name"],
+                row["old_value"],
+                row["new_value"],
+                row["reason"],
+                row["ip_address"],
+                row["session_id"],
+                row["record_hash"],
+                row["prev_hash"],
             ),
         )
         self.con.commit()
@@ -550,6 +564,7 @@ class AuditTrailEngine:
     def export_csv(self, output_path: str) -> str:
         """Export full audit trail to CSV (§11.10(b))."""
         import csv
+
         cur = self.con.cursor()
         cur.execute("SELECT * FROM audit_trail ORDER BY timestamp_utc ASC")
         rows = cur.fetchall()
@@ -588,9 +603,7 @@ class ESignatureEngine:
     ) -> dict:
         """Apply an electronic signature. Requires password re-entry per §11.200(b)."""
         cur = self.con.cursor()
-        cur.execute(
-            f"SELECT * FROM users WHERE user_id={_PH} AND active=1", (user_id,)
-        )
+        cur.execute(f"SELECT * FROM users WHERE user_id={_PH} AND active=1", (user_id,))
         u = _fetchone_dict(cur)
         if not u:
             raise ValueError("User not found or inactive")
@@ -605,9 +618,13 @@ class ESignatureEngine:
             )
             self.con.commit()
             self.audit.log(
-                user_id, u["username"], u["role"], AuditAction.LOGIN_FAIL,
+                user_id,
+                u["username"],
+                u["role"],
+                AuditAction.LOGIN_FAIL,
                 reason="E-signature password verification failed",
-                session_id=session_id, ip_address=ip_address,
+                session_id=session_id,
+                ip_address=ip_address,
             )
             raise ValueError("Password verification failed (§11.200(b))")
 
@@ -650,17 +667,35 @@ class ESignatureEngine:
                 {_PH},{_PH},{_PH},{_PH},{_PH}
             )""",
             (
-                sig_id, ts, user_id, u["username"], u["display_name"],
-                u["role"], record_id, domain, reason_str, record_hash,
-                sig_hash, 1, ip_address or "", session_id or "", manifest,
+                sig_id,
+                ts,
+                user_id,
+                u["username"],
+                u["display_name"],
+                u["role"],
+                record_id,
+                domain,
+                reason_str,
+                record_hash,
+                sig_hash,
+                1,
+                ip_address or "",
+                session_id or "",
+                manifest,
             ),
         )
         self.con.commit()
 
         self.audit.log(
-            user_id, u["username"], u["role"], AuditAction.SIGN,
-            domain=domain, record_id=record_id, reason=reason_str,
-            session_id=session_id, ip_address=ip_address,
+            user_id,
+            u["username"],
+            u["role"],
+            AuditAction.SIGN,
+            domain=domain,
+            record_id=record_id,
+            reason=reason_str,
+            session_id=session_id,
+            ip_address=ip_address,
         )
 
         return {
@@ -692,7 +727,8 @@ class ESignatureEngine:
             "reason": sig["reason"],
             "record_match": record_match,
             "warning": (
-                "" if record_match
+                ""
+                if record_match
                 else "RECORD MODIFIED AFTER SIGNING — signature may be invalid"
             ),
         }
@@ -734,8 +770,17 @@ class UserManager:
                 {_PH},{_PH},{_PH},{_PH},{_PH},
                 {_PH},{_PH},0,0,NULL,{_PH},{_PH},1
             )""",
-            (user_id, username, display_name, role_str, email,
-             pw_hash, pw_salt, ts, created_by),
+            (
+                user_id,
+                username,
+                display_name,
+                role_str,
+                email,
+                pw_hash,
+                pw_salt,
+                ts,
+                created_by,
+            ),
         )
         cur.execute(
             f"INSERT INTO pw_history (user_id, pw_hash, changed_at) VALUES ({_PH},{_PH},{_PH})",
@@ -744,7 +789,10 @@ class UserManager:
         self.con.commit()
 
         self.audit.log(
-            created_by, created_by, "ADMIN", AuditAction.CREATE,
+            created_by,
+            created_by,
+            "ADMIN",
+            AuditAction.CREATE,
             record_id=user_id,
             new_value=f"username={username}, role={role_str}",
             reason="User account created",
@@ -770,24 +818,31 @@ class UserManager:
                 f"SELECT failed_attempts FROM users WHERE user_id={_PH}", (uid,)
             )
             row = cur2.fetchone()
-            attempts = (row[0] if not isinstance(row, dict) else row["failed_attempts"]) + 1
+            attempts = (
+                row[0] if not isinstance(row, dict) else row["failed_attempts"]
+            ) + 1
             cur2.execute(
                 f"UPDATE users SET failed_attempts={_PH} WHERE user_id={_PH}",
                 (attempts, uid),
             )
             if attempts >= MAX_LOGIN_ATTEMPTS:
-                cur2.execute(
-                    f"UPDATE users SET locked=1 WHERE user_id={_PH}", (uid,)
-                )
+                cur2.execute(f"UPDATE users SET locked=1 WHERE user_id={_PH}", (uid,))
                 self.audit.log(
-                    uid, uname, role, AuditAction.ACCOUNT_LOCK,
+                    uid,
+                    uname,
+                    role,
+                    AuditAction.ACCOUNT_LOCK,
                     reason=f"Locked after {attempts} failed attempts",
                     ip_address=ip_address,
                 )
             self.con.commit()
             self.audit.log(
-                uid, uname, role, AuditAction.LOGIN_FAIL,
-                reason="Invalid password", ip_address=ip_address,
+                uid,
+                uname,
+                role,
+                AuditAction.LOGIN_FAIL,
+                reason="Invalid password",
+                ip_address=ip_address,
             )
 
         if not u:
@@ -803,8 +858,14 @@ class UserManager:
         expires = ts_now.replace(minute=(ts_now.minute + SESSION_TIMEOUT_MIN) % 60)
         cur.execute(
             f"INSERT INTO sessions VALUES ({_PH},{_PH},{_PH},{_PH},{_PH},{_PH},0)",
-            (session_id, u["user_id"], ts_now.isoformat(),
-             expires.isoformat(), ip_address or "", ""),
+            (
+                session_id,
+                u["user_id"],
+                ts_now.isoformat(),
+                expires.isoformat(),
+                ip_address or "",
+                "",
+            ),
         )
         cur.execute(
             f"UPDATE users SET failed_attempts=0, last_login={_PH} WHERE user_id={_PH}",
@@ -813,8 +874,12 @@ class UserManager:
         self.con.commit()
 
         self.audit.log(
-            u["user_id"], u["username"], u["role"], AuditAction.LOGIN,
-            ip_address=ip_address, session_id=session_id,
+            u["user_id"],
+            u["username"],
+            u["role"],
+            AuditAction.LOGIN,
+            ip_address=ip_address,
+            session_id=session_id,
         )
         return {
             "session_id": session_id,
@@ -867,8 +932,12 @@ class UserManager:
         self.con.commit()
 
         self.audit.log(
-            user_id, u["username"], u["role"], AuditAction.PW_CHANGE,
-            reason="User-initiated password change", session_id=session_id,
+            user_id,
+            u["username"],
+            u["role"],
+            AuditAction.PW_CHANGE,
+            reason="User-initiated password change",
+            session_id=session_id,
         )
         return True
 
@@ -905,15 +974,29 @@ class ClinicalRecordManager:
             INSERT INTO clinical_records VALUES (
                 {_PH},{_PH},{_PH},{_PH},{_PH},{_PH},1,{_PH},{_PH},NULL,NULL,{_PH}
             )""",
-            (record_id, subject_id, domain, visit, data_json,
-             RecordStatus.DRAFT.value, ts, user_id, record_hash),
+            (
+                record_id,
+                subject_id,
+                domain,
+                visit,
+                data_json,
+                RecordStatus.DRAFT.value,
+                ts,
+                user_id,
+                record_hash,
+            ),
         )
         self.con.commit()
 
         self.audit.log(
-            user_id, username, role, AuditAction.CREATE,
-            domain=domain, record_id=record_id,
-            new_value=data_json[:200], reason="Initial data entry",
+            user_id,
+            username,
+            role,
+            AuditAction.CREATE,
+            domain=domain,
+            record_id=record_id,
+            new_value=data_json[:200],
+            reason="Initial data entry",
             session_id=session_id,
         )
         return record_id
@@ -961,10 +1044,16 @@ class ClinicalRecordManager:
         self.con.commit()
 
         self.audit.log(
-            user_id, username, role, AuditAction.UPDATE,
-            domain=rec["domain"], record_id=record_id,
-            field_name=field, old_value=str(old_value),
-            new_value=str(new_value), reason=reason,
+            user_id,
+            username,
+            role,
+            AuditAction.UPDATE,
+            domain=rec["domain"],
+            record_id=record_id,
+            field_name=field,
+            old_value=str(old_value),
+            new_value=str(new_value),
+            reason=reason,
             session_id=session_id,
         )
         return True
@@ -1058,22 +1147,34 @@ if __name__ == "__main__":
     # 1. Create users
     print("\n[1] Creating users...")
     admin_id = um.create_user(
-        "admin", "System Admin", Role.ADMIN,
-        "admin@trial.com", "Admin@Trial2024!", "SYSTEM",
+        "admin",
+        "System Admin",
+        Role.ADMIN,
+        "admin@trial.com",
+        "Admin@Trial2024!",
+        "SYSTEM",
     )
     inv_id = um.create_user(
-        "dr_sharma", "Dr. Priya Sharma", Role.INVESTIGATOR,
-        "sharma@site1.com", "Sharma@Trial2024!",
+        "dr_sharma",
+        "Dr. Priya Sharma",
+        Role.INVESTIGATOR,
+        "sharma@site1.com",
+        "Sharma@Trial2024!",
     )
     dm_id = um.create_user(
-        "cdm_raj", "Raj Kumar", Role.DATA_MANAGER,
-        "raj@cro.com", "CdmRaj@Trial2024!",
+        "cdm_raj",
+        "Raj Kumar",
+        Role.DATA_MANAGER,
+        "raj@cro.com",
+        "CdmRaj@Trial2024!",
     )
     print("   ✅ Created: admin, dr_sharma (Investigator), cdm_raj (Data Manager)")
 
     # 2. Authenticate
     print("\n[2] Authenticating users...")
-    session = um.authenticate("dr_sharma", "Sharma@Trial2024!", ip_address="192.168.1.10")
+    session = um.authenticate(
+        "dr_sharma", "Sharma@Trial2024!", ip_address="192.168.1.10"
+    )
     print(f"   ✅ Dr. Sharma logged in — session: {session['session_id'][:16]}...")
 
     fail = um.authenticate("dr_sharma", "WrongPassword!", ip_address="192.168.1.10")
@@ -1089,8 +1190,13 @@ if __name__ == "__main__":
         "AESER": "N",
     }
     rec_id = crm.create_record(
-        "STUDY001-001-001", "AE", "WEEK 4", ae_data,
-        inv_id, "dr_sharma", Role.INVESTIGATOR.value,
+        "STUDY001-001-001",
+        "AE",
+        "WEEK 4",
+        ae_data,
+        inv_id,
+        "dr_sharma",
+        Role.INVESTIGATOR.value,
         session_id=session["session_id"],
     )
     print(f"   ✅ AE record created: {rec_id}")
@@ -1098,18 +1204,24 @@ if __name__ == "__main__":
     # 4. Update record
     print("\n[4] Updating record — full audit trail...")
     crm.update_record(
-        rec_id, "AESEV", "MODERATE",
+        rec_id,
+        "AESEV",
+        "MODERATE",
         reason="Site follow-up: AE worsened on Day 3",
-        user_id=inv_id, username="dr_sharma",
+        user_id=inv_id,
+        username="dr_sharma",
         role=Role.INVESTIGATOR.value,
         session_id=session["session_id"],
     )
     print("   ✅ AESEV updated: MILD → MODERATE (reason recorded)")
 
     crm.update_record(
-        rec_id, "AEENDTC", "2024-02-15",
+        rec_id,
+        "AEENDTC",
+        "2024-02-15",
         reason="AE resolved — end date confirmed by site",
-        user_id=dm_id, username="cdm_raj",
+        user_id=dm_id,
+        username="cdm_raj",
         role=Role.DATA_MANAGER.value,
     )
     print("   ✅ AEENDTC added by CDM: 2024-02-15")
@@ -1118,8 +1230,10 @@ if __name__ == "__main__":
     print("\n[5] Applying electronic signature (§11.50)...")
     current_rec = crm.get_record(rec_id)
     sig = esig.sign_record(
-        user_id=inv_id, password="Sharma@Trial2024!",
-        record_id=rec_id, domain="AE",
+        user_id=inv_id,
+        password="Sharma@Trial2024!",
+        record_id=rec_id,
+        domain="AE",
         reason=SignatureReason.MEDICAL_REVIEW,
         record_data=current_rec["data"],
         session_id=session["session_id"],
@@ -1160,7 +1274,9 @@ if __name__ == "__main__":
     # 9. Export
     csv_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        "..", "reports", "audit_trail_export.csv"
+        "..",
+        "reports",
+        "audit_trail_export.csv",
     )
     aud.export_csv(csv_path)
     print(f"\n[9] Audit trail exported → {csv_path}")
@@ -1169,7 +1285,9 @@ if __name__ == "__main__":
     report = generate_compliance_report()
     report_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        "..", "reports", "part11_compliance_report.json"
+        "..",
+        "reports",
+        "part11_compliance_report.json",
     )
     os.makedirs(os.path.dirname(report_path), exist_ok=True)
     with open(report_path, "w") as f:

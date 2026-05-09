@@ -5,7 +5,6 @@ Save in: Mini_EDC_Project/python/randomisation.py
 Run with: python randomisation.py
 """
 
-
 import random
 import hashlib
 import pandas as pd
@@ -99,9 +98,11 @@ def generate_randomisation_list(seed: int = 42, subjects_per_site: int = 20):
 
     # Get sites from DB
     sites = conn.execute("SELECT DISTINCT siteid FROM subjects").fetchall()
-    sites = [
-        (s["siteid"] if isinstance(s, dict) else s[0]) for s in sites
-    ] if sites else ["SITE01", "SITE02", "SITE03"]
+    sites = (
+        [(s["siteid"] if isinstance(s, dict) else s[0]) for s in sites]
+        if sites
+        else ["SITE01", "SITE02", "SITE03"]
+    )
 
     # Build block pattern from allocation ratio
     block_pattern = []
@@ -163,8 +164,8 @@ def randomise_subject(usubjid: str, siteid: str, randomised_by: str = "DM"):
     ).fetchone()
     if existing:
         conn.close()
-        rc  = existing["rand_code"] if isinstance(existing, dict) else existing[0]
-        ac  = existing["arm_code"]  if isinstance(existing, dict) else existing[1]
+        rc = existing["rand_code"] if isinstance(existing, dict) else existing[0]
+        ac = existing["arm_code"] if isinstance(existing, dict) else existing[1]
         return False, ac, TREATMENT_ARMS.get(ac, ""), rc
 
     # Get next available slot for this site
@@ -181,9 +182,9 @@ def randomise_subject(usubjid: str, siteid: str, randomised_by: str = "DM"):
         conn.close()
         return False, None, "No randomisation slots available for this site", None
 
-    list_id    = slot["list_id"]    if isinstance(slot, dict) else slot[0]
-    rand_number= slot["rand_number"]if isinstance(slot, dict) else slot[1]
-    arm_code   = slot["arm_code"]   if isinstance(slot, dict) else slot[2]
+    list_id = slot["list_id"] if isinstance(slot, dict) else slot[0]
+    rand_number = slot["rand_number"] if isinstance(slot, dict) else slot[1]
+    arm_code = slot["arm_code"] if isinstance(slot, dict) else slot[2]
     arm_desc = TREATMENT_ARMS.get(arm_code, arm_code)
     rand_code = f"RAND-{rand_number:05d}"
     seed_hash = hashlib.md5(
@@ -254,7 +255,7 @@ def randomise_all_subjects():
     randomised = 0
     for row in subjects:
         usubjid = row["usubjid"] if isinstance(row, dict) else row[0]
-        siteid  = row["siteid"]  if isinstance(row, dict) else row[1]
+        siteid = row["siteid"] if isinstance(row, dict) else row[1]
         ok, arm, desc, code = randomise_subject(usubjid, siteid or "SITE01")
         if ok:
             randomised += 1
@@ -306,9 +307,9 @@ def print_randomisation_report():
     if by_arm:
         print("\n  Treatment Arm Balance:")
         for row in by_arm:
-            arm_code = row["arm_code"]        if isinstance(row, dict) else row[0]
+            arm_code = row["arm_code"] if isinstance(row, dict) else row[0]
             arm_desc = row["arm_description"] if isinstance(row, dict) else row[1]
-            n        = row["n"]               if isinstance(row, dict) else row[2]
+            n = row["n"] if isinstance(row, dict) else row[2]
             bar = "█" * n + "░" * max(0, 10 - n)
             print(f"  {arm_code} ({arm_desc:<18}) [{bar}] n={n}")
 

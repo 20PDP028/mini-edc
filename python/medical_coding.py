@@ -215,8 +215,16 @@ def code_all_adverse_events():
                     meddra_code=EXCLUDED.meddra_code, match_type=EXCLUDED.match_type,
                     coded_at=EXCLUDED.coded_at
             """,
-                (ae_id, usubjid, aeterm, pt, soc, code, match_type,
-                 datetime.now().isoformat()),
+                (
+                    ae_id,
+                    usubjid,
+                    aeterm,
+                    pt,
+                    soc,
+                    code,
+                    match_type,
+                    datetime.now().isoformat(),
+                ),
             )
         else:
             conn.execute(
@@ -225,8 +233,16 @@ def code_all_adverse_events():
                 (ae_id, usubjid, raw_term, meddra_pt, meddra_soc, meddra_code, match_type, coded_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-                (ae_id, usubjid, aeterm, pt, soc, code, match_type,
-                 datetime.now().isoformat()),
+                (
+                    ae_id,
+                    usubjid,
+                    aeterm,
+                    pt,
+                    soc,
+                    code,
+                    match_type,
+                    datetime.now().isoformat(),
+                ),
             )
 
         results.append(
