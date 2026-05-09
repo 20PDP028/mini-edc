@@ -1,15 +1,10 @@
 FROM python:3.11-slim
-
 WORKDIR /app
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY dashboard.py .
-COPY auth_manager.py .
-COPY db_connection.py .
-COPY pdf_report.py .
-
+COPY python/dashboard.py .
+COPY python/auth_manager.py .
+COPY python/db_connection.py .
+COPY python/pdf_report.py .
 EXPOSE 8501
-
 CMD ["sh", "-c", "streamlit run dashboard.py --server.port $PORT --server.address 0.0.0.0 --server.headless true"]
