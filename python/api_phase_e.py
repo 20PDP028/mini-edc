@@ -10,6 +10,7 @@ import hashlib
 import hmac
 import uuid
 import os
+from enum import Enum
 
 # ── DB connection ─────────────────────────────────────────────────────────────
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
@@ -154,7 +155,7 @@ USERS = {
 }
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
-from enum import Enum
+
 
 class QueryStatusEnum(str, Enum):
     open     = "OPEN"
@@ -162,8 +163,13 @@ class QueryStatusEnum(str, Enum):
     closed   = "CLOSED"
 
 class DomainEnum(str, Enum):
-    DM = "DM"; AE = "AE"; VS = "VS"
-    LB = "LB"; EX = "EX"; SV = "SV"; DS = "DS"
+    DM = "DM"
+    AE = "AE"
+    VS = "VS"
+    LB = "LB"
+    EX = "EX"
+    SV = "SV"
+    DS = "DS"
 
 # ── Pydantic models ───────────────────────────────────────────────────────────
 
@@ -172,7 +178,10 @@ class LoginRequest(BaseModel):
     password: str = Field(..., example="Admin@1234")
 
 class LoginResponse(BaseModel):
-    token: str; username: str; role: str; message: str
+    token: str
+    username: str
+    role: str
+    message: str
 
 class SubjectIn(BaseModel):
     usubjid:      str  = Field(..., example="STUDY001-001")
@@ -184,30 +193,47 @@ class SubjectIn(BaseModel):
     site_id:      str  = Field(..., example="SITE-01")
 
 class SubjectOut(BaseModel):
-    usubjid: str; age: int; sex: str; race: str
-    country: str; consent_date: str; site_id: str
-    status: str; enrolled_at: str
+    usubjid: str
+    age: int
+    sex: str
+    race: str
+    country: str
+    consent_date: str
+    site_id: str
+    status: str
+    enrolled_at: str
 
 class ValidationRequest(BaseModel):
     domain:  DomainEnum = Field(..., example="DM")
     records: List[dict]
 
 class FindingOut(BaseModel):
-    rule_id: str; domain: str; usubjid: str
-    severity: str; message: str; field: Optional[str]
+    rule_id: str
+    domain: str
+    usubjid: str
+    severity: str
+    message: str
+    field: Optional[str]
 
 class ValidationResponse(BaseModel):
-    domain: str; records_checked: int
-    findings_count: int; findings: List[FindingOut]
+    domain: str
+    records_checked: int
+    findings_count: int
+    findings: List[FindingOut]
 
 class SDTMRequest(BaseModel):
     domain:   DomainEnum = Field(..., example="DM")
     subjects: Optional[List[str]] = None
 
 class AuditEntry(BaseModel):
-    entry_id: str; timestamp: str; user: str
-    action: str; domain: str; usubjid: Optional[str]
-    details: str; chain_hash: str
+    entry_id: str
+    timestamp: str
+    user: str
+    action: str
+    domain: str
+    usubjid: Optional[str]
+    details: str
+    chain_hash: str
 
 class QueryIn(BaseModel):
     usubjid: str = Field(..., example="STUDY001-001")
@@ -217,9 +243,17 @@ class QueryIn(BaseModel):
     message: str = Field(..., example="Value seems implausibly high.")
 
 class QueryOut(BaseModel):
-    query_id: str; usubjid: str; domain: str; field: str
-    visit: str; message: str; status: str; raised_by: str
-    raised_at: str; response: Optional[str]; closed_at: Optional[str]
+    query_id: str
+    usubjid: str
+    domain: str
+    field: str
+    visit: str
+    message: str
+    status: str
+    raised_by: str
+    raised_at: str
+    response: Optional[str]
+    closed_at: Optional[str]
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -293,11 +327,13 @@ def validate_domain(domain: str, records: list) -> list:
                         add("DM004", uid, "ERROR", f"AGE {age} outside plausible range", "AGE")
                 except ValueError:
                     add("DM004", uid, "ERROR", "AGE is non-numeric", "AGE")
-            rfst = r.get("RFSTDTC",""); consent = r.get("DMDTC","")
+            rfst = r.get("RFSTDTC","")
+            consent = r.get("DMDTC","")
             if rfst and consent and rfst < consent:
                 add("DM005", uid, "CRITICAL", "First dose before consent date — protocol violation", "RFSTDTC")
         elif domain == "AE":
-            aestdt = r.get("AESTDTC",""); aeendt = r.get("AEENDTC","")
+            aestdt = r.get("AESTDTC","")
+            aeendt = r.get("AEENDTC","")
             if aestdt and aeendt and aeendt < aestdt:
                 add("AE001", uid, "ERROR", "AE end date before start date", "AEENDTC")
             sev = r.get("AESEV","").upper()
@@ -311,7 +347,8 @@ def validate_domain(domain: str, records: list) -> list:
             if str(r.get("AESDTH","")).upper() == "Y" and r.get("AEOUT","").upper() != "FATAL":
                 add("AE005", uid, "ERROR", "AESDTH=Y but AEOUT is not FATAL", "AEOUT")
         elif domain == "VS":
-            sys_bp = r.get("VSORRES_SYSBP"); dia_bp = r.get("VSORRES_DIABP")
+            sys_bp = r.get("VSORRES_SYSBP")
+            dia_bp = r.get("VSORRES_DIABP")
             if sys_bp and dia_bp:
                 try:
                     if float(sys_bp) <= float(dia_bp):
@@ -341,7 +378,8 @@ def validate_domain(domain: str, records: list) -> list:
             except ValueError:
                 pass
         elif domain == "EX":
-            exst = r.get("EXSTDTC",""); consent = r.get("DMDTC","")
+            exst = r.get("EXSTDTC","")
+            consent = r.get("DMDTC","")
             if exst and consent and exst < consent:
                 add("EX001", uid, "CRITICAL", "Dose administered before consent", "EXSTDTC")
             dose = r.get("EXDOSE")
@@ -357,7 +395,9 @@ def validate_domain(domain: str, records: list) -> list:
 
 def generate_sdtm_domain(domain: str, subject_ids: Optional[List[str]]) -> list:
     subs = subject_ids or ["STUDY001-001","STUDY001-002","STUDY001-003"]
-    rows = []; studyid = "STUDY001"; d = domain.upper()
+    rows = []
+    studyid = "STUDY001"
+    d = domain.upper()
     for i, uid in enumerate(subs):
         if d == "DM":
             rows.append({"STUDYID":studyid,"DOMAIN":"DM","USUBJID":uid,"SUBJID":uid.split("-")[-1],
@@ -437,9 +477,11 @@ def list_subjects(
     sql = "SELECT * FROM edc_subjects WHERE 1=1"
     params = []
     if site_id:
-        sql += f" AND site_id={PH}"; params.append(site_id)
+        sql += f" AND site_id={PH}"
+        params.append(site_id)
     if status:
-        sql += f" AND status={PH}"; params.append(status)
+        sql += f" AND status={PH}"
+        params.append(status)
     return db_exec(sql, tuple(params), fetchall=True) or []
 
 @app.get("/subjects/{usubjid}", response_model=SubjectOut, tags=["subjects"], summary="Get a single subject by USUBJID")
@@ -488,9 +530,11 @@ def list_queries(
     sql = "SELECT * FROM edc_queries WHERE 1=1"
     params = []
     if status:
-        sql += f" AND status={PH}"; params.append(status.value)
+        sql += f" AND status={PH}"
+        params.append(status.value)
     if usubjid:
-        sql += f" AND usubjid={PH}"; params.append(usubjid)
+        sql += f" AND usubjid={PH}"
+        params.append(usubjid)
     return db_exec(sql, tuple(params), fetchall=True) or []
 
 @app.patch("/queries/{query_id}/respond", response_model=QueryOut, tags=["queries"], summary="Respond to an open query")
@@ -506,7 +550,8 @@ def respond_to_query(
         raise HTTPException(400, detail="Query is not OPEN")
     db_exec(f"UPDATE edc_queries SET status='ANSWERED', response={PH} WHERE query_id={PH}", (response, query_id), commit=True)
     log_audit(current_user["username"], "QUERY_ANSWERED", q["domain"], q["usubjid"], f"Query {query_id} answered")
-    q["status"] = "ANSWERED"; q["response"] = response
+    q["status"] = "ANSWERED"
+    q["response"] = response
     return q
 
 @app.patch("/queries/{query_id}/close", response_model=QueryOut, tags=["queries"], summary="Close an answered query")
@@ -519,7 +564,8 @@ def close_query(query_id: str, current_user: dict = Depends(get_current_user)):
     ts = datetime.utcnow().isoformat() + "Z"
     db_exec(f"UPDATE edc_queries SET status='CLOSED', closed_at={PH} WHERE query_id={PH}", (ts, query_id), commit=True)
     log_audit(current_user["username"], "QUERY_CLOSED", q["domain"], q["usubjid"], f"Query {query_id} closed")
-    q["status"] = "CLOSED"; q["closed_at"] = ts
+    q["status"] = "CLOSED"
+    q["closed_at"] = ts
     return q
 
 # ── Routes: Validation ────────────────────────────────────────────────────────
@@ -588,12 +634,16 @@ def get_audit_trail(
     sql = "SELECT entry_id, timestamp, usr as user, action, domain, usubjid, details, chain_hash FROM edc_audit WHERE 1=1"
     params = []
     if user:
-        sql += f" AND usr={PH}"; params.append(user)
+        sql += f" AND usr={PH}"
+        params.append(user)
     if action:
-        sql += f" AND action={PH}"; params.append(action)
+        sql += f" AND action={PH}"
+        params.append(action)
     if domain:
-        sql += f" AND domain={PH}"; params.append(domain)
-    sql += f" ORDER BY timestamp DESC LIMIT {PH}"; params.append(limit)
+        sql += f" AND domain={PH}"
+        params.append(domain)
+    sql += f" ORDER BY timestamp DESC LIMIT {PH}"
+    params.append(limit)
     return db_exec(sql, tuple(params), fetchall=True) or []
 
 @app.get("/audit/integrity", tags=["audit"], summary="Verify audit chain integrity")
@@ -601,7 +651,8 @@ def verify_audit_integrity(current_user: dict = Depends(get_current_user)):
     rows = db_exec("SELECT usr, action, domain, usubjid, details, chain_hash FROM edc_audit ORDER BY timestamp ASC", fetchall=True)
     if not rows:
         return {"status": "EMPTY", "entries_checked": 0, "broken_links": 0}
-    broken = 0; prev_hash = "GENESIS"
+    broken = 0
+    prev_hash = "GENESIS"
     for entry in rows:
         raw = f"{entry['usr']}|{entry['action']}|{entry['domain']}|{entry['usubjid']}|{entry['details']}|{prev_hash}"
         expected = hmac.new(SECRET, raw.encode(), hashlib.sha256).hexdigest()
