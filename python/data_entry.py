@@ -5,94 +5,159 @@ Site Staff only — enters Demographics, Vitals, Labs, Visit/Medication data
 """
 
 import streamlit as st
-import sqlite3
 import os
 from datetime import datetime, date
 
-BASE    = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
+from db_connection import get_conn, is_postgres
 
 
 # ── DB Setup ──────────────────────────────────────────────────────────────────
 def init_data_entry_tables():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     cur  = conn.cursor()
 
-    cur.executescript("""
-        CREATE TABLE IF NOT EXISTS demographics (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            usubjid     TEXT NOT NULL,
-            siteid      TEXT NOT NULL,
-            age         INTEGER,
-            sex         TEXT,
-            race        TEXT,
-            weight_kg   REAL,
-            height_cm   REAL,
-            dob         TEXT,
-            entered_by  TEXT,
-            entered_at  TEXT
-        );
+    if is_postgres():
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS demographics (
+                id          SERIAL PRIMARY KEY,
+                usubjid     TEXT NOT NULL,
+                siteid      TEXT NOT NULL,
+                age         INTEGER,
+                sex         TEXT,
+                race        TEXT,
+                weight_kg   REAL,
+                height_cm   REAL,
+                dob         TEXT,
+                entered_by  TEXT,
+                entered_at  TEXT
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS vitals (
+                id           SERIAL PRIMARY KEY,
+                usubjid      TEXT NOT NULL,
+                visit        TEXT NOT NULL,
+                visit_date   TEXT,
+                bp_systolic  INTEGER,
+                bp_diastolic INTEGER,
+                heart_rate   INTEGER,
+                temperature  REAL,
+                spo2         REAL,
+                resp_rate    INTEGER,
+                entered_by   TEXT,
+                entered_at   TEXT
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS lab_results (
+                id          SERIAL PRIMARY KEY,
+                usubjid     TEXT NOT NULL,
+                visit       TEXT NOT NULL,
+                visit_date  TEXT,
+                test_name   TEXT,
+                result      REAL,
+                unit        TEXT,
+                normal_low  REAL,
+                normal_high REAL,
+                flag        TEXT,
+                entered_by  TEXT,
+                entered_at  TEXT
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS visit_medications (
+                id          SERIAL PRIMARY KEY,
+                usubjid     TEXT NOT NULL,
+                visit       TEXT NOT NULL,
+                visit_date  TEXT,
+                drug_name   TEXT,
+                dose        REAL,
+                dose_unit   TEXT,
+                route       TEXT,
+                frequency   TEXT,
+                start_date  TEXT,
+                end_date    TEXT,
+                compliance  TEXT,
+                notes       TEXT,
+                entered_by  TEXT,
+                entered_at  TEXT
+            )
+        """)
+    else:
+        cur.executescript("""
+            CREATE TABLE IF NOT EXISTS demographics (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                usubjid     TEXT NOT NULL,
+                siteid      TEXT NOT NULL,
+                age         INTEGER,
+                sex         TEXT,
+                race        TEXT,
+                weight_kg   REAL,
+                height_cm   REAL,
+                dob         TEXT,
+                entered_by  TEXT,
+                entered_at  TEXT
+            );
 
-        CREATE TABLE IF NOT EXISTS vitals (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            usubjid     TEXT NOT NULL,
-            visit       TEXT NOT NULL,
-            visit_date  TEXT,
-            bp_systolic INTEGER,
-            bp_diastolic INTEGER,
-            heart_rate  INTEGER,
-            temperature REAL,
-            spo2        REAL,
-            resp_rate   INTEGER,
-            entered_by  TEXT,
-            entered_at  TEXT
-        );
+            CREATE TABLE IF NOT EXISTS vitals (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                usubjid     TEXT NOT NULL,
+                visit       TEXT NOT NULL,
+                visit_date  TEXT,
+                bp_systolic INTEGER,
+                bp_diastolic INTEGER,
+                heart_rate  INTEGER,
+                temperature REAL,
+                spo2        REAL,
+                resp_rate   INTEGER,
+                entered_by  TEXT,
+                entered_at  TEXT
+            );
 
-        CREATE TABLE IF NOT EXISTS lab_results (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            usubjid     TEXT NOT NULL,
-            visit       TEXT NOT NULL,
-            visit_date  TEXT,
-            test_name   TEXT,
-            result      REAL,
-            unit        TEXT,
-            normal_low  REAL,
-            normal_high REAL,
-            flag        TEXT,
-            entered_by  TEXT,
-            entered_at  TEXT
-        );
+            CREATE TABLE IF NOT EXISTS lab_results (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                usubjid     TEXT NOT NULL,
+                visit       TEXT NOT NULL,
+                visit_date  TEXT,
+                test_name   TEXT,
+                result      REAL,
+                unit        TEXT,
+                normal_low  REAL,
+                normal_high REAL,
+                flag        TEXT,
+                entered_by  TEXT,
+                entered_at  TEXT
+            );
 
-        CREATE TABLE IF NOT EXISTS visit_medications (
-            id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            usubjid      TEXT NOT NULL,
-            visit        TEXT NOT NULL,
-            visit_date   TEXT,
-            drug_name    TEXT,
-            dose         REAL,
-            dose_unit    TEXT,
-            route        TEXT,
-            frequency    TEXT,
-            start_date   TEXT,
-            end_date     TEXT,
-            compliance   TEXT,
-            notes        TEXT,
-            entered_by   TEXT,
-            entered_at   TEXT
-        );
-    """)
+            CREATE TABLE IF NOT EXISTS visit_medications (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                usubjid      TEXT NOT NULL,
+                visit        TEXT NOT NULL,
+                visit_date   TEXT,
+                drug_name    TEXT,
+                dose         REAL,
+                dose_unit    TEXT,
+                route        TEXT,
+                frequency    TEXT,
+                start_date   TEXT,
+                end_date     TEXT,
+                compliance   TEXT,
+                notes        TEXT,
+                entered_by   TEXT,
+                entered_at   TEXT
+            );
+        """)
 
     conn.commit()
     conn.close()
 
 
 def get_subjects(siteid):
-    if not os.path.exists(DB_PATH):
-        return []
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_conn()
         cur  = conn.cursor()
-        cur.execute("SELECT usubjid FROM subjects WHERE siteid = ? ORDER BY usubjid", (siteid,))
+        ph   = "%s" if is_postgres() else "?"
+        cur.execute(f"SELECT usubjid FROM subjects WHERE siteid = {ph} ORDER BY usubjid", (siteid,))
         rows = [r[0] for r in cur.fetchall()]
         conn.close()
         return rows
@@ -101,23 +166,23 @@ def get_subjects(siteid):
 
 
 def save_record(table, data):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     cur  = conn.cursor()
+    ph   = "%s" if is_postgres() else "?"
     cols = ", ".join(data.keys())
-    plch = ", ".join(["?"] * len(data))
+    plch = ", ".join([ph] * len(data))
     cur.execute(f"INSERT INTO {table} ({cols}) VALUES ({plch})", list(data.values()))
     conn.commit()
     conn.close()
 
 
 def log_audit(action, detail, username):
-    if not os.path.exists(DB_PATH):
-        return
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_conn()
         cur  = conn.cursor()
+        ph   = "%s" if is_postgres() else "?"
         cur.execute(
-            "INSERT INTO audit_trail (action, detail, username, timestamp) VALUES (?,?,?,?)",
+            f"INSERT INTO audit_trail (action, detail, username, timestamp) VALUES ({ph},{ph},{ph},{ph})",
             (action, detail, username, datetime.now().isoformat()),
         )
         conn.commit()

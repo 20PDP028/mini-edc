@@ -5,12 +5,12 @@ Run with: python -m streamlit run dashboard.py
 """
 
 import streamlit as st
-import sqlite3
 import pandas as pd
 import os
 import sys
 from datetime import datetime
 from data_entry import render_data_entry
+from db_connection import get_conn, is_postgres
 
 st.set_page_config(
     page_title="Mini EDC | CDM System",
@@ -44,8 +44,18 @@ html, body, [class*="css"] { font-family: 'IBM Plex Sans', sans-serif; }
 )
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 sys.path.insert(0, BASE)
+
+
+def _db_available():
+    """Check if database is reachable."""
+    try:
+        conn = get_conn()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
 
 try:
     from auth_manager import (
@@ -57,7 +67,7 @@ try:
         PERMISSIONS,
     )
 
-    if os.path.exists(DB_PATH):
+    if _db_available():
         init_auth_tables()
     AUTH_AVAILABLE = True
 except ImportError:
@@ -69,16 +79,15 @@ if "logged_in" not in st.session_state:
 
 # ── Helper ────────────────────────────────────────────────────
 def load_df(table):
-    if not os.path.exists(DB_PATH):
-        return pd.DataFrame()
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_conn()
         df = pd.read_sql_query(f"SELECT * FROM {table}", conn)
         conn.close()
         return df
     except Exception as e:
         st.error(f"Error loading data from {table}: {e}")
         return pd.DataFrame()
+
 # ══════════════════════════════════════════════════════════════
 # LOGIN
 # ══════════════════════════════════════════════════════════════
@@ -155,7 +164,7 @@ if not st.session_state.logged_in:
                 "ADMIN": "admin123",
             }
 
-            if AUTH_AVAILABLE and os.path.exists(DB_PATH):
+            if AUTH_AVAILABLE and _db_available():
                 ok, user_data, token = login(uid.strip(), pwd)
                 if ok:
                     st.session_state.logged_in = True
@@ -229,7 +238,7 @@ with st.sidebar:
         st.session_state.user = None
         st.rerun()
 
-    if os.path.exists(DB_PATH):
+    if _db_available():
         st.success("✅ DB connected")
     else:
         st.warning("⚠️ Demo mode")
@@ -389,14 +398,15 @@ elif page == "🔍 Query Management":
             )
 
         if st.button("✅ Update Query", type="primary"):
-            if os.path.exists(DB_PATH):
-                conn2 = sqlite3.connect(DB_PATH)
+            if _db_available():
+                ph = "%s" if is_postgres() else "?"
+                conn2 = get_conn()
                 conn2.execute(
-                    "UPDATE queries SET status=?,resolved_at=? WHERE query_id=?",
+                    f"UPDATE queries SET status={ph},resolved_at={ph} WHERE query_id={ph}",
                     (new_status, datetime.now().isoformat(), sel_q),
                 )
                 conn2.execute(
-                    "INSERT INTO audit_trail (event_time,action,table_name,record_id,field_name,new_value,performed_by) VALUES (?,?,?,?,?,?,?)",
+                    f"INSERT INTO audit_trail (event_time,action,table_name,record_id,field_name,new_value,performed_by) VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph})",
                     (
                         datetime.now().isoformat(),
                         f"QUERY_{new_status.upper()}",
@@ -484,7 +494,7 @@ elif page == "✍️ E-Signatures":
             )
             sig_pwd2 = st.text_input("Your Password", type="password")
         if st.button("✍️ Apply E-Signature", type="primary"):
-            if AUTH_AVAILABLE and os.path.exists(DB_PATH):
+            if AUTH_AVAILABLE and _db_available():
                 ok, msg = esign(
                     user["user_id"], sig_pwd2, sig_action, sig_record, sig_meaning
                 )
@@ -495,7 +505,7 @@ elif page == "✍️ E-Signatures":
     st.markdown(
         "<div class='section-header'>Signature Log</div>", unsafe_allow_html=True
     )
-    if AUTH_AVAILABLE and os.path.exists(DB_PATH):
+    if AUTH_AVAILABLE and _db_available():
         sigs = get_signatures()
         if sigs:
             for s in sigs:
@@ -560,7 +570,7 @@ elif page == "👥 User Management":
         "<h1 style='font-family:IBM Plex Mono,monospace;font-size:1.6rem;color:#E8EDF5;'>User Management</h1>",
         unsafe_allow_html=True,
     )
-    if AUTH_AVAILABLE and os.path.exists(DB_PATH):
+    if AUTH_AVAILABLE and _db_available():
         rows = get_all_users()
         st.dataframe(
             pd.DataFrame(
