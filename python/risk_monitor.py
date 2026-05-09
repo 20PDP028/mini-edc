@@ -6,12 +6,11 @@ Save in: Mini_EDC_Project/python/risk_monitor.py
 Run: python risk_monitor.py
 """
 
-import sqlite3
 import os
 import json
 from datetime import datetime
+from db_connection import get_conn, is_postgres
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "sql", "cdm_phase3.db")
 REPORT_DIR = os.path.join(os.path.dirname(__file__), "..", "reports")
 os.makedirs(REPORT_DIR, exist_ok=True)
 
@@ -29,36 +28,44 @@ MAX_SCORE = 100
 
 
 def get_db():
-    if not os.path.exists(DB_PATH):
-        print(f"[RISK] Database not found: {DB_PATH}")
-        print("[RISK] Run main_phase3.py first to create the database.")
-        return None
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return get_conn()
+
+
+def _fetchone(cursor_result):
+    """Fetch a single scalar value from a fetchone() result."""
+    row = cursor_result.fetchone()
+    if row is None:
+        return 0
+    # psycopg2 returns tuples; sqlite3 with Row factory returns Row objects
+    return row[0]
 
 
 def get_sites():
     conn = get_db()
-    if not conn:
-        return []
-    with conn:
-        rows = conn.execute(
-            "SELECT DISTINCT siteid FROM subjects ORDER BY siteid"
-        ).fetchall()
-    return [r["siteid"] for r in rows]
+    rows = conn.execute(
+        "SELECT DISTINCT siteid FROM subjects ORDER BY siteid"
+    ).fetchall()
+    conn.close()
+    return [r[0] for r in rows]
 
 
 def score_site(conn, siteid):
     """Compute risk score for a single site. Returns score dict."""
+    ph = "%s" if is_postgres() else "?"
     score = 0
     factors = []
 
+    # Stale query age expression — differs between Postgres and SQLite
+    if is_postgres():
+        stale_expr = "EXTRACT(EPOCH FROM (NOW() - created_at::timestamp)) / 86400 > 7"
+    else:
+        stale_expr = "julianday('now') - julianday(created_at) > 7"
+
     # 1. Critical open queries
-    crit = conn.execute(
-        "SELECT COUNT(*) FROM queries WHERE siteid=? AND severity='Critical' AND status='Open'",
+    crit = _fetchone(conn.execute(
+        f"SELECT COUNT(*) FROM queries WHERE siteid={ph} AND severity='Critical' AND status='Open'",
         (siteid,),
-    ).fetchone()[0]
+    ))
     pts = min(crit * WEIGHTS["critical_queries"], 40)
     score += pts
     if crit:
@@ -72,14 +79,14 @@ def score_site(conn, siteid):
         )
 
     # 2. SAE pending report
-    sae = conn.execute(
-        """
+    sae = _fetchone(conn.execute(
+        f"""
         SELECT COUNT(*) FROM adverse_events ae
         JOIN subjects s USING(usubjid)
-        WHERE s.siteid=? AND ae.aeser='Y' AND ae.report_flag='PENDING'
+        WHERE s.siteid={ph} AND ae.aeser='Y' AND ae.report_flag='PENDING'
     """,
         (siteid,),
-    ).fetchone()[0]
+    ))
     pts = min(sae * WEIGHTS["sae_pending"], 40)
     score += pts
     if sae:
@@ -93,10 +100,10 @@ def score_site(conn, siteid):
         )
 
     # 3. Major open queries
-    major = conn.execute(
-        "SELECT COUNT(*) FROM queries WHERE siteid=? AND severity='Major' AND status='Open'",
+    major = _fetchone(conn.execute(
+        f"SELECT COUNT(*) FROM queries WHERE siteid={ph} AND severity='Major' AND status='Open'",
         (siteid,),
-    ).fetchone()[0]
+    ))
     pts = min(major * WEIGHTS["major_queries"], 20)
     score += pts
     if major:
@@ -110,14 +117,14 @@ def score_site(conn, siteid):
         )
 
     # 4. Stale queries (7+ days)
-    stale = conn.execute(
-        """
+    stale = _fetchone(conn.execute(
+        f"""
         SELECT COUNT(*) FROM queries
-        WHERE siteid=? AND status='Open'
-          AND julianday('now') - julianday(created_at) > 7
+        WHERE siteid={ph} AND status='Open'
+          AND {stale_expr}
     """,
         (siteid,),
-    ).fetchone()[0]
+    ))
     pts = min(stale * WEIGHTS["stale_queries_7d"], 20)
     score += pts
     if stale:
@@ -131,12 +138,12 @@ def score_site(conn, siteid):
         )
 
     # 5. Unanswered rate
-    total_q = conn.execute(
-        "SELECT COUNT(*) FROM queries WHERE siteid=?", (siteid,)
-    ).fetchone()[0]
-    open_q = conn.execute(
-        "SELECT COUNT(*) FROM queries WHERE siteid=? AND status='Open'", (siteid,)
-    ).fetchone()[0]
+    total_q = _fetchone(conn.execute(
+        f"SELECT COUNT(*) FROM queries WHERE siteid={ph}", (siteid,)
+    ))
+    open_q = _fetchone(conn.execute(
+        f"SELECT COUNT(*) FROM queries WHERE siteid={ph} AND status='Open'", (siteid,)
+    ))
     unans_rate = (open_q / total_q * 100) if total_q else 0
     pts = min(int(unans_rate * WEIGHTS["unanswered_rate"] / 100), 20)
     score += pts
@@ -168,9 +175,9 @@ def score_site(conn, siteid):
         icon = "🟢"
 
     # Site stats
-    subjects = conn.execute(
-        "SELECT COUNT(*) FROM subjects WHERE siteid=?", (siteid,)
-    ).fetchone()[0]
+    subjects = _fetchone(conn.execute(
+        f"SELECT COUNT(*) FROM subjects WHERE siteid={ph}", (siteid,)
+    ))
 
     return {
         "siteid": siteid,
@@ -203,9 +210,9 @@ def run_risk_assessment():
         return []
 
     results = []
-    with conn:
-        for siteid in sites:
-            results.append(score_site(conn, siteid))
+    for siteid in sites:
+        results.append(score_site(conn, siteid))
+    conn.close()
 
     # Sort by score descending
     results.sort(key=lambda x: x["score"], reverse=True)

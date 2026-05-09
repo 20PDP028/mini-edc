@@ -8,7 +8,7 @@ Test: http://localhost:5000/api/queries
 """
 
 from flask import Flask, request, jsonify, g
-import sqlite3
+from db_connection import get_conn, is_postgres
 import os
 from datetime import datetime
 from functools import wraps
@@ -39,11 +39,10 @@ def require_api_key(f):
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
+    conn = get_conn()
+    if not is_postgres():
+        conn.execute("PRAGMA foreign_keys = ON")  # SQLite only
     return conn
-
 
 def rows_to_list(rows):
     return [dict(r) for r in rows]

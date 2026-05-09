@@ -5,7 +5,6 @@ Save in: Mini_EDC_Project/python/visit_tracker.py
 Run with: python visit_tracker.py
 """
 
-import sqlite3
 import os
 import pandas as pd
 import matplotlib
@@ -14,9 +13,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from datetime import datetime
 import matplotlib.patches as mpatches
+from db_connection import get_conn, is_postgres
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 REPORTS_DIR = os.path.join(BASE, "..", "reports")
 
 NAVY = "#0D2B55"
@@ -39,19 +38,35 @@ EXPECTED_VISITS = [
 
 def init_visit_table():
     """Add visit_completion table if not exists."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS visit_completion (
-            vc_id       INTEGER PRIMARY KEY AUTOINCREMENT,
-            usubjid     TEXT,
-            siteid      TEXT,
-            visit_name  TEXT,
-            visit_date  TEXT,
-            status      TEXT DEFAULT 'Completed',
-            notes       TEXT,
-            recorded_at TEXT
-        )
-    """)
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
+
+    if is_postgres():
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS visit_completion (
+                vc_id       SERIAL PRIMARY KEY,
+                usubjid     TEXT,
+                siteid      TEXT,
+                visit_name  TEXT,
+                visit_date  TEXT,
+                status      TEXT DEFAULT 'Completed',
+                notes       TEXT,
+                recorded_at TEXT
+            )
+        """)
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS visit_completion (
+                vc_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                usubjid     TEXT,
+                siteid      TEXT,
+                visit_name  TEXT,
+                visit_date  TEXT,
+                status      TEXT DEFAULT 'Completed',
+                notes       TEXT,
+                recorded_at TEXT
+            )
+        """)
     conn.commit()
 
     # Populate from existing visits table
@@ -67,9 +82,9 @@ def init_visit_table():
         for i, (subj, site, vdate) in enumerate(visits):
             vname = visit_names[i % len(visit_names)]
             conn.execute(
-                """
+                f"""
                 INSERT INTO visit_completion (usubjid, siteid, visit_name, visit_date, status, recorded_at)
-                VALUES (?, ?, ?, ?, 'Completed', ?)
+                VALUES ({ph}, {ph}, {ph}, {ph}, 'Completed', {ph})
             """,
                 (subj, site or "UNKNOWN", vname, vdate, datetime.now().isoformat()),
             )
@@ -80,7 +95,7 @@ def init_visit_table():
 
 def get_completion_matrix():
     """Returns a subject × visit completion matrix."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     df_vc = pd.read_sql_query("SELECT * FROM visit_completion", conn)
     df_sub = pd.read_sql_query("SELECT usubjid, siteid FROM subjects", conn)
     print(f"Loaded {len(df_vc)} visit completion records and {len(df_sub)} subjects")
@@ -100,7 +115,7 @@ def get_completion_matrix():
 
 def completion_rate_by_site():
     """Returns completion % per site."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     df = pd.read_sql_query(
         """
         SELECT siteid,
@@ -120,7 +135,7 @@ def completion_rate_by_site():
 def print_visit_summary():
     """Print text summary of visit completion."""
     init_visit_table()
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     total = conn.execute("SELECT COUNT(*) FROM visit_completion").fetchone()[0]
     complete = conn.execute(
         "SELECT COUNT(*) FROM visit_completion WHERE status='Completed'"

@@ -5,15 +5,12 @@ Save in: Mini_EDC_Project/python/randomisation.py
 Run with: python randomisation.py
 """
 
-import sqlite3
 import os
 import random
 import hashlib
 import pandas as pd
 from datetime import datetime
-
-BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
+from db_connection import get_conn, is_postgres
 
 # ── Trial Arms — customise as needed ─────────────────────────
 TREATMENT_ARMS = {
@@ -32,33 +29,61 @@ STRATIFICATION_FACTORS = ["siteid"]  # stratify by site
 
 
 def init_randomisation_table():
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS randomisation (
-            rand_id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            rand_code       TEXT UNIQUE,
-            usubjid         TEXT,
-            siteid          TEXT,
-            arm_code        TEXT,
-            arm_description TEXT,
-            randomised_at   TEXT,
-            randomised_by   TEXT,
-            block_id        INTEGER,
-            seed_hash       TEXT,
-            status          TEXT DEFAULT 'Active'
-        )
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS randomisation_list (
-            list_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-            rand_number INTEGER,
-            siteid      TEXT,
-            arm_code    TEXT,
-            is_used     INTEGER DEFAULT 0,
-            used_by     TEXT,
-            used_at     TEXT
-        )
-    """)
+    conn = get_conn()
+    if is_postgres():
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS randomisation (
+                rand_id         SERIAL PRIMARY KEY,
+                rand_code       TEXT UNIQUE,
+                usubjid         TEXT,
+                siteid          TEXT,
+                arm_code        TEXT,
+                arm_description TEXT,
+                randomised_at   TEXT,
+                randomised_by   TEXT,
+                block_id        INTEGER,
+                seed_hash       TEXT,
+                status          TEXT DEFAULT 'Active'
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS randomisation_list (
+                list_id     SERIAL PRIMARY KEY,
+                rand_number INTEGER,
+                siteid      TEXT,
+                arm_code    TEXT,
+                is_used     INTEGER DEFAULT 0,
+                used_by     TEXT,
+                used_at     TEXT
+            )
+        """)
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS randomisation (
+                rand_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                rand_code       TEXT UNIQUE,
+                usubjid         TEXT,
+                siteid          TEXT,
+                arm_code        TEXT,
+                arm_description TEXT,
+                randomised_at   TEXT,
+                randomised_by   TEXT,
+                block_id        INTEGER,
+                seed_hash       TEXT,
+                status          TEXT DEFAULT 'Active'
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS randomisation_list (
+                list_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+                rand_number INTEGER,
+                siteid      TEXT,
+                arm_code    TEXT,
+                is_used     INTEGER DEFAULT 0,
+                used_by     TEXT,
+                used_at     TEXT
+            )
+        """)
     conn.commit()
     conn.close()
 
@@ -69,11 +94,14 @@ def generate_randomisation_list(seed: int = 42, subjects_per_site: int = 20):
     Uses block randomisation to ensure balance.
     """
     init_randomisation_table()
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
 
     # Get sites from DB
     sites = conn.execute("SELECT DISTINCT siteid FROM subjects").fetchall()
-    sites = [s[0] for s in sites] if sites else ["SITE01", "SITE02", "SITE03"]
+    sites = [
+        (s["siteid"] if isinstance(s, dict) else s[0]) for s in sites
+    ] if sites else ["SITE01", "SITE02", "SITE03"]
 
     # Build block pattern from allocation ratio
     block_pattern = []
@@ -88,14 +116,25 @@ def generate_randomisation_list(seed: int = 42, subjects_per_site: int = 20):
             block = block_pattern.copy()
             random.shuffle(block)
             for arm in block:
-                conn.execute(
-                    """
-                    INSERT OR IGNORE INTO randomisation_list
-                    (rand_number, siteid, arm_code, is_used)
-                    VALUES (?, ?, ?, 0)
-                """,
-                    (rand_number, site, arm),
-                )
+                if is_postgres():
+                    conn.execute(
+                        f"""
+                        INSERT INTO randomisation_list
+                        (rand_number, siteid, arm_code, is_used)
+                        VALUES ({ph},{ph},{ph},0)
+                        ON CONFLICT DO NOTHING
+                    """,
+                        (rand_number, site, arm),
+                    )
+                else:
+                    conn.execute(
+                        """
+                        INSERT OR IGNORE INTO randomisation_list
+                        (rand_number, siteid, arm_code, is_used)
+                        VALUES (?, ?, ?, 0)
+                    """,
+                        (rand_number, site, arm),
+                    )
                 rand_number += 1
                 needed -= 1
                 if needed <= 0:
@@ -115,21 +154,24 @@ def randomise_subject(usubjid: str, siteid: str, randomised_by: str = "DM"):
     Returns (success, arm_code, arm_description, rand_code)
     """
     init_randomisation_table()
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
 
     # Check if subject already randomised
     existing = conn.execute(
-        "SELECT rand_code, arm_code FROM randomisation WHERE usubjid=?", (usubjid,)
+        f"SELECT rand_code, arm_code FROM randomisation WHERE usubjid={ph}", (usubjid,)
     ).fetchone()
     if existing:
         conn.close()
-        return False, existing[1], TREATMENT_ARMS.get(existing[1], ""), existing[0]
+        rc  = existing["rand_code"] if isinstance(existing, dict) else existing[0]
+        ac  = existing["arm_code"]  if isinstance(existing, dict) else existing[1]
+        return False, ac, TREATMENT_ARMS.get(ac, ""), rc
 
     # Get next available slot for this site
     slot = conn.execute(
-        """
+        f"""
         SELECT list_id, rand_number, arm_code FROM randomisation_list
-        WHERE siteid=? AND is_used=0
+        WHERE siteid={ph} AND is_used=0
         ORDER BY rand_number ASC LIMIT 1
     """,
         (siteid,),
@@ -139,7 +181,9 @@ def randomise_subject(usubjid: str, siteid: str, randomised_by: str = "DM"):
         conn.close()
         return False, None, "No randomisation slots available for this site", None
 
-    list_id, rand_number, arm_code = slot
+    list_id    = slot["list_id"]    if isinstance(slot, dict) else slot[0]
+    rand_number= slot["rand_number"]if isinstance(slot, dict) else slot[1]
+    arm_code   = slot["arm_code"]   if isinstance(slot, dict) else slot[2]
     arm_desc = TREATMENT_ARMS.get(arm_code, arm_code)
     rand_code = f"RAND-{rand_number:05d}"
     seed_hash = hashlib.md5(
@@ -148,8 +192,8 @@ def randomise_subject(usubjid: str, siteid: str, randomised_by: str = "DM"):
 
     # Mark slot as used
     conn.execute(
-        """
-        UPDATE randomisation_list SET is_used=1, used_by=?, used_at=? WHERE list_id=?
+        f"""
+        UPDATE randomisation_list SET is_used=1, used_by={ph}, used_at={ph} WHERE list_id={ph}
     """,
         (usubjid, datetime.now().isoformat(), list_id),
     )
@@ -157,11 +201,11 @@ def randomise_subject(usubjid: str, siteid: str, randomised_by: str = "DM"):
     # Record randomisation
     block_id = (rand_number - 1) // sum(ALLOCATION_RATIO.values()) + 1
     conn.execute(
-        """
+        f"""
         INSERT INTO randomisation
         (rand_code, usubjid, siteid, arm_code, arm_description,
          randomised_at, randomised_by, block_id, seed_hash)
-        VALUES (?,?,?,?,?,?,?,?,?)
+        VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
     """,
         (
             rand_code,
@@ -178,10 +222,10 @@ def randomise_subject(usubjid: str, siteid: str, randomised_by: str = "DM"):
 
     # Audit trail
     conn.execute(
-        """
+        f"""
         INSERT INTO audit_trail
         (event_time, action, table_name, record_id, field_name, new_value, performed_by)
-        VALUES (?,?,?,?,?,?,?)
+        VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph})
     """,
         (
             datetime.now().isoformat(),
@@ -203,12 +247,14 @@ def randomise_subject(usubjid: str, siteid: str, randomised_by: str = "DM"):
 
 def randomise_all_subjects():
     """Randomise all existing subjects who haven't been randomised yet."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     subjects = conn.execute("SELECT usubjid, siteid FROM subjects").fetchall()
     conn.close()
 
     randomised = 0
-    for usubjid, siteid in subjects:
+    for row in subjects:
+        usubjid = row["usubjid"] if isinstance(row, dict) else row[0]
+        siteid  = row["siteid"]  if isinstance(row, dict) else row[1]
         ok, arm, desc, code = randomise_subject(usubjid, siteid or "SITE01")
         if ok:
             randomised += 1
@@ -218,7 +264,7 @@ def randomise_all_subjects():
 
 def get_arm_balance():
     """Check treatment arm balance across sites."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     try:
         df = pd.read_sql_query(
             """
@@ -239,7 +285,7 @@ def get_arm_balance():
 
 def print_randomisation_report():
     """Print randomisation summary."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     try:
         total = conn.execute("SELECT COUNT(*) FROM randomisation").fetchone()[0]
         by_arm = conn.execute("""
@@ -259,7 +305,10 @@ def print_randomisation_report():
 
     if by_arm:
         print("\n  Treatment Arm Balance:")
-        for arm_code, arm_desc, n in by_arm:
+        for row in by_arm:
+            arm_code = row["arm_code"]        if isinstance(row, dict) else row[0]
+            arm_desc = row["arm_description"] if isinstance(row, dict) else row[1]
+            n        = row["n"]               if isinstance(row, dict) else row[2]
             bar = "█" * n + "░" * max(0, 10 - n)
             print(f"  {arm_code} ({arm_desc:<18}) [{bar}] n={n}")
 

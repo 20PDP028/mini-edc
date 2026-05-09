@@ -5,13 +5,12 @@ Save in: Mini_EDC_Project/python/sdtm_export.py
 Run with: python sdtm_export.py
 """
 
-import sqlite3
 import os
 import pandas as pd
 from datetime import datetime
+from db_connection import get_conn
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 EXPORTS_DIR = os.path.join(BASE, "..", "reports", "sdtm_export")
 
 # Trial metadata — customise
@@ -20,7 +19,7 @@ DOMAIN_VERSION = "SDTM v1.7"
 
 
 def _conn():
-    return sqlite3.connect(DB_PATH)
+    return get_conn()
 
 
 def export_dm():

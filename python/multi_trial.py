@@ -5,57 +5,103 @@ Save in: Mini_EDC_Project/python/multi_trial.py
 Run with: python multi_trial.py
 """
 
-import sqlite3
 import os
 import pandas as pd
 from datetime import datetime
-
-BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
+from db_connection import get_conn, is_postgres
 
 
 def init_trial_tables():
     """Create multi-trial registry tables."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.executescript("""
-        CREATE TABLE IF NOT EXISTS trials (
-            trial_id        TEXT PRIMARY KEY,
-            trial_name      TEXT NOT NULL,
-            protocol_number TEXT,
-            phase           TEXT,
-            indication      TEXT,
-            sponsor         TEXT,
-            status          TEXT DEFAULT 'Active',
-            start_date      TEXT,
-            end_date        TEXT,
-            created_at      TEXT,
-            created_by      TEXT
-        );
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
 
-        CREATE TABLE IF NOT EXISTS trial_sites (
-            ts_id       INTEGER PRIMARY KEY AUTOINCREMENT,
-            trial_id    TEXT REFERENCES trials(trial_id),
-            siteid      TEXT,
-            site_name   TEXT,
-            pi_name     TEXT,
-            country     TEXT,
-            status      TEXT DEFAULT 'Active',
-            activated_at TEXT
-        );
-
-        CREATE TABLE IF NOT EXISTS trial_subjects (
-            ts_id       INTEGER PRIMARY KEY AUTOINCREMENT,
-            trial_id    TEXT REFERENCES trials(trial_id),
-            usubjid     TEXT,
-            siteid      TEXT,
-            enrolled_at TEXT,
-            status      TEXT DEFAULT 'Active'
-        );
-    """)
+    if is_postgres():
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS trials (
+                trial_id        TEXT PRIMARY KEY,
+                trial_name      TEXT NOT NULL,
+                protocol_number TEXT,
+                phase           TEXT,
+                indication      TEXT,
+                sponsor         TEXT,
+                status          TEXT DEFAULT 'Active',
+                start_date      TEXT,
+                end_date        TEXT,
+                created_at      TEXT,
+                created_by      TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS trial_sites (
+                ts_id       SERIAL PRIMARY KEY,
+                trial_id    TEXT REFERENCES trials(trial_id),
+                siteid      TEXT,
+                site_name   TEXT,
+                pi_name     TEXT,
+                country     TEXT,
+                status      TEXT DEFAULT 'Active',
+                activated_at TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS trial_subjects (
+                ts_id       SERIAL PRIMARY KEY,
+                trial_id    TEXT REFERENCES trials(trial_id),
+                usubjid     TEXT,
+                siteid      TEXT,
+                enrolled_at TEXT,
+                status      TEXT DEFAULT 'Active'
+            )
+        """)
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS trials (
+                trial_id        TEXT PRIMARY KEY,
+                trial_name      TEXT NOT NULL,
+                protocol_number TEXT,
+                phase           TEXT,
+                indication      TEXT,
+                sponsor         TEXT,
+                status          TEXT DEFAULT 'Active',
+                start_date      TEXT,
+                end_date        TEXT,
+                created_at      TEXT,
+                created_by      TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS trial_sites (
+                ts_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                trial_id    TEXT REFERENCES trials(trial_id),
+                siteid      TEXT,
+                site_name   TEXT,
+                pi_name     TEXT,
+                country     TEXT,
+                status      TEXT DEFAULT 'Active',
+                activated_at TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS trial_subjects (
+                ts_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                trial_id    TEXT REFERENCES trials(trial_id),
+                usubjid     TEXT,
+                siteid      TEXT,
+                enrolled_at TEXT,
+                status      TEXT DEFAULT 'Active'
+            )
+        """)
 
     # Insert default trial (current project)
     conn.execute(
-        """
+        f"""
+        INSERT INTO trials
+        (trial_id, trial_name, protocol_number, phase, indication,
+         sponsor, status, start_date, created_at, created_by)
+        VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
+        ON CONFLICT (trial_id) DO NOTHING
+    """ if is_postgres() else """
         INSERT OR IGNORE INTO trials
         (trial_id, trial_name, protocol_number, phase, indication,
          sponsor, status, start_date, created_at, created_by)
@@ -92,10 +138,11 @@ def create_trial(
 ):
     """Register a new clinical trial."""
     init_trial_tables()
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
 
     existing = conn.execute(
-        "SELECT 1 FROM trials WHERE trial_id=?", (trial_id,)
+        f"SELECT 1 FROM trials WHERE trial_id={ph}", (trial_id,)
     ).fetchone()
 
     if existing:
@@ -103,11 +150,11 @@ def create_trial(
         return False, f"Trial {trial_id} already exists"
 
     conn.execute(
-        """
+        f"""
         INSERT INTO trials
         (trial_id, trial_name, protocol_number, phase, indication,
          sponsor, status, start_date, created_at, created_by)
-        VALUES (?,?,?,?,?,?,?,?,?,?)
+        VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
     """,
         (
             trial_id,
@@ -124,10 +171,10 @@ def create_trial(
     )
 
     conn.execute(
-        """
+        f"""
         INSERT INTO audit_trail
         (event_time, action, table_name, record_id, field_name, new_value, performed_by)
-        VALUES (?,?,?,?,?,?,?)
+        VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph})
     """,
         (
             datetime.now().isoformat(),
@@ -148,15 +195,28 @@ def create_trial(
 
 def add_site(trial_id, siteid, site_name, pi_name, country="IND"):
     """Add a site to a trial."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute(
-        """
-        INSERT OR IGNORE INTO trial_sites
-        (trial_id, siteid, site_name, pi_name, country, activated_at)
-        VALUES (?,?,?,?,?,?)
-    """,
-        (trial_id, siteid, site_name, pi_name, country, datetime.now().isoformat()),
-    )
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
+
+    if is_postgres():
+        conn.execute(
+            f"""
+            INSERT INTO trial_sites
+            (trial_id, siteid, site_name, pi_name, country, activated_at)
+            VALUES ({ph},{ph},{ph},{ph},{ph},{ph})
+            ON CONFLICT DO NOTHING
+        """,
+            (trial_id, siteid, site_name, pi_name, country, datetime.now().isoformat()),
+        )
+    else:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO trial_sites
+            (trial_id, siteid, site_name, pi_name, country, activated_at)
+            VALUES (?,?,?,?,?,?)
+        """,
+            (trial_id, siteid, site_name, pi_name, country, datetime.now().isoformat()),
+        )
     conn.commit()
     conn.close()
     print(f"[TRIAL] Site {siteid} added to {trial_id}")
@@ -164,9 +224,11 @@ def add_site(trial_id, siteid, site_name, pi_name, country="IND"):
 
 def enrol_subject(trial_id, usubjid, siteid):
     """Enrol a subject into a specific trial."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
+
     existing = conn.execute(
-        "SELECT 1 FROM trial_subjects WHERE trial_id=? AND usubjid=?",
+        f"SELECT 1 FROM trial_subjects WHERE trial_id={ph} AND usubjid={ph}",
         (trial_id, usubjid),
     ).fetchone()
 
@@ -175,9 +237,9 @@ def enrol_subject(trial_id, usubjid, siteid):
         return False, f"{usubjid} already enrolled in {trial_id}"
 
     conn.execute(
-        """
+        f"""
         INSERT INTO trial_subjects (trial_id, usubjid, siteid, enrolled_at)
-        VALUES (?,?,?,?)
+        VALUES ({ph},{ph},{ph},{ph})
     """,
         (trial_id, usubjid, siteid, datetime.now().isoformat()),
     )
@@ -189,7 +251,7 @@ def enrol_subject(trial_id, usubjid, siteid):
 def get_trial_dashboard():
     """Return summary metrics for all trials."""
     init_trial_tables()
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     try:
         trials = pd.read_sql_query(
             "SELECT * FROM trials ORDER BY start_date DESC", conn
@@ -228,12 +290,14 @@ def get_trial_dashboard():
 
 def enrol_existing_subjects():
     """Enrol all existing subjects into the default trial."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     subjects = conn.execute("SELECT usubjid, siteid FROM subjects").fetchall()
     conn.close()
 
     enrolled = 0
-    for usubjid, siteid in subjects:
+    for row in subjects:
+        usubjid = row["usubjid"] if isinstance(row, dict) else row[0]
+        siteid = row["siteid"] if isinstance(row, dict) else row[1]
         ok, _ = enrol_subject("CARDIO-P2", usubjid, siteid or "SITE01")
         if ok:
             enrolled += 1

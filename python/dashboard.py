@@ -10,6 +10,7 @@ import pandas as pd
 import os
 import sys
 from datetime import datetime
+from data_entry import render_data_entry
 
 st.set_page_config(
     page_title="Mini EDC | CDM System",
@@ -66,6 +67,18 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.user = None
 
+# ── Helper ────────────────────────────────────────────────────
+def load_df(table):
+    if not os.path.exists(DB_PATH):
+        return pd.DataFrame()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        df = pd.read_sql_query(f"SELECT * FROM {table}", conn)
+        conn.close()
+        return df
+    except Exception as e:
+        st.error(f"Error loading data from {table}: {e}")
+        return pd.DataFrame()
 # ══════════════════════════════════════════════════════════════
 # LOGIN
 # ══════════════════════════════════════════════════════════════
@@ -215,24 +228,11 @@ with st.sidebar:
         st.session_state.logged_in = False
         st.session_state.user = None
         st.rerun()
-    (
+
+    if os.path.exists(DB_PATH):
         st.success("✅ DB connected")
-        if os.path.exists(DB_PATH)
-        else st.warning("⚠️ Demo mode")
-    )
-
-
-def load_df(table):
-    if not os.path.exists(DB_PATH):
-        return pd.DataFrame()
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        df = pd.read_sql_query(f"SELECT * FROM {table}", conn)
-        conn.close()
-        return df
-    except Exception as e:
-        st.error(f"Error loading data from {table}: {e}")
-        return pd.DataFrame()
+    else:
+        st.warning("⚠️ Demo mode")
 
 
 df_queries = load_df("queries")

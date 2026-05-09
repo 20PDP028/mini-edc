@@ -11,11 +11,11 @@ Setup:
 """
 
 import smtplib
-import sqlite3
 import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
+from db_connection import get_conn, is_postgres
 
 # ── CONFIG — Edit these ───────────────────────────────────────
 SENDER_EMAIL = "your_gmail@gmail.com"  # ← your Gmail
@@ -24,9 +24,6 @@ MONITOR_EMAILS = [
     "monitor1@example.com",  # ← add monitor emails
     "monitor2@example.com",
 ]
-
-BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 
 
 def _send_email(to_list: list, subject: str, html_body: str):
@@ -51,12 +48,13 @@ def _send_email(to_list: list, subject: str, html_body: str):
 
 def _log_alert(conn, alert_type, record_id, recipients, status):
     """Log every alert attempt in the audit trail."""
+    ph = "%s" if is_postgres() else "?"
     try:
         conn.execute(
-            """
+            f"""
             INSERT INTO audit_trail
             (event_time, action, table_name, record_id, field_name, new_value, performed_by)
-            VALUES (?, ?, 'email_alerts', ?, 'recipients', ?, 'EMAIL_SYSTEM')
+            VALUES ({ph}, {ph}, 'email_alerts', {ph}, 'recipients', {ph}, 'EMAIL_SYSTEM')
         """,
             (
                 datetime.now().isoformat(),
@@ -121,7 +119,7 @@ def send_sae_alert(sae: dict):
     )
     ok = _send_email(MONITOR_EMAILS, subject, html)
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     _log_alert(
         conn,
         "SAE_ALERT",
@@ -156,7 +154,7 @@ def send_critical_query_alert(query: dict):
     )
     ok = _send_email(MONITOR_EMAILS, subject, html)
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     _log_alert(
         conn,
         "CRITICAL_QUERY",
@@ -172,7 +170,7 @@ def send_daily_summary():
     """
     Send a daily summary of open queries and pending SAEs to monitors.
     """
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     try:
         open_q = conn.execute(
             "SELECT COUNT(*) FROM queries WHERE status='Open'"
@@ -211,7 +209,7 @@ def check_and_alert_new_issues():
     Scan DB for new SAEs and Critical queries, send alerts for unnotified ones.
     Call this after running validation / open_queries.
     """
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
 
     # SAEs not yet alerted
     saes = conn.execute("""

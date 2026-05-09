@@ -5,13 +5,12 @@ Save in: Mini_EDC_Project/python/lab_ranges.py
 Run with: python lab_ranges.py
 """
 
-import sqlite3
 import os
 import pandas as pd
 from datetime import datetime
+from db_connection import get_conn, is_postgres
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 
 # ── Reference Range Dictionary ────────────────────────────────
 # Format: test_code: {(gender, age_min, age_max): (low, high, unit, alert_low, alert_high)}
@@ -134,23 +133,41 @@ def evaluate_lab_value(test_code: str, value: float, gender: str, age: float):
 
 
 def init_lab_flags_table():
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS lab_flags (
-            flag_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-            usubjid     TEXT,
-            siteid      TEXT,
-            test_code   TEXT,
-            value       REAL,
-            unit        TEXT,
-            ref_low     REAL,
-            ref_high    REAL,
-            status      TEXT,
-            flag        TEXT,
-            message     TEXT,
-            flagged_at  TEXT
-        )
-    """)
+    conn = get_conn()
+    if is_postgres():
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS lab_flags (
+                flag_id     SERIAL PRIMARY KEY,
+                usubjid     TEXT,
+                siteid      TEXT,
+                test_code   TEXT,
+                value       REAL,
+                unit        TEXT,
+                ref_low     REAL,
+                ref_high    REAL,
+                status      TEXT,
+                flag        TEXT,
+                message     TEXT,
+                flagged_at  TEXT
+            )
+        """)
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS lab_flags (
+                flag_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+                usubjid     TEXT,
+                siteid      TEXT,
+                test_code   TEXT,
+                value       REAL,
+                unit        TEXT,
+                ref_low     REAL,
+                ref_high    REAL,
+                status      TEXT,
+                flag        TEXT,
+                message     TEXT,
+                flagged_at  TEXT
+            )
+        """)
     conn.commit()
     conn.close()
 
@@ -167,7 +184,8 @@ def evaluate_all_subjects():
         return pd.DataFrame()
 
     df = pd.read_excel(raw_path, sheet_name="Clinical_Data")
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
 
     results = []
     for _, row in df.iterrows():
@@ -196,11 +214,11 @@ def evaluate_all_subjects():
             ref = get_reference_range(test_code, gender, age)
 
             conn.execute(
-                """
+                f"""
                 INSERT INTO lab_flags
                 (usubjid, siteid, test_code, value, unit,
                  ref_low, ref_high, status, flag, message, flagged_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
             """,
                 (
                     usubjid,

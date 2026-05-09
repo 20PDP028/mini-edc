@@ -5,7 +5,6 @@ Save in: Mini_EDC_Project/python/discrepancy_trends.py
 Run with: python discrepancy_trends.py
 """
 
-import sqlite3
 import os
 import pandas as pd
 import matplotlib
@@ -13,9 +12,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from datetime import datetime
+from db_connection import get_conn
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
 REPORTS_DIR = os.path.join(BASE, "..", "reports")
 
 NAVY = "#0D2B55"
@@ -29,7 +28,7 @@ COLORS = [NAVY, TEAL, RED, AMBER, BLUE, PURPLE]
 
 
 def load_data():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     df_q = pd.read_sql_query("SELECT * FROM queries", conn)
     df_s = pd.read_sql_query("SELECT * FROM adverse_events", conn)
     df_a = pd.read_sql_query("SELECT * FROM audit_trail", conn)

@@ -7,7 +7,6 @@ Run once:  python scheduler.py --now
 Run daemon: python scheduler.py
 """
 
-import sqlite3
 import os
 import time
 import argparse
@@ -16,9 +15,9 @@ import json
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+from db_connection import get_conn, is_postgres
 
 # ── Config ────────────────────────────────────────────────────
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "sql", "cdm_phase3.db")
 LOG_PATH = os.path.join(
     os.path.dirname(__file__), "..", "reports", "scheduler_log.json"
 )
@@ -40,15 +39,18 @@ os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
 
 # ── Database helpers ──────────────────────────────────────────
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return get_conn()
+
+
+def _stale_expr():
+    """Return the correct date-diff expression for the active backend."""
+    if is_postgres():
+        return "EXTRACT(EPOCH FROM (NOW() - created_at::timestamp)) / 86400 > "
+    return "julianday('now') - julianday(created_at) > "
 
 
 def check_new_saes():
     """Return SAEs with report_flag = PENDING."""
-    if not os.path.exists(DB_PATH):
-        return []
     with get_db() as conn:
         rows = conn.execute("""
             SELECT ae.usubjid, s.siteid, ae.aeterm, ae.aesev, ae.aestdtc
@@ -56,13 +58,11 @@ def check_new_saes():
             JOIN subjects s USING(usubjid)
             WHERE ae.aeser='Y' AND ae.report_flag='PENDING'
         """).fetchall()
-    return [dict(r) for r in rows]
+    return [dict(zip(["usubjid", "siteid", "aeterm", "aesev", "aestdtc"], r)) for r in rows]
 
 
 def check_critical_queries():
     """Return Open Critical queries."""
-    if not os.path.exists(DB_PATH):
-        return []
     with get_db() as conn:
         rows = conn.execute("""
             SELECT query_id, usubjid, siteid, field_name, issue_description, created_at
@@ -70,28 +70,25 @@ def check_critical_queries():
             WHERE severity='Critical' AND status='Open'
             ORDER BY created_at ASC
         """).fetchall()
-    return [dict(r) for r in rows]
+    return [dict(zip(["query_id", "usubjid", "siteid", "field_name", "issue_description", "created_at"], r)) for r in rows]
 
 
 def check_stale_queries(days=7):
     """Queries Open for more than N days with no answer."""
-    if not os.path.exists(DB_PATH):
-        return []
+    stale_expr = _stale_expr() + str(days)
     with get_db() as conn:
         rows = conn.execute(f"""
             SELECT query_id, usubjid, siteid, field_name, severity, created_at
             FROM queries
             WHERE status='Open'
-              AND julianday('now') - julianday(created_at) > {days}
+              AND {stale_expr}
             ORDER BY created_at ASC
         """).fetchall()
-    return [dict(r) for r in rows]
+    return [dict(zip(["query_id", "usubjid", "siteid", "field_name", "severity", "created_at"], r)) for r in rows]
 
 
 def get_summary():
     """Get overall counts for the daily report."""
-    if not os.path.exists(DB_PATH):
-        return {}
     with get_db() as conn:
         return {
             "open": conn.execute(

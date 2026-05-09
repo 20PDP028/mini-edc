@@ -1,6 +1,6 @@
 """
 main_phase3.py — Phase 3 Runner
-Ties together: CDISC validation → SQLite storage → Query lifecycle → Reports
+Ties together: CDISC validation → DB storage → Query lifecycle → Reports
 Save in: Mini_EDC_Project/python/main_phase3.py
 """
 
@@ -32,7 +32,7 @@ SHEET_NAME = "Clinical_Data"
 
 # ── Step 1: Initialise Database ───────────────────────────────
 print("\n" + "=" * 65)
-print("  PHASE 3 — SQLite CDM + Query Lifecycle")
+print("  PHASE 3 — CDM + Query Lifecycle")
 print("=" * 65)
 
 init_db()

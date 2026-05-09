@@ -5,13 +5,10 @@ Save in: Mini_EDC_Project/python/medical_coding.py
 Run with: python medical_coding.py
 """
 
-import sqlite3
 import os
 import pandas as pd
 from datetime import datetime
-
-BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
+from db_connection import get_conn, is_postgres
 
 # ── Built-in MedDRA dictionary (subset) ──────────────────────
 # Format: "raw term": ("MedDRA Preferred Term", "System Organ Class", "MedDRA Code")
@@ -122,21 +119,38 @@ MEDDRA_DICT = {
 
 def init_coding_table():
     """Create ae_coding table if not exists."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS ae_coding (
-            coding_id   INTEGER PRIMARY KEY AUTOINCREMENT,
-            ae_id       INTEGER,
-            usubjid     TEXT,
-            raw_term    TEXT,
-            meddra_pt   TEXT,
-            meddra_soc  TEXT,
-            meddra_code TEXT,
-            match_type  TEXT,
-            coded_at    TEXT,
-            coded_by    TEXT DEFAULT 'AUTO'
-        )
-    """)
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
+    if is_postgres():
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ae_coding (
+                coding_id   SERIAL PRIMARY KEY,
+                ae_id       INTEGER,
+                usubjid     TEXT,
+                raw_term    TEXT,
+                meddra_pt   TEXT,
+                meddra_soc  TEXT,
+                meddra_code TEXT,
+                match_type  TEXT,
+                coded_at    TEXT,
+                coded_by    TEXT DEFAULT 'AUTO'
+            )
+        """)
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ae_coding (
+                coding_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+                ae_id       INTEGER,
+                usubjid     TEXT,
+                raw_term    TEXT,
+                meddra_pt   TEXT,
+                meddra_soc  TEXT,
+                meddra_code TEXT,
+                match_type  TEXT,
+                coded_at    TEXT,
+                coded_by    TEXT DEFAULT 'AUTO'
+            )
+        """)
     conn.commit()
     conn.close()
 
@@ -174,7 +188,8 @@ def code_all_adverse_events():
     Returns DataFrame of coding results.
     """
     init_coding_table()
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
 
     aes = conn.execute("SELECT ae_id, usubjid, aeterm FROM adverse_events").fetchall()
 
@@ -182,30 +197,40 @@ def code_all_adverse_events():
     coded = 0
     uncoded = 0
 
-    for ae_id, usubjid, aeterm in aes:
+    for row in aes:
+        ae_id = row["ae_id"] if isinstance(row, dict) else row[0]
+        usubjid = row["usubjid"] if isinstance(row, dict) else row[1]
+        aeterm = row["aeterm"] if isinstance(row, dict) else row[2]
+
         if not aeterm or str(aeterm).strip().lower() == "nan":
             continue
 
         pt, soc, code, match_type = fuzzy_match(str(aeterm))
 
-        # Insert/replace coding
-        conn.execute(
-            """
-            INSERT OR REPLACE INTO ae_coding
-            (ae_id, usubjid, raw_term, meddra_pt, meddra_soc, meddra_code, match_type, coded_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-            (
-                ae_id,
-                usubjid,
-                aeterm,
-                pt,
-                soc,
-                code,
-                match_type,
-                datetime.now().isoformat(),
-            ),
-        )
+        if is_postgres():
+            conn.execute(
+                """
+                INSERT INTO ae_coding
+                (ae_id, usubjid, raw_term, meddra_pt, meddra_soc, meddra_code, match_type, coded_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (ae_id) DO UPDATE SET
+                    meddra_pt=EXCLUDED.meddra_pt, meddra_soc=EXCLUDED.meddra_soc,
+                    meddra_code=EXCLUDED.meddra_code, match_type=EXCLUDED.match_type,
+                    coded_at=EXCLUDED.coded_at
+            """,
+                (ae_id, usubjid, aeterm, pt, soc, code, match_type,
+                 datetime.now().isoformat()),
+            )
+        else:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO ae_coding
+                (ae_id, usubjid, raw_term, meddra_pt, meddra_soc, meddra_code, match_type, coded_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (ae_id, usubjid, aeterm, pt, soc, code, match_type,
+                 datetime.now().isoformat()),
+            )
 
         results.append(
             {
@@ -231,7 +256,7 @@ def code_all_adverse_events():
 
 def get_soc_summary():
     """Returns count of AEs per System Organ Class."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     try:
         df = pd.read_sql_query(
             """

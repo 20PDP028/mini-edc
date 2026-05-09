@@ -5,13 +5,10 @@ Save in: Mini_EDC_Project/python/protocol_deviation.py
 Run with: python protocol_deviation.py
 """
 
-import sqlite3
 import os
 import pandas as pd
 from datetime import datetime
-
-BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE, "..", "sql", "cdm_phase3.db")
+from db_connection import get_conn, is_postgres
 
 # ── Deviation Categories ──────────────────────────────────────
 DEVIATION_TYPES = {
@@ -35,25 +32,45 @@ SEVERITY_LEVELS = {
 
 
 def init_pd_table():
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS protocol_deviations (
-            pd_id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            pd_code         TEXT UNIQUE,
-            usubjid         TEXT,
-            siteid          TEXT,
-            deviation_type  TEXT,
-            deviation_cat   TEXT,
-            severity        TEXT,
-            description     TEXT,
-            action_taken    TEXT,
-            status          TEXT DEFAULT 'Open',
-            reported_by     TEXT,
-            reported_at     TEXT,
-            resolved_at     TEXT,
-            capa            TEXT
-        )
-    """)
+    conn = get_conn()
+    if is_postgres():
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS protocol_deviations (
+                pd_id           SERIAL PRIMARY KEY,
+                pd_code         TEXT UNIQUE,
+                usubjid         TEXT,
+                siteid          TEXT,
+                deviation_type  TEXT,
+                deviation_cat   TEXT,
+                severity        TEXT,
+                description     TEXT,
+                action_taken    TEXT,
+                status          TEXT DEFAULT 'Open',
+                reported_by     TEXT,
+                reported_at     TEXT,
+                resolved_at     TEXT,
+                capa            TEXT
+            )
+        """)
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS protocol_deviations (
+                pd_id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                pd_code         TEXT UNIQUE,
+                usubjid         TEXT,
+                siteid          TEXT,
+                deviation_type  TEXT,
+                deviation_cat   TEXT,
+                severity        TEXT,
+                description     TEXT,
+                action_taken    TEXT,
+                status          TEXT DEFAULT 'Open',
+                reported_by     TEXT,
+                reported_at     TEXT,
+                resolved_at     TEXT,
+                capa            TEXT
+            )
+        """)
     conn.commit()
     conn.close()
 
@@ -75,37 +92,40 @@ def log_deviation(
 ):
     """Log a new protocol deviation."""
     init_pd_table()
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
     code = _next_pd_code(conn)
     cat = DEVIATION_TYPES.get(dev_type, "Other")
 
-    conn.execute(
-        """
-        INSERT OR IGNORE INTO protocol_deviations
-        (pd_code, usubjid, siteid, deviation_type, deviation_cat,
-         severity, description, action_taken, reported_by, reported_at, capa)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)
-    """,
-        (
-            code,
-            usubjid,
-            siteid,
-            dev_type,
-            cat,
-            severity,
-            description,
-            action_taken,
-            reported_by,
-            datetime.now().isoformat(),
-            capa,
-        ),
-    )
+    if is_postgres():
+        conn.execute(
+            f"""
+            INSERT INTO protocol_deviations
+            (pd_code, usubjid, siteid, deviation_type, deviation_cat,
+             severity, description, action_taken, reported_by, reported_at, capa)
+            VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
+            ON CONFLICT (pd_code) DO NOTHING
+        """,
+            (code, usubjid, siteid, dev_type, cat, severity, description,
+             action_taken, reported_by, datetime.now().isoformat(), capa),
+        )
+    else:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO protocol_deviations
+            (pd_code, usubjid, siteid, deviation_type, deviation_cat,
+             severity, description, action_taken, reported_by, reported_at, capa)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        """,
+            (code, usubjid, siteid, dev_type, cat, severity, description,
+             action_taken, reported_by, datetime.now().isoformat(), capa),
+        )
 
     conn.execute(
-        """
+        f"""
         INSERT INTO audit_trail
         (event_time, action, table_name, record_id, field_name, new_value, performed_by)
-        VALUES (?,?,?,?,?,?,?)
+        VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph})
     """,
         (
             datetime.now().isoformat(),
@@ -126,20 +146,21 @@ def log_deviation(
 
 def resolve_deviation(pd_code, resolved_by, capa_description):
     """Mark a deviation as resolved with CAPA."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
     conn.execute(
-        """
+        f"""
         UPDATE protocol_deviations
-        SET status='Resolved', resolved_at=?, capa=?
-        WHERE pd_code=?
+        SET status='Resolved', resolved_at={ph}, capa={ph}
+        WHERE pd_code={ph}
     """,
         (datetime.now().isoformat(), capa_description, pd_code),
     )
     conn.execute(
-        """
+        f"""
         INSERT INTO audit_trail
         (event_time, action, table_name, record_id, field_name, new_value, performed_by)
-        VALUES (?,?,?,?,?,?,?)
+        VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph})
     """,
         (
             datetime.now().isoformat(),
@@ -162,7 +183,8 @@ def auto_detect_deviations():
     Detects: visit window violations, missing consent indicators, dosing errors.
     """
     init_pd_table()
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
+    ph = "%s" if is_postgres() else "?"
     detected = 0
 
     # Detect dosing errors from queries
@@ -173,33 +195,40 @@ def auto_detect_deviations():
             WHERE field_name='Dose_mg' AND severity='Critical'
         """).fetchall()
 
-        for qid, subj, site, issue in dose_issues:
+        for row in dose_issues:
+            qid    = row["query_id"]          if isinstance(row, dict) else row[0]
+            subj   = row["usubjid"]           if isinstance(row, dict) else row[1]
+            site   = row["siteid"]            if isinstance(row, dict) else row[2]
+            issue  = row["issue_description"] if isinstance(row, dict) else row[3]
             code = _next_pd_code(conn)
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO protocol_deviations
-                (pd_code, usubjid, siteid, deviation_type, deviation_cat,
-                 severity, description, reported_by, reported_at)
-                VALUES (?,?,?,?,?,?,?,?,?)
-            """,
-                (
-                    code,
-                    subj,
-                    site or "UNKNOWN",
-                    "DOS",
-                    "Dosing Error",
-                    "Major",
-                    f"Auto-detected: {issue}",
-                    "SYSTEM",
-                    datetime.now().isoformat(),
-                ),
-            )
+            if is_postgres():
+                conn.execute(
+                    f"""
+                    INSERT INTO protocol_deviations
+                    (pd_code, usubjid, siteid, deviation_type, deviation_cat,
+                     severity, description, reported_by, reported_at)
+                    VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
+                    ON CONFLICT (pd_code) DO NOTHING
+                """,
+                    (code, subj, site or "UNKNOWN", "DOS", "Dosing Error", "Major",
+                     f"Auto-detected: {issue}", "SYSTEM", datetime.now().isoformat()),
+                )
+            else:
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO protocol_deviations
+                    (pd_code, usubjid, siteid, deviation_type, deviation_cat,
+                     severity, description, reported_by, reported_at)
+                    VALUES (?,?,?,?,?,?,?,?,?)
+                """,
+                    (code, subj, site or "UNKNOWN", "DOS", "Dosing Error", "Major",
+                     f"Auto-detected: {issue}", "SYSTEM", datetime.now().isoformat()),
+                )
             detected += 1
     except Exception as e:
         print(f"Error auto-detecting dosing errors: {e}")
-        pass
 
-    # Detect invalid date deviations (visit window violations)
+    # Detect visit window violations
     try:
         date_issues = conn.execute("""
             SELECT query_id, usubjid, siteid, issue_description
@@ -207,31 +236,40 @@ def auto_detect_deviations():
             WHERE field_name='Visit_Date'
         """).fetchall()
 
-        for qid, subj, site, issue in date_issues:
+        for row in date_issues:
+            qid    = row["query_id"]          if isinstance(row, dict) else row[0]
+            subj   = row["usubjid"]           if isinstance(row, dict) else row[1]
+            site   = row["siteid"]            if isinstance(row, dict) else row[2]
+            issue  = row["issue_description"] if isinstance(row, dict) else row[3]
             code = _next_pd_code(conn)
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO protocol_deviations
-                (pd_code, usubjid, siteid, deviation_type, deviation_cat,
-                 severity, description, reported_by, reported_at)
-                VALUES (?,?,?,?,?,?,?,?,?)
-            """,
-                (
-                    code,
-                    subj,
-                    site or "UNKNOWN",
-                    "VW",
-                    "Visit Window Violation",
-                    "Minor",
-                    f"Auto-detected: {issue}",
-                    "SYSTEM",
-                    datetime.now().isoformat(),
-                ),
-            )
+            if is_postgres():
+                conn.execute(
+                    f"""
+                    INSERT INTO protocol_deviations
+                    (pd_code, usubjid, siteid, deviation_type, deviation_cat,
+                     severity, description, reported_by, reported_at)
+                    VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
+                    ON CONFLICT (pd_code) DO NOTHING
+                """,
+                    (code, subj, site or "UNKNOWN", "VW", "Visit Window Violation",
+                     "Minor", f"Auto-detected: {issue}", "SYSTEM",
+                     datetime.now().isoformat()),
+                )
+            else:
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO protocol_deviations
+                    (pd_code, usubjid, siteid, deviation_type, deviation_cat,
+                     severity, description, reported_by, reported_at)
+                    VALUES (?,?,?,?,?,?,?,?,?)
+                """,
+                    (code, subj, site or "UNKNOWN", "VW", "Visit Window Violation",
+                     "Minor", f"Auto-detected: {issue}", "SYSTEM",
+                     datetime.now().isoformat()),
+                )
             detected += 1
     except Exception as e:
         print(f"Error auto-detecting visit window violations: {e}")
-        pass
 
     conn.commit()
     conn.close()
@@ -242,7 +280,7 @@ def auto_detect_deviations():
 def get_pd_summary():
     """Return summary DataFrame of all deviations."""
     init_pd_table()
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     try:
         df = pd.read_sql_query(
             "SELECT * FROM protocol_deviations ORDER BY reported_at DESC", conn
