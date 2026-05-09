@@ -5,7 +5,7 @@ Save in: Mini_EDC_Project/python/protocol_deviation.py
 Run with: python protocol_deviation.py
 """
 
-import os
+
 import pandas as pd
 from datetime import datetime
 from db_connection import get_conn, is_postgres
@@ -237,7 +237,7 @@ def auto_detect_deviations():
         """).fetchall()
 
         for row in date_issues:
-            qid    = row["query_id"]          if isinstance(row, dict) else row[0]
+            
             subj   = row["usubjid"]           if isinstance(row, dict) else row[1]
             site   = row["siteid"]            if isinstance(row, dict) else row[2]
             issue  = row["issue_description"] if isinstance(row, dict) else row[3]

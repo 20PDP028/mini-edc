@@ -19,26 +19,18 @@ Pages:
   7. 📊 Reports      — compliance report + charts
 """
 
-import os
 import sys
 import json
-import io
-import zipfile
 from pathlib import Path
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from cdisc_validation_engine import CDISCValidator, SAMPLE_DATA
-from sdtm_generator import SDTMGenerator, DefineXMLGenerator, SDTMConformanceChecker
 from part11_audit import (
     UserManager,
-    ESignatureEngine,
-    AuditTrailEngine,
-    ClinicalRecordManager,
     generate_compliance_report,
     Role,
-    SignatureReason,
     DB_PATH,
     init_db,
 )

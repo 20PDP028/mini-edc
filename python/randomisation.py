@@ -5,7 +5,7 @@ Save in: Mini_EDC_Project/python/randomisation.py
 Run with: python randomisation.py
 """
 
-import os
+
 import random
 import hashlib
 import pandas as pd

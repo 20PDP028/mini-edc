@@ -5,7 +5,6 @@ Save in: Mini_EDC_Project/python/medical_coding.py
 Run with: python medical_coding.py
 """
 
-import os
 import pandas as pd
 from datetime import datetime
 from db_connection import get_conn, is_postgres
@@ -120,7 +119,6 @@ MEDDRA_DICT = {
 def init_coding_table():
     """Create ae_coding table if not exists."""
     conn = get_conn()
-    ph = "%s" if is_postgres() else "?"
     if is_postgres():
         conn.execute("""
             CREATE TABLE IF NOT EXISTS ae_coding (
@@ -189,7 +187,6 @@ def code_all_adverse_events():
     """
     init_coding_table()
     conn = get_conn()
-    ph = "%s" if is_postgres() else "?"
 
     aes = conn.execute("SELECT ae_id, usubjid, aeterm FROM adverse_events").fetchall()
 

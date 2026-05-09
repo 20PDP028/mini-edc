@@ -5,7 +5,7 @@ Save in: Mini_EDC_Project/python/multi_trial.py
 Run with: python multi_trial.py
 """
 
-import os
+
 import pandas as pd
 from datetime import datetime
 from db_connection import get_conn, is_postgres

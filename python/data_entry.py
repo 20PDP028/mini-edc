@@ -5,7 +5,6 @@ Site Staff only — enters Demographics, Vitals, Labs, Visit/Medication data
 """
 
 import streamlit as st
-import os
 from datetime import datetime, date
 
 from db_connection import get_conn, is_postgres
@@ -293,11 +292,16 @@ def render_data_entry(user):
 
         # Auto-flag abnormals
         flags = []
-        if bp_sys  > 0 and (bp_sys  > 140 or bp_sys  < 90):  flags.append(f"BP Systolic {bp_sys} mmHg")
-        if bp_dia  > 0 and (bp_dia  > 90  or bp_dia  < 60):  flags.append(f"BP Diastolic {bp_dia} mmHg")
-        if hr      > 0 and (hr      > 100 or hr      < 60):  flags.append(f"HR {hr} bpm")
-        if temp    > 30 and (temp   > 37.5 or temp   < 36.0): flags.append(f"Temp {temp}°C")
-        if spo2    > 0  and spo2    < 95:                     flags.append(f"SpO₂ {spo2}%")
+        if bp_sys  > 0 and (bp_sys  > 140 or bp_sys  < 90):  
+            flags.append(f"BP Systolic {bp_sys} mmHg")
+        if bp_dia  > 0 and (bp_dia  > 90  or bp_dia  < 60):  
+            flags.append(f"BP Diastolic {bp_dia} mmHg")
+        if hr      > 0 and (hr      > 100 or hr      < 60):  
+            flags.append(f"HR {hr} bpm")
+        if temp    > 30 and (temp   > 37.5 or temp   < 36.0): 
+            flags.append(f"Temp {temp}°C")
+        if spo2    > 0  and spo2    < 95:                     
+            flags.append(f"SpO₂ {spo2}%")
 
         if flags:
             st.warning("⚠️ Abnormal values detected: " + " | ".join(flags))

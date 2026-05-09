@@ -6,7 +6,6 @@ Save in: Mini_EDC_Project/python/data_lock.py
 Run with: python data_lock.py
 """
 
-import os
 import hashlib
 from datetime import datetime
 

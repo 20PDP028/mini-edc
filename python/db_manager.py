@@ -4,7 +4,6 @@ Handles all database operations for the CDM system.
 Save in: Mini_EDC_Project/python/db_manager.py
 """
 
-import os
 from datetime import datetime
 
 from db_connection import get_conn as _get_conn, is_postgres

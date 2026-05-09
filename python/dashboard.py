@@ -9,7 +9,6 @@ import pandas as pd
 import os
 import sys
 from datetime import datetime
-from data_entry import render_data_entry
 from db_connection import get_conn, is_postgres
 
 st.set_page_config(
