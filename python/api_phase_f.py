@@ -72,6 +72,12 @@ app = FastAPI(
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+if os.path.exists("/app/static"):
+    app.mount("/static", StaticFiles(directory="/app/static"), name="static")
+
+@app.get("/dashboard", include_in_schema=False)
+def serve_dashboard():
+    return FileResponse("/app/static/dashboard_phase_f.html")
 # ── Models ────────────────────────────────────────────────────
 
 class LoginRequest(BaseModel):

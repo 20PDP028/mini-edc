@@ -33,7 +33,7 @@ COPY python/cdisc_validation_engine.py ./cdisc_validation_engine.py
 COPY python/sdtm_generator.py      ./sdtm_generator.py
 COPY python/part11_audit.py        ./part11_audit.py
 COPY data/                         ./data/
-
+COPY dashboard_phase_f.html /app/static/dashboard_phase_f.html
 # Create output directories
 RUN mkdir -p /app/reports/sdtm /app/logs && \
     chown -R edcuser:edcuser /app
