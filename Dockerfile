@@ -28,6 +28,7 @@ COPY --from=builder /install /usr/local
 
 # Copy application code
 COPY python/api_phase_e.py         ./api_phase_e.py
+COPY python/api_phase_f.py         ./api_phase_f.py
 COPY python/cdisc_validation_engine.py ./cdisc_validation_engine.py
 COPY python/sdtm_generator.py      ./sdtm_generator.py
 COPY python/part11_audit.py        ./part11_audit.py
@@ -48,7 +49,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
 # Start the API
-CMD ["python", "-m", "uvicorn", "api_phase_e:app", \
+CMD ["python", "-m", "uvicorn", "api_phase_f:app", \
      "--host", "0.0.0.0", \
      "--port", "8000", \
      "--workers", "2", \
