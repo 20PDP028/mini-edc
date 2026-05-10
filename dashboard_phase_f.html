@@ -25,25 +25,9 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden;}
-
-/* GRID LINES BG */
-body::before{
-  content:'';position:fixed;inset:0;
-  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
-  background-size:40px 40px;opacity:0.3;pointer-events:none;z-index:0;
-}
-
-/* LAYOUT */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:0.3;pointer-events:none;z-index:0;}
 .app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:56px 1fr;min-height:100vh;position:relative;z-index:1;}
-
-/* TOPBAR */
-.topbar{
-  grid-column:1/-1;
-  background:var(--bg2);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:16px;padding:0 24px;
-  position:sticky;top:0;z-index:100;
-}
+.topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 24px;position:sticky;top:0;z-index:100;}
 .logo{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--accent);letter-spacing:2px;text-transform:uppercase;}
 .logo span{color:var(--accent2);}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
@@ -54,47 +38,20 @@ body::before{
 #user-badge{font-family:var(--font-mono);font-size:11px;color:var(--accent);padding:4px 10px;border:1px solid var(--accent);border-radius:2px;cursor:pointer;}
 #logout-btn{background:transparent;border:1px solid var(--border);color:var(--text2);font-family:var(--font-mono);font-size:11px;padding:4px 10px;border-radius:2px;cursor:pointer;transition:all .2s;}
 #logout-btn:hover{border-color:var(--danger);color:var(--danger);}
-
-/* SIDEBAR */
-.sidebar{
-  background:var(--bg2);
-  border-right:1px solid var(--border);
-  padding:16px 0;
-  display:flex;flex-direction:column;gap:2px;
-  overflow-y:auto;
-}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:16px 0;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
 .nav-section{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:2px;padding:12px 16px 6px;text-transform:uppercase;}
-.nav-item{
-  display:flex;align-items:center;gap:10px;
-  padding:9px 16px;cursor:pointer;
-  font-size:13px;color:var(--text2);
-  border-left:2px solid transparent;
-  transition:all .15s;
-}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
 .nav-item:hover{background:var(--bg3);color:var(--text);}
 .nav-item.active{background:var(--bg3);color:var(--accent);border-left-color:var(--accent);}
 .nav-item .icon{font-size:15px;width:18px;text-align:center;}
-
-/* MAIN */
 .main{padding:24px;overflow-y:auto;background:var(--bg);}
-
-/* PANELS */
 .panel{display:none;}
 .panel.active{display:block;}
-
-/* PAGE HEADER */
 .page-header{margin-bottom:24px;}
 .page-title{font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--text);letter-spacing:1px;}
 .page-sub{font-size:13px;color:var(--text2);margin-top:4px;}
-
-/* STAT CARDS */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;}
-.stat-card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:4px;padding:16px;
-  position:relative;overflow:hidden;
-}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:16px;position:relative;overflow:hidden;}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);}
 .stat-card.green::before{background:var(--accent2);}
 .stat-card.orange::before{background:var(--accent3);}
@@ -102,8 +59,6 @@ body::before{
 .stat-card.red::before{background:var(--danger);}
 .stat-val{font-family:var(--font-mono);font-size:28px;font-weight:600;color:var(--text);}
 .stat-label{font-size:12px;color:var(--text2);margin-top:4px;}
-
-/* TABLES */
 .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:24px;}
 .table-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);}
 .table-title{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--text);}
@@ -113,18 +68,15 @@ td{font-size:13px;padding:10px 16px;border-bottom:1px solid var(--border);color:
 tr:last-child td{border-bottom:none;}
 tr:hover td{background:var(--bg3);color:var(--text);}
 .mono{font-family:var(--font-mono);font-size:12px;}
-
-/* STATUS PILLS */
 .pill{font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:2px;font-weight:600;letter-spacing:1px;}
 .pill.active,.pill.enrolled,.pill.open{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.3);}
 .pill.completed,.pill.closed{background:rgba(0,255,157,.1);color:var(--accent2);border:1px solid rgba(0,255,157,.3);}
 .pill.pending,.pill.planned,.pill.answered{background:rgba(255,204,0,.1);color:var(--warn);border:1px solid rgba(255,204,0,.3);}
-.pill.withdrawn,.pill.screen_failed{background:rgba(255,68,85,.1);color:var(--danger);border:1px solid rgba(255,68,85,.3);}
+.pill.withdrawn,.pill.screen_failed,.pill.inactive{background:rgba(255,68,85,.1);color:var(--danger);border:1px solid rgba(255,68,85,.3);}
 .pill.mild{background:rgba(0,255,157,.1);color:var(--accent2);border:1px solid rgba(0,255,157,.3);}
 .pill.moderate{background:rgba(255,204,0,.1);color:var(--warn);border:1px solid rgba(255,204,0,.3);}
 .pill.severe{background:rgba(255,68,85,.1);color:var(--danger);border:1px solid rgba(255,68,85,.3);}
-
-/* BUTTONS */
+.pill.admin{background:rgba(255,107,53,.1);color:var(--accent3);border:1px solid rgba(255,107,53,.3);}
 .btn{font-family:var(--font-mono);font-size:12px;padding:7px 14px;border-radius:2px;cursor:pointer;border:1px solid;transition:all .2s;letter-spacing:.5px;}
 .btn-primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600;}
 .btn-primary:hover{background:transparent;color:var(--accent);}
@@ -132,92 +84,85 @@ tr:hover td{background:var(--bg3);color:var(--text);}
 .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
 .btn-danger{background:transparent;color:var(--danger);border-color:var(--danger);}
 .btn-danger:hover{background:var(--danger);color:#fff;}
+.btn-warn{background:transparent;color:var(--warn);border-color:var(--warn);}
+.btn-warn:hover{background:var(--warn);color:var(--bg);}
 .btn-sm{padding:4px 10px;font-size:11px;}
 .btn-green{background:var(--accent2);color:var(--bg);border-color:var(--accent2);font-weight:600;}
 .btn-green:hover{background:transparent;color:var(--accent2);}
-
-/* FORMS */
+.action-btns{display:flex;gap:6px;}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:16px;}
 .form-group{display:flex;flex-direction:column;gap:5px;}
 .form-group label{font-family:var(--font-mono);font-size:11px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;}
-.form-group input,.form-group select,.form-group textarea{
-  background:var(--bg2);border:1px solid var(--border);color:var(--text);
-  font-family:var(--font-mono);font-size:12px;padding:8px 10px;border-radius:2px;outline:none;
-  transition:border-color .2s;
-}
+.form-group input,.form-group select,.form-group textarea{background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:8px 10px;border-radius:2px;outline:none;transition:border-color .2s;}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);}
 .form-group select option{background:var(--bg2);}
 .form-section{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;margin-bottom:16px;}
 .form-section-title{font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
 .form-actions{display:flex;gap:10px;padding-top:8px;}
-
-/* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:4px;width:90%;max-width:600px;max-height:85vh;overflow-y:auto;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:4px;width:90%;max-width:620px;max-height:90vh;overflow-y:auto;}
 .modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
 .modal-title{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--accent);}
 .modal-close{background:transparent;border:none;color:var(--text2);font-size:20px;cursor:pointer;}
 .modal-body{padding:20px;}
-
-/* LOGIN */
-#login-screen{
-  position:fixed;inset:0;background:var(--bg);z-index:300;
-  display:flex;align-items:center;justify-content:center;
-}
-.login-box{
-  background:var(--bg2);border:1px solid var(--border);border-radius:4px;
-  padding:40px;width:360px;
-}
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;align-items:center;justify-content:center;}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:40px;width:360px;}
 .login-logo{font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--accent);letter-spacing:3px;margin-bottom:6px;}
 .login-sub{font-size:12px;color:var(--text2);margin-bottom:28px;font-family:var(--font-mono);}
 .login-box .form-group{margin-bottom:14px;}
 .login-box .form-group input{width:100%;padding:10px;}
 .login-error{font-family:var(--font-mono);font-size:12px;color:var(--danger);margin-bottom:12px;display:none;}
 .login-btn{width:100%;padding:12px;font-size:13px;margin-top:6px;}
-
-/* ALERT */
-.alert{
-  font-family:var(--font-mono);font-size:12px;padding:10px 14px;border-radius:2px;
-  margin-bottom:14px;display:none;
-}
+.alert{font-family:var(--font-mono);font-size:12px;padding:10px 14px;border-radius:2px;margin-bottom:14px;display:none;}
 .alert.success{background:rgba(0,255,157,.1);border:1px solid rgba(0,255,157,.3);color:var(--accent2);}
 .alert.error{background:rgba(255,68,85,.1);border:1px solid rgba(255,68,85,.3);color:var(--danger);}
-
-/* TABS */
-.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;flex-wrap:wrap;}
 .tab{font-family:var(--font-mono);font-size:12px;padding:10px 16px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;}
 .tab:hover{color:var(--text);}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
-
-/* EMPTY STATE */
 .empty{text-align:center;padding:40px;color:var(--text3);font-family:var(--font-mono);font-size:13px;}
-
-/* LOADING */
 .loading{text-align:center;padding:30px;color:var(--text2);font-family:var(--font-mono);font-size:12px;}
 .loading::after{content:'...';animation:dots 1s infinite;}
 @keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
-
-/* QUERY CARD */
 .query-card{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px;margin-bottom:10px;}
 .query-id{font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-bottom:6px;}
 .query-issue{font-size:13px;color:var(--text);margin-bottom:8px;}
 .query-meta{font-family:var(--font-mono);font-size:11px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap;}
-
-/* SCROLLBAR */
+/* Visit tracker */
+.visit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px;}
+.visit-box{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:12px;cursor:pointer;transition:border-color .2s;}
+.visit-box:hover{border-color:var(--accent);}
+.visit-box.done{border-color:var(--accent2);}
+.visit-box.done .vb-num{color:var(--accent2);}
+.visit-box.planned .vb-num{color:var(--text3);}
+.vb-num{font-family:var(--font-mono);font-size:10px;color:var(--accent);margin-bottom:4px;}
+.vb-name{font-size:12px;font-weight:500;margin-bottom:4px;}
+.vb-status{font-family:var(--font-mono);font-size:10px;color:var(--text3);}
+/* Subject detail */
+.subj-detail-header{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.subj-detail-id{font-family:var(--font-mono);font-size:18px;color:var(--accent);}
+.subj-detail-meta{display:flex;gap:16px;flex-wrap:wrap;}
+.subj-detail-meta span{font-family:var(--font-mono);font-size:11px;color:var(--text2);}
+/* Data lock banner */
+.lock-banner{background:rgba(255,68,85,.08);border:1px solid rgba(255,68,85,.3);border-radius:4px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;}
+.lock-banner-text{font-family:var(--font-mono);font-size:13px;color:var(--danger);}
+/* Reports */
+.report-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.report-info{flex:1;}
+.report-name{font-family:var(--font-mono);font-size:13px;color:var(--text);margin-bottom:4px;}
+.report-desc{font-size:12px;color:var(--text2);}
+/* User role pills */
+.pill.data_manager,.pill.dm{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.3);}
+.pill.monitor,.pill.cra{background:rgba(0,255,157,.1);color:var(--accent2);border:1px solid rgba(0,255,157,.3);}
+.pill.investigator,.pill.pi{background:rgba(255,204,0,.1);color:var(--warn);border:1px solid rgba(255,204,0,.3);}
 ::-webkit-scrollbar{width:6px;height:6px;}
 ::-webkit-scrollbar-track{background:var(--bg2);}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--text3);}
-
-/* RESPONSIVE */
-@media(max-width:768px){
-  .app{grid-template-columns:1fr;}
-  .sidebar{display:none;}
-  .stats-grid{grid-template-columns:repeat(2,1fr);}
-}
+@media(max-width:768px){.app{grid-template-columns:1fr;}.sidebar{display:none;}.stats-grid{grid-template-columns:repeat(2,1fr);}}
 </style>
 </head>
 <body>
@@ -236,8 +181,6 @@ tr:hover td{background:var(--bg3);color:var(--text);}
 
 <!-- APP -->
 <div class="app" id="app-shell" style="display:none;">
-
-  <!-- TOPBAR -->
   <header class="topbar">
     <div class="logo">MINI·<span>EDC</span></div>
     <div class="badge">PHASE F</div>
@@ -251,7 +194,6 @@ tr:hover td{background:var(--bg3);color:var(--text);}
     </div>
   </header>
 
-  <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="nav-section">Overview</div>
     <div class="nav-item active" onclick="showPanel('dashboard')" id="nav-dashboard"><span class="icon">◈</span> Dashboard</div>
@@ -267,9 +209,12 @@ tr:hover td{background:var(--bg3);color:var(--text);}
     <div class="nav-section">Quality</div>
     <div class="nav-item" onclick="showPanel('queries')" id="nav-queries"><span class="icon">⚑</span> Queries</div>
     <div class="nav-item" onclick="showPanel('audit')" id="nav-audit"><span class="icon">◌</span> Audit Trail</div>
+    <div class="nav-section">Admin</div>
+    <div class="nav-item" onclick="showPanel('users')" id="nav-users"><span class="icon">◍</span> Users</div>
+    <div class="nav-item" onclick="showPanel('reports')" id="nav-reports"><span class="icon">↓</span> Reports</div>
+    <div class="nav-item" onclick="showPanel('datalock')" id="nav-datalock"><span class="icon">🔒</span> Data Lock</div>
   </nav>
 
-  <!-- MAIN -->
   <main class="main">
 
     <!-- DASHBOARD -->
@@ -303,9 +248,7 @@ tr:hover td{background:var(--bg3);color:var(--text);}
         <button class="btn btn-primary" onclick="openModal('modal-study')">+ NEW STUDY</button>
       </div>
       <div id="alert-studies" class="alert"></div>
-      <div class="table-wrap">
-        <div id="studies-table"><div class="loading">Loading</div></div>
-      </div>
+      <div class="table-wrap"><div id="studies-table"><div class="loading">Loading</div></div></div>
     </div>
 
     <!-- SITES -->
@@ -315,17 +258,17 @@ tr:hover td{background:var(--bg3);color:var(--text);}
         <button class="btn btn-primary" onclick="openModal('modal-site')">+ ADD SITE</button>
       </div>
       <div id="alert-sites" class="alert"></div>
-      <div class="table-wrap">
-        <div id="sites-table"><div class="loading">Loading</div></div>
-      </div>
+      <div class="table-wrap"><div id="sites-table"><div class="loading">Loading</div></div></div>
     </div>
 
     <!-- PROTOCOL -->
     <div class="panel" id="panel-protocol">
-      <div class="page-header"><div class="page-title">PROTOCOL VISITS</div><div class="page-sub">Visit schedule for selected study</div></div>
-      <div class="table-wrap">
-        <div id="protocol-table"><div class="loading">Loading</div></div>
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="page-title">PROTOCOL VISITS</div><div class="page-sub">Visit schedule for selected study</div></div>
+        <button class="btn btn-primary" onclick="openModal('modal-visit')">+ ADD VISIT</button>
       </div>
+      <div id="alert-protocol" class="alert"></div>
+      <div class="table-wrap"><div id="protocol-table"><div class="loading">Loading</div></div></div>
     </div>
 
     <!-- SUBJECTS -->
@@ -334,8 +277,41 @@ tr:hover td{background:var(--bg3);color:var(--text);}
         <div><div class="page-title">SUBJECTS</div><div class="page-sub">All enrolled subjects</div></div>
         <button class="btn btn-primary" onclick="showPanel('enroll')">+ ENROLL</button>
       </div>
-      <div class="table-wrap">
-        <div id="subjects-table"><div class="loading">Loading</div></div>
+      <div class="table-wrap"><div id="subjects-table"><div class="loading">Loading</div></div></div>
+    </div>
+
+    <!-- SUBJECT DETAIL -->
+    <div class="panel" id="panel-subject-detail">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="page-title">SUBJECT DETAIL</div><div class="page-sub" id="sd-breadcrumb">← Back to subjects</div></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="showPanel('subjects')">← BACK</button>
+          <button class="btn btn-warn btn-sm" onclick="openEditSubjectModal()">EDIT</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCurrentSubject()">DELETE</button>
+        </div>
+      </div>
+      <div id="sd-header"></div>
+      <div class="tabs">
+        <div class="tab active" onclick="showSDTab('visits')">VISIT TRACKER</div>
+        <div class="tab" onclick="showSDTab('crf')">CRF DATA</div>
+        <div class="tab" onclick="showSDTab('queries')">QUERIES</div>
+      </div>
+      <div class="tab-panel active" id="sd-visits">
+        <div class="visit-grid" id="sd-visit-grid"><div class="loading">Loading</div></div>
+      </div>
+      <div class="tab-panel" id="sd-crf">
+        <div class="tabs" style="margin-bottom:16px;">
+          <div class="tab active" onclick="showSDCRFTab('dm')">DM</div>
+          <div class="tab" onclick="showSDCRFTab('vs')">VS</div>
+          <div class="tab" onclick="showSDCRFTab('lb')">LB</div>
+          <div class="tab" onclick="showSDCRFTab('ae')">AE</div>
+          <div class="tab" onclick="showSDCRFTab('ex')">EX</div>
+          <div class="tab" onclick="showSDCRFTab('cm')">CM</div>
+        </div>
+        <div id="sd-crf-content"><div class="empty">Select a CRF tab</div></div>
+      </div>
+      <div class="tab-panel" id="sd-queries">
+        <div id="sd-queries-content"><div class="loading">Loading</div></div>
       </div>
     </div>
 
@@ -350,9 +326,7 @@ tr:hover td{background:var(--bg3);color:var(--text);}
           <div class="form-group"><label>Subject ID</label><input id="e-subjid" placeholder="001"/></div>
           <div class="form-group"><label>Initials</label><input id="e-initials" placeholder="JS"/></div>
           <div class="form-group"><label>Site *</label><select id="e-site"><option value="">Select site...</option></select></div>
-          <div class="form-group"><label>Sex *</label>
-            <select id="e-sex"><option value="">Select...</option><option value="M">Male</option><option value="F">Female</option><option value="U">Unknown</option><option value="N">Not reported</option></select>
-          </div>
+          <div class="form-group"><label>Sex *</label><select id="e-sex"><option value="">Select...</option><option value="M">Male</option><option value="F">Female</option><option value="U">Unknown</option><option value="N">Not reported</option></select></div>
           <div class="form-group"><label>Race</label><input id="e-race" placeholder="WHITE"/></div>
           <div class="form-group"><label>Ethnicity</label><input id="e-ethnic" placeholder="NOT HISPANIC OR LATINO"/></div>
           <div class="form-group"><label>Country</label><input id="e-country" placeholder="USA"/></div>
@@ -385,7 +359,6 @@ tr:hover td{background:var(--bg3);color:var(--text);}
           <div class="tab" onclick="showCRFTab('ex')">EXPOSURE</div>
           <div class="tab" onclick="showCRFTab('cm')">MEDICATIONS</div>
         </div>
-        <!-- DM -->
         <div class="tab-panel active" id="crf-dm">
           <div class="form-section">
             <div class="form-section-title">Demographics CRF</div>
@@ -402,7 +375,6 @@ tr:hover td{background:var(--bg3);color:var(--text);}
             <div class="form-actions"><button class="btn btn-primary" onclick="submitCRF('dm')">SAVE DM CRF</button></div>
           </div>
         </div>
-        <!-- VS -->
         <div class="tab-panel" id="crf-vs">
           <div class="form-section">
             <div class="form-section-title">Vital Signs CRF</div>
@@ -421,7 +393,6 @@ tr:hover td{background:var(--bg3);color:var(--text);}
             <div class="form-actions"><button class="btn btn-primary" onclick="submitCRF('vs')">SAVE VS CRF</button></div>
           </div>
         </div>
-        <!-- LB -->
         <div class="tab-panel" id="crf-lb">
           <div class="form-section">
             <div class="form-section-title">Laboratory CRF</div>
@@ -440,7 +411,6 @@ tr:hover td{background:var(--bg3);color:var(--text);}
             <div class="form-actions"><button class="btn btn-primary" onclick="submitCRF('lb')">SAVE LB CRF</button></div>
           </div>
         </div>
-        <!-- AE -->
         <div class="tab-panel" id="crf-ae">
           <div class="form-section">
             <div class="form-section-title">Adverse Event CRF</div>
@@ -450,17 +420,11 @@ tr:hover td{background:var(--bg3);color:var(--text);}
               <div class="form-group"><label>Body System</label><input id="ae-bodsys" placeholder="NERVOUS SYSTEM DISORDERS"/></div>
               <div class="form-group"><label>Start Date *</label><input id="ae-start" type="date"/></div>
               <div class="form-group"><label>End Date</label><input id="ae-end" type="date"/></div>
-              <div class="form-group"><label>Severity *</label>
-                <select id="ae-sev"><option value="">Select...</option><option value="MILD">Mild</option><option value="MODERATE">Moderate</option><option value="SEVERE">Severe</option></select>
-              </div>
-              <div class="form-group"><label>Serious *</label>
-                <select id="ae-ser"><option value="">Select...</option><option value="N">No</option><option value="Y">Yes</option></select>
-              </div>
+              <div class="form-group"><label>Severity *</label><select id="ae-sev"><option value="">Select...</option><option value="MILD">Mild</option><option value="MODERATE">Moderate</option><option value="SEVERE">Severe</option></select></div>
+              <div class="form-group"><label>Serious *</label><select id="ae-ser"><option value="">Select...</option><option value="N">No</option><option value="Y">Yes</option></select></div>
               <div class="form-group"><label>Relationship</label><input id="ae-rel" placeholder="POSSIBLY RELATED"/></div>
               <div class="form-group"><label>Outcome</label><input id="ae-out" placeholder="RECOVERED/RESOLVED"/></div>
-              <div class="form-group"><label>Death</label>
-                <select id="ae-death"><option value="N">No</option><option value="Y">Yes</option></select>
-              </div>
+              <div class="form-group"><label>Death</label><select id="ae-death"><option value="N">No</option><option value="Y">Yes</option></select></div>
             </div>
             <div class="form-actions"><button class="btn btn-primary" onclick="submitCRF('ae')">SAVE AE</button></div>
           </div>
@@ -469,7 +433,6 @@ tr:hover td{background:var(--bg3);color:var(--text);}
             <div id="ae-table"></div>
           </div>
         </div>
-        <!-- EX -->
         <div class="tab-panel" id="crf-ex">
           <div class="form-section">
             <div class="form-section-title">Exposure CRF</div>
@@ -487,7 +450,6 @@ tr:hover td{background:var(--bg3);color:var(--text);}
             <div class="form-actions"><button class="btn btn-primary" onclick="submitCRF('ex')">SAVE EX CRF</button></div>
           </div>
         </div>
-        <!-- CM -->
         <div class="tab-panel" id="crf-cm">
           <div class="form-section">
             <div class="form-section-title">Concomitant Medication CRF</div>
@@ -519,8 +481,93 @@ tr:hover td{background:var(--bg3);color:var(--text);}
     <!-- AUDIT -->
     <div class="panel" id="panel-audit">
       <div class="page-header"><div class="page-title">AUDIT TRAIL</div><div class="page-sub">All system actions</div></div>
+      <div class="table-wrap"><div id="audit-table"><div class="loading">Loading</div></div></div>
+    </div>
+
+    <!-- USERS -->
+    <div class="panel" id="panel-users">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="page-title">USER MANAGEMENT</div><div class="page-sub">Manage system users</div></div>
+        <button class="btn btn-primary" onclick="openModal('modal-user')">+ NEW USER</button>
+      </div>
+      <div id="alert-users" class="alert"></div>
+      <div class="table-wrap"><div id="users-table"><div class="loading">Loading</div></div></div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="panel" id="panel-reports">
+      <div class="page-header"><div class="page-title">REPORTS & EXPORTS</div><div class="page-sub">Generate and download study reports</div></div>
+      <div id="alert-reports" class="alert"></div>
+      <div class="report-card">
+        <div class="report-info">
+          <div class="report-name">SDTM DATASET — DM</div>
+          <div class="report-desc">Demographics domain in CDISC SDTM format (CSV)</div>
+        </div>
+        <button class="btn btn-outline" onclick="exportSDTM('dm')">EXPORT CSV</button>
+      </div>
+      <div class="report-card">
+        <div class="report-info">
+          <div class="report-name">SDTM DATASET — VS</div>
+          <div class="report-desc">Vital Signs domain in CDISC SDTM format (CSV)</div>
+        </div>
+        <button class="btn btn-outline" onclick="exportSDTM('vs')">EXPORT CSV</button>
+      </div>
+      <div class="report-card">
+        <div class="report-info">
+          <div class="report-name">SDTM DATASET — LB</div>
+          <div class="report-desc">Laboratory domain in CDISC SDTM format (CSV)</div>
+        </div>
+        <button class="btn btn-outline" onclick="exportSDTM('lb')">EXPORT CSV</button>
+      </div>
+      <div class="report-card">
+        <div class="report-info">
+          <div class="report-name">SDTM DATASET — AE</div>
+          <div class="report-desc">Adverse Events domain in CDISC SDTM format (CSV)</div>
+        </div>
+        <button class="btn btn-outline" onclick="exportSDTM('ae')">EXPORT CSV</button>
+      </div>
+      <div class="report-card">
+        <div class="report-info">
+          <div class="report-name">SUBJECT LISTING</div>
+          <div class="report-desc">All enrolled subjects with status (CSV)</div>
+        </div>
+        <button class="btn btn-outline" onclick="exportSubjects()">EXPORT CSV</button>
+      </div>
+      <div class="report-card">
+        <div class="report-info">
+          <div class="report-name">QUERY LISTING</div>
+          <div class="report-desc">All queries with status and resolution (CSV)</div>
+        </div>
+        <button class="btn btn-outline" onclick="exportQueries()">EXPORT CSV</button>
+      </div>
+      <div class="report-card">
+        <div class="report-info">
+          <div class="report-name">AUDIT TRAIL REPORT</div>
+          <div class="report-desc">Complete audit trail export (CSV)</div>
+        </div>
+        <button class="btn btn-outline" onclick="exportAudit()">EXPORT CSV</button>
+      </div>
+    </div>
+
+    <!-- DATA LOCK -->
+    <div class="panel" id="panel-datalock">
+      <div class="page-header"><div class="page-title">DATA LOCK</div><div class="page-sub">Lock study data for submission</div></div>
+      <div id="alert-datalock" class="alert"></div>
+      <div id="lock-status-banner"></div>
+      <div class="form-section">
+        <div class="form-section-title">Lock Study Data</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Locking study data prevents any further modifications. This action should only be performed after all data cleaning and query resolution is complete.</p>
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1"><label>Lock Reason *</label><textarea id="lock-reason" rows="3" style="width:100%;resize:vertical;" placeholder="All queries resolved. Data cleaning complete. Ready for statistical analysis."></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-danger" onclick="lockStudy()">🔒 LOCK STUDY DATA</button>
+          <button class="btn btn-outline" onclick="unlockStudy()">UNLOCK (Admin Only)</button>
+        </div>
+      </div>
       <div class="table-wrap">
-        <div id="audit-table"><div class="loading">Loading</div></div>
+        <div class="table-header"><div class="table-title">LOCK HISTORY</div></div>
+        <div id="lock-history"><div class="loading">Loading</div></div>
       </div>
     </div>
 
@@ -528,21 +575,24 @@ tr:hover td{background:var(--bg3);color:var(--text);}
 </div>
 
 <!-- MODALS -->
-<!-- New Study -->
+
+<!-- New/Edit Study -->
 <div class="modal-overlay" id="modal-study">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title">NEW STUDY</div><button class="modal-close" onclick="closeModal('modal-study')">×</button></div>
+    <div class="modal-header"><div class="modal-title" id="modal-study-title">NEW STUDY</div><button class="modal-close" onclick="closeModal('modal-study')">×</button></div>
     <div class="modal-body">
       <div id="alert-modal-study" class="alert"></div>
+      <input type="hidden" id="s-edit-id"/>
       <div class="form-grid">
         <div class="form-group"><label>Study ID *</label><input id="s-id" placeholder="STUDY002"/></div>
         <div class="form-group"><label>Study Title *</label><input id="s-title" placeholder="A Phase II Study of..."/></div>
         <div class="form-group"><label>Protocol No</label><input id="s-proto" placeholder="PROTO-2024-002"/></div>
         <div class="form-group"><label>Phase</label><select id="s-phase"><option value="">Select...</option><option>I</option><option>II</option><option>III</option><option>IV</option></select></div>
+        <div class="form-group"><label>Status</label><select id="s-status"><option value="ACTIVE">ACTIVE</option><option value="COMPLETED">COMPLETED</option><option value="SUSPENDED">SUSPENDED</option></select></div>
         <div class="form-group"><label>Sponsor</label><input id="s-sponsor" placeholder="Pharma Corp"/></div>
         <div class="form-group"><label>Indication</label><input id="s-indication" placeholder="Hypertension"/></div>
       </div>
-      <div class="form-actions"><button class="btn btn-primary" onclick="createStudy()">CREATE STUDY</button><button class="btn btn-outline" onclick="closeModal('modal-study')">CANCEL</button></div>
+      <div class="form-actions"><button class="btn btn-primary" id="study-save-btn" onclick="saveStudy()">CREATE STUDY</button><button class="btn btn-outline" onclick="closeModal('modal-study')">CANCEL</button></div>
     </div>
   </div>
 </div>
@@ -559,8 +609,52 @@ tr:hover td{background:var(--bg3);color:var(--text);}
         <div class="form-group"><label>Investigator</label><input id="si-inv" placeholder="Dr. Kumar"/></div>
         <div class="form-group"><label>Country</label><input id="si-country" placeholder="IND"/></div>
         <div class="form-group"><label>City</label><input id="si-city" placeholder="Mumbai"/></div>
+        <div class="form-group"><label>Status</label><select id="si-status"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></div>
       </div>
       <div class="form-actions"><button class="btn btn-primary" onclick="addSite()">ADD SITE</button><button class="btn btn-outline" onclick="closeModal('modal-site')">CANCEL</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Protocol Visit -->
+<div class="modal-overlay" id="modal-visit">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="modal-visit-title">ADD VISIT</div><button class="modal-close" onclick="closeModal('modal-visit')">×</button></div>
+    <div class="modal-body">
+      <div id="alert-modal-visit" class="alert"></div>
+      <input type="hidden" id="v-edit-num"/>
+      <div class="form-grid">
+        <div class="form-group"><label>Visit Number *</label><input id="v-num" type="number" placeholder="11"/></div>
+        <div class="form-group"><label>Visit Name *</label><input id="v-name" placeholder="WEEK 28"/></div>
+        <div class="form-group"><label>Window Low (days)</label><input id="v-lo" type="number" placeholder="-3" value="0"/></div>
+        <div class="form-group"><label>Window High (days)</label><input id="v-hi" type="number" placeholder="3" value="0"/></div>
+        <div class="form-group"><label>Unscheduled?</label><select id="v-unsched"><option value="0">No</option><option value="1">Yes</option></select></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-primary" id="visit-save-btn" onclick="saveVisit()">ADD VISIT</button><button class="btn btn-outline" onclick="closeModal('modal-visit')">CANCEL</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Subject -->
+<div class="modal-overlay" id="modal-edit-subject">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">EDIT SUBJECT</div><button class="modal-close" onclick="closeModal('modal-edit-subject')">×</button></div>
+    <div class="modal-body">
+      <div id="alert-modal-edit-subj" class="alert"></div>
+      <input type="hidden" id="es-usubjid"/>
+      <div class="form-grid">
+        <div class="form-group"><label>Subject ID</label><input id="es-subjid"/></div>
+        <div class="form-group"><label>Initials</label><input id="es-initials"/></div>
+        <div class="form-group"><label>Status</label><select id="es-status"><option value="ENROLLED">ENROLLED</option><option value="COMPLETED">COMPLETED</option><option value="WITHDRAWN">WITHDRAWN</option><option value="SCREEN_FAILED">SCREEN FAILED</option></select></div>
+        <div class="form-group"><label>Sex</label><select id="es-sex"><option value="M">Male</option><option value="F">Female</option><option value="U">Unknown</option><option value="N">Not reported</option></select></div>
+        <div class="form-group"><label>Race</label><input id="es-race"/></div>
+        <div class="form-group"><label>Ethnicity</label><input id="es-ethnic"/></div>
+        <div class="form-group"><label>Country</label><input id="es-country"/></div>
+        <div class="form-group"><label>Withdraw Reason</label><input id="es-wdreason" placeholder="Only if withdrawn"/></div>
+        <div class="form-group"><label>Consent Date</label><input id="es-consent" type="date"/></div>
+        <div class="form-group"><label>Enrollment Date</label><input id="es-enroll" type="date"/></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-primary" onclick="saveSubjectEdit()">SAVE CHANGES</button><button class="btn btn-outline" onclick="closeModal('modal-edit-subject')">CANCEL</button></div>
     </div>
   </div>
 </div>
@@ -585,6 +679,38 @@ tr:hover td{background:var(--bg3);color:var(--text);}
   </div>
 </div>
 
+<!-- New User -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">NEW USER</div><button class="modal-close" onclick="closeModal('modal-user')">×</button></div>
+    <div class="modal-body">
+      <div id="alert-modal-user" class="alert"></div>
+      <div class="form-grid">
+        <div class="form-group"><label>User ID *</label><input id="u-id" placeholder="DM001"/></div>
+        <div class="form-group"><label>Full Name *</label><input id="u-name" placeholder="Dr. John Smith"/></div>
+        <div class="form-group"><label>Email</label><input id="u-email" type="email" placeholder="john@site.com"/></div>
+        <div class="form-group"><label>Role *</label><select id="u-role"><option value="">Select...</option><option value="ADMIN">ADMIN</option><option value="DATA_MANAGER">DATA MANAGER</option><option value="MONITOR">MONITOR</option><option value="INVESTIGATOR">INVESTIGATOR</option><option value="SITE_STAFF">SITE STAFF</option></select></div>
+        <div class="form-group"><label>Password *</label><input id="u-pass" type="password" placeholder="Min 8 chars"/></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-primary" onclick="createUser()">CREATE USER</button><button class="btn btn-outline" onclick="closeModal('modal-user')">CANCEL</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header"><div class="modal-title" style="color:var(--danger);">CONFIRM DELETE</div><button class="modal-close" onclick="closeModal('modal-confirm')">×</button></div>
+    <div class="modal-body">
+      <p id="confirm-msg" style="font-size:13px;color:var(--text2);margin-bottom:20px;"></p>
+      <div class="form-actions">
+        <button class="btn btn-danger" onclick="confirmDeleteFn()">DELETE</button>
+        <button class="btn btn-outline" onclick="closeModal('modal-confirm')">CANCEL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const API = 'https://mini-edc-production.up.railway.app';
 let token = '';
@@ -592,6 +718,8 @@ let currentUser = {};
 let currentStudy = '';
 let studyList = [];
 let subjectList = [];
+let currentSubjectDetail = null;
+let confirmDeleteFn = ()=>{};
 
 // ── API HELPER ────────────────────────────────────────────────
 async function api(method, path, body=null) {
@@ -622,7 +750,6 @@ async function doLogin() {
     await loadStudies();
   } catch(e) { errEl.textContent = e.message; errEl.style.display='block'; }
 }
-
 document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 async function doLogout() {
@@ -636,7 +763,9 @@ async function doLogout() {
 function showPanel(name) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
+  const panel = document.getElementById('panel-'+name);
+  if(!panel) return;
+  panel.classList.add('active');
   const nav = document.getElementById('nav-'+name);
   if(nav) nav.classList.add('active');
   if(name==='dashboard') loadDashboard();
@@ -648,6 +777,8 @@ function showPanel(name) {
   if(name==='audit') loadAudit();
   if(name==='enroll') loadEnrollSites();
   if(name==='crf') loadCRFSubjects();
+  if(name==='users') loadUsersTable();
+  if(name==='datalock') loadDataLock();
 }
 
 // ── STUDY SELECTOR ────────────────────────────────────────────
@@ -681,12 +812,12 @@ async function loadDashboard() {
   if(study) document.getElementById('dash-study-name').textContent = study.study_title;
   try {
     const stats = await api('GET', `/studies/${currentStudy}/stats`);
-    document.getElementById('stat-enrolled').textContent = stats.subjects.enrolled;
-    document.getElementById('stat-completed').textContent = stats.subjects.completed;
-    document.getElementById('stat-open-q').textContent = stats.queries.open;
-    document.getElementById('stat-ae').textContent = stats.adverse_events.total;
-    document.getElementById('stat-sae').textContent = stats.adverse_events.serious;
-    document.getElementById('stat-withdrawn').textContent = stats.subjects.withdrawn;
+    document.getElementById('stat-enrolled').textContent = stats.subjects?.enrolled ?? '—';
+    document.getElementById('stat-completed').textContent = stats.subjects?.completed ?? '—';
+    document.getElementById('stat-open-q').textContent = stats.queries?.open ?? '—';
+    document.getElementById('stat-ae').textContent = stats.adverse_events?.total ?? '—';
+    document.getElementById('stat-sae').textContent = stats.adverse_events?.serious ?? '—';
+    document.getElementById('stat-withdrawn').textContent = stats.subjects?.withdrawn ?? '—';
   } catch(e) {}
   try {
     const subjects = await api('GET', `/studies/${currentStudy}/subjects`);
@@ -697,45 +828,101 @@ async function loadDashboard() {
   try {
     const queries = await api('GET', `/studies/${currentStudy}/queries?status=Open`);
     const el = document.getElementById('dash-queries-table');
-    if(queries.length === 0) { el.innerHTML = '<div class="empty">No open queries</div>'; return; }
+    if(!queries.length) { el.innerHTML = '<div class="empty">No open queries</div>'; return; }
     el.innerHTML = `<table><thead><tr><th>Query ID</th><th>Subject</th><th>Domain</th><th>Field</th><th>Severity</th><th>Raised</th></tr></thead><tbody>${
-      queries.slice(0,5).map(q=>`<tr><td class="mono">${q.query_id}</td><td class="mono">${q.usubjid}</td><td>${q.domain}</td><td>${q.field}</td><td><span class="pill ${q.severity.toLowerCase()}">${q.severity}</span></td><td class="mono">${q.raised_at?.slice(0,10)||'—'}</td></tr>`).join('')
+      queries.slice(0,5).map(q=>`<tr><td class="mono">${q.query_id}</td><td class="mono">${q.usubjid}</td><td>${q.domain}</td><td>${q.field}</td><td><span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span></td><td class="mono">${q.raised_at?.slice(0,10)||'—'}</td></tr>`).join('')
     }</tbody></table>`;
   } catch(e) {}
 }
 
 function subjectsTableHTML(subjects) {
-  return `<table><thead><tr><th>USUBJID</th><th>Site</th><th>Sex</th><th>Consent Date</th><th>Status</th></tr></thead><tbody>${
-    subjects.map(s=>`<tr><td class="mono">${s.usubjid}</td><td>${s.site_id}</td><td>${s.sex}</td><td class="mono">${s.consent_date||'—'}</td><td><span class="pill ${s.status?.toLowerCase()}">${s.status}</span></td></tr>`).join('')
+  return `<table><thead><tr><th>USUBJID</th><th>Site</th><th>Sex</th><th>Consent Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>${
+    subjects.map(s=>`<tr>
+      <td class="mono" style="cursor:pointer;color:var(--accent);" onclick="viewSubjectDetail('${s.usubjid}')">${s.usubjid}</td>
+      <td>${s.site_id||'—'}</td><td>${s.sex||'—'}</td>
+      <td class="mono">${s.consent_date||'—'}</td>
+      <td><span class="pill ${s.status?.toLowerCase()}">${s.status||'—'}</span></td>
+      <td><div class="action-btns">
+        <button class="btn btn-outline btn-sm" onclick="viewSubjectDetail('${s.usubjid}')">VIEW</button>
+        <button class="btn btn-warn btn-sm" onclick="openEditSubjectModalFor('${s.usubjid}')">EDIT</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete('subject','${s.usubjid}')">DEL</button>
+      </div></td>
+    </tr>`).join('')
   }</tbody></table>`;
 }
 
-// ── STUDIES TABLE ─────────────────────────────────────────────
+// ── STUDIES ──────────────────────────────────────────────────
 async function loadStudiesTable() {
   try {
     const studies = await api('GET', '/studies');
     studyList = studies;
     document.getElementById('studies-table').innerHTML = studies.length ?
-      `<table><thead><tr><th>Study ID</th><th>Title</th><th>Phase</th><th>Sponsor</th><th>Indication</th><th>Status</th></tr></thead><tbody>${
-        studies.map(s=>`<tr><td class="mono">${s.study_id}</td><td>${s.study_title}</td><td>${s.phase||'—'}</td><td>${s.sponsor||'—'}</td><td>${s.indication||'—'}</td><td><span class="pill ${s.status?.toLowerCase()}">${s.status}</span></td></tr>`).join('')
+      `<table><thead><tr><th>Study ID</th><th>Title</th><th>Phase</th><th>Sponsor</th><th>Indication</th><th>Status</th><th>Actions</th></tr></thead><tbody>${
+        studies.map(s=>`<tr>
+          <td class="mono">${s.study_id}</td><td>${s.study_title}</td>
+          <td>${s.phase||'—'}</td><td>${s.sponsor||'—'}</td><td>${s.indication||'—'}</td>
+          <td><span class="pill ${s.status?.toLowerCase()}">${s.status}</span></td>
+          <td><div class="action-btns">
+            <button class="btn btn-warn btn-sm" onclick="openEditStudy('${s.study_id}')">EDIT</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete('study','${s.study_id}')">DEL</button>
+          </div></td>
+        </tr>`).join('')
       }</tbody></table>` : '<div class="empty">No studies found</div>';
   } catch(e) { document.getElementById('studies-table').innerHTML='<div class="empty">Failed to load</div>'; }
 }
 
-async function createStudy() {
+function openEditStudy(studyId) {
+  const s = studyList.find(x=>x.study_id===studyId);
+  if(!s) return;
+  document.getElementById('modal-study-title').textContent = 'EDIT STUDY';
+  document.getElementById('study-save-btn').textContent = 'SAVE CHANGES';
+  document.getElementById('s-edit-id').value = studyId;
+  document.getElementById('s-id').value = s.study_id;
+  document.getElementById('s-id').disabled = true;
+  document.getElementById('s-title').value = s.study_title||'';
+  document.getElementById('s-proto').value = s.protocol_no||'';
+  document.getElementById('s-phase').value = s.phase||'';
+  document.getElementById('s-status').value = s.status||'ACTIVE';
+  document.getElementById('s-sponsor').value = s.sponsor||'';
+  document.getElementById('s-indication').value = s.indication||'';
+  openModal('modal-study');
+}
+
+function openNewStudy() {
+  document.getElementById('modal-study-title').textContent = 'NEW STUDY';
+  document.getElementById('study-save-btn').textContent = 'CREATE STUDY';
+  document.getElementById('s-edit-id').value = '';
+  document.getElementById('s-id').value = '';
+  document.getElementById('s-id').disabled = false;
+  ['s-title','s-proto','s-sponsor','s-indication'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('s-phase').value='';
+  document.getElementById('s-status').value='ACTIVE';
+  openModal('modal-study');
+}
+// Override the + NEW STUDY button
+document.querySelector('[onclick="openModal(\'modal-study\')"]')?.setAttribute('onclick','openNewStudy()');
+
+async function saveStudy() {
+  const editId = document.getElementById('s-edit-id').value;
   const body = {
-    study_id: document.getElementById('s-id').value.trim(),
     study_title: document.getElementById('s-title').value.trim(),
     protocol_no: document.getElementById('s-proto').value.trim()||null,
     phase: document.getElementById('s-phase').value||null,
+    status: document.getElementById('s-status').value,
     sponsor: document.getElementById('s-sponsor').value.trim()||null,
     indication: document.getElementById('s-indication').value.trim()||null,
   };
   try {
-    await api('POST', '/studies', body);
-    showAlert('alert-modal-study', 'Study created successfully!', 'success');
+    if(editId) {
+      await api('PATCH', `/studies/${editId}`, body);
+      showAlert('alert-modal-study','Study updated!','success');
+    } else {
+      body.study_id = document.getElementById('s-id').value.trim();
+      await api('POST', '/studies', body);
+      showAlert('alert-modal-study','Study created!','success');
+    }
     await loadStudies();
-    setTimeout(()=>closeModal('modal-study'),1000);
+    setTimeout(()=>{ closeModal('modal-study'); loadStudiesTable(); },800);
   } catch(e) { showAlert('alert-modal-study', e.message, 'error'); }
 }
 
@@ -745,8 +932,15 @@ async function loadSitesTable() {
   try {
     const sites = await api('GET', `/studies/${currentStudy}/sites`);
     document.getElementById('sites-table').innerHTML = sites.length ?
-      `<table><thead><tr><th>Site ID</th><th>Site Name</th><th>Investigator</th><th>Country</th><th>City</th><th>Status</th></tr></thead><tbody>${
-        sites.map(s=>`<tr><td class="mono">${s.site_id}</td><td>${s.site_name}</td><td>${s.investigator||'—'}</td><td>${s.country||'—'}</td><td>${s.city||'—'}</td><td><span class="pill ${s.status?.toLowerCase()}">${s.status}</span></td></tr>`).join('')
+      `<table><thead><tr><th>Site ID</th><th>Site Name</th><th>Investigator</th><th>Country</th><th>City</th><th>Status</th><th>Actions</th></tr></thead><tbody>${
+        sites.map(s=>`<tr>
+          <td class="mono">${s.site_id}</td><td>${s.site_name}</td>
+          <td>${s.investigator||'—'}</td><td>${s.country||'—'}</td><td>${s.city||'—'}</td>
+          <td><span class="pill ${s.status?.toLowerCase()}">${s.status}</span></td>
+          <td><div class="action-btns">
+            <button class="btn btn-warn btn-sm" onclick="toggleSiteStatus('${s.site_id}','${s.status}')">${s.status==='ACTIVE'?'DEACTIVATE':'ACTIVATE'}</button>
+          </div></td>
+        </tr>`).join('')
       }</tbody></table>` : '<div class="empty">No sites found</div>';
   } catch(e) {}
 }
@@ -758,12 +952,22 @@ async function addSite() {
     investigator: document.getElementById('si-inv').value.trim()||null,
     country: document.getElementById('si-country').value.trim()||null,
     city: document.getElementById('si-city').value.trim()||null,
+    status: document.getElementById('si-status').value,
   };
+  if(!body.site_id||!body.site_name) { showAlert('alert-modal-site','Site ID and Name required','error'); return; }
   try {
     await api('POST', `/studies/${currentStudy}/sites`, body);
     showAlert('alert-modal-site', 'Site added!', 'success');
-    setTimeout(()=>closeModal('modal-site'),1000);
+    setTimeout(()=>{ closeModal('modal-site'); loadSitesTable(); },800);
   } catch(e) { showAlert('alert-modal-site', e.message, 'error'); }
+}
+
+async function toggleSiteStatus(siteId, currentStatus) {
+  const newStatus = currentStatus==='ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+  try {
+    await api('PATCH', `/studies/${currentStudy}/sites/${siteId}`, {status: newStatus});
+    loadSitesTable();
+  } catch(e) { alert(e.message); }
 }
 
 // ── PROTOCOL ──────────────────────────────────────────────────
@@ -771,10 +975,67 @@ async function loadProtocol() {
   if(!currentStudy) { document.getElementById('protocol-table').innerHTML='<div class="empty">Select a study first</div>'; return; }
   try {
     const data = await api('GET', `/studies/${currentStudy}/protocol`);
-    document.getElementById('protocol-table').innerHTML = `<table><thead><tr><th>#</th><th>Visit Name</th><th>Window Low</th><th>Window High</th><th>Unscheduled</th></tr></thead><tbody>${
-      data.visits.map(v=>`<tr><td class="mono">${v.visit_num}</td><td>${v.visit_name}</td><td>${v.visit_window_lo}</td><td>${v.visit_window_hi}</td><td>${v.is_unscheduled?'Yes':'No'}</td></tr>`).join('')
-    }</tbody></table>`;
+    document.getElementById('protocol-table').innerHTML = data.visits?.length ?
+      `<table><thead><tr><th>#</th><th>Visit Name</th><th>Window Low</th><th>Window High</th><th>Unscheduled</th><th>Actions</th></tr></thead><tbody>${
+        data.visits.map(v=>`<tr>
+          <td class="mono">${v.visit_num}</td><td>${v.visit_name}</td>
+          <td>${v.visit_window_lo}</td><td>${v.visit_window_hi}</td>
+          <td>${v.is_unscheduled?'Yes':'No'}</td>
+          <td><div class="action-btns">
+            <button class="btn btn-warn btn-sm" onclick="openEditVisit(${v.visit_num},'${v.visit_name}',${v.visit_window_lo},${v.visit_window_hi},${v.is_unscheduled})">EDIT</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete('visit',${v.visit_num})">DEL</button>
+          </div></td>
+        </tr>`).join('')
+      }</tbody></table>` : '<div class="empty">No visits defined</div>';
   } catch(e) { document.getElementById('protocol-table').innerHTML='<div class="empty">No protocol found</div>'; }
+}
+
+function openAddVisit() {
+  document.getElementById('modal-visit-title').textContent = 'ADD VISIT';
+  document.getElementById('visit-save-btn').textContent = 'ADD VISIT';
+  document.getElementById('v-edit-num').value = '';
+  ['v-num','v-name'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('v-lo').value='0';
+  document.getElementById('v-hi').value='0';
+  document.getElementById('v-unsched').value='0';
+  openModal('modal-visit');
+}
+
+function openEditVisit(num, name, lo, hi, unsched) {
+  document.getElementById('modal-visit-title').textContent = 'EDIT VISIT';
+  document.getElementById('visit-save-btn').textContent = 'SAVE CHANGES';
+  document.getElementById('v-edit-num').value = num;
+  document.getElementById('v-num').value = num;
+  document.getElementById('v-num').disabled = true;
+  document.getElementById('v-name').value = name;
+  document.getElementById('v-lo').value = lo;
+  document.getElementById('v-hi').value = hi;
+  document.getElementById('v-unsched').value = unsched;
+  openModal('modal-visit');
+}
+
+async function saveVisit() {
+  const editNum = document.getElementById('v-edit-num').value;
+  const body = {
+    visit_name: document.getElementById('v-name').value.trim(),
+    visit_window_lo: parseInt(document.getElementById('v-lo').value)||0,
+    visit_window_hi: parseInt(document.getElementById('v-hi').value)||0,
+    is_unscheduled: parseInt(document.getElementById('v-unsched').value)||0,
+  };
+  if(!body.visit_name) { showAlert('alert-modal-visit','Visit name required','error'); return; }
+  try {
+    if(editNum) {
+      await api('PATCH', `/studies/${currentStudy}/protocol/visits/${editNum}`, body);
+      showAlert('alert-modal-visit','Visit updated!','success');
+    } else {
+      body.visit_num = parseInt(document.getElementById('v-num').value);
+      if(!body.visit_num) { showAlert('alert-modal-visit','Visit number required','error'); return; }
+      await api('POST', `/studies/${currentStudy}/protocol/visits`, body);
+      showAlert('alert-modal-visit','Visit added!','success');
+    }
+    document.getElementById('v-num').disabled = false;
+    setTimeout(()=>{ closeModal('modal-visit'); loadProtocol(); },800);
+  } catch(e) { showAlert('alert-modal-visit', e.message, 'error'); }
 }
 
 // ── SUBJECTS ──────────────────────────────────────────────────
@@ -811,12 +1072,188 @@ async function enrollSubject() {
     consent_date: document.getElementById('e-consent').value,
     enroll_date: document.getElementById('e-enroll').value||null,
   };
-  if(!body.usubjid||!body.site_id||!body.sex||!body.consent_date) { showAlert('alert-enroll','Please fill required fields','error'); return; }
+  if(!body.usubjid||!body.site_id||!body.sex||!body.consent_date) { showAlert('alert-enroll','Fill required fields','error'); return; }
   try {
     await api('POST', `/studies/${currentStudy}/subjects`, body);
-    showAlert('alert-enroll', `Subject ${body.usubjid} enrolled successfully!`, 'success');
+    showAlert('alert-enroll', `Subject ${body.usubjid} enrolled!`, 'success');
     ['e-usubjid','e-subjid','e-initials','e-race','e-ethnic','e-country','e-consent','e-enroll'].forEach(id=>document.getElementById(id).value='');
   } catch(e) { showAlert('alert-enroll', e.message, 'error'); }
+}
+
+// ── SUBJECT DETAIL ────────────────────────────────────────────
+async function viewSubjectDetail(usubjid) {
+  const s = subjectList.find(x=>x.usubjid===usubjid) || {usubjid};
+  currentSubjectDetail = s;
+  document.getElementById('sd-breadcrumb').textContent = `Subjects → ${usubjid}`;
+  document.getElementById('sd-header').innerHTML = `
+    <div class="subj-detail-header">
+      <div>
+        <div class="subj-detail-id">${usubjid}</div>
+        <div class="subj-detail-meta" style="margin-top:8px;">
+          <span>SITE: ${s.site_id||'—'}</span>
+          <span>SEX: ${s.sex||'—'}</span>
+          <span>RACE: ${s.race||'—'}</span>
+          <span>CONSENT: ${s.consent_date||'—'}</span>
+        </div>
+      </div>
+      <span class="pill ${s.status?.toLowerCase()||'enrolled'}">${s.status||'ENROLLED'}</span>
+    </div>`;
+  showPanel('subject-detail');
+  loadSubjectVisits(usubjid);
+}
+
+async function loadSubjectVisits(usubjid) {
+  try {
+    const proto = await api('GET', `/studies/${currentStudy}/protocol`);
+    const visits = proto.visits || [];
+    let subjVisits = [];
+    try { subjVisits = await api('GET', `/studies/${currentStudy}/subjects/${usubjid}/visits`); } catch(e) {}
+    const svMap = {};
+    subjVisits.forEach(v=>svMap[v.visit_num]=v);
+    document.getElementById('sd-visit-grid').innerHTML = visits.map(v=>{
+      const sv = svMap[v.visit_num];
+      const done = sv && (sv.status==='COMPLETED'||sv.visit_date);
+      return `<div class="visit-box ${done?'done':'planned'}" onclick="selectVisit(${v.visit_num},'${v.visit_name}')">
+        <div class="vb-num">VISIT ${v.visit_num}</div>
+        <div class="vb-name">${v.visit_name}</div>
+        <div class="vb-status">${done ? '✓ '+( sv.visit_date||'DONE') : 'PLANNED'}</div>
+      </div>`;
+    }).join('') || '<div class="empty">No visits in protocol</div>';
+  } catch(e) { document.getElementById('sd-visit-grid').innerHTML='<div class="empty">Could not load visits</div>'; }
+}
+
+function selectVisit(num, name) {
+  showSDTab('crf');
+  document.getElementById('vs-visit').value = num;
+  document.getElementById('vs-visitname').value = name;
+  document.getElementById('lb-visit').value = num;
+  document.getElementById('lb-visitname').value = name;
+  document.getElementById('ex-visit').value = num;
+  document.getElementById('ex-visitname').value = name;
+}
+
+function showSDTab(tab) {
+  document.querySelectorAll('#panel-subject-detail .tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('sd-'+tab).classList.add('active');
+  document.querySelectorAll('#panel-subject-detail > .tabs .tab').forEach((t,i)=>{
+    t.classList.toggle('active',['visits','crf','queries'][i]===tab);
+  });
+  if(tab==='queries'&&currentSubjectDetail) loadSubjectQueries(currentSubjectDetail.usubjid);
+}
+
+function showSDCRFTab(tab) {
+  document.querySelectorAll('#sd-crf .tab').forEach((t,i)=>{
+    t.classList.toggle('active',['dm','vs','lb','ae','ex','cm'][i]===tab);
+  });
+  if(!currentSubjectDetail) return;
+  loadSubjectCRF(currentSubjectDetail.usubjid, tab);
+}
+
+async function loadSubjectCRF(usubjid, domain) {
+  const el = document.getElementById('sd-crf-content');
+  el.innerHTML = '<div class="loading">Loading</div>';
+  try {
+    const data = await api('GET', `/studies/${currentStudy}/subjects/${usubjid}/crf/${domain}`);
+    if(!data || (Array.isArray(data) && !data.length)) { el.innerHTML='<div class="empty">No '+domain.toUpperCase()+' data</div>'; return; }
+    const rows = Array.isArray(data) ? data : [data];
+    const keys = Object.keys(rows[0]).filter(k=>k!=='id'&&k!=='study_id'&&k!=='site_id'&&k!=='locked');
+    el.innerHTML = `<div class="table-wrap"><table><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>${
+      rows.map(r=>`<tr>${keys.map(k=>`<td>${r[k]??'—'}</td>`).join('')}</tr>`).join('')
+    }</tbody></table></div>`;
+  } catch(e) { el.innerHTML='<div class="empty">Could not load '+domain.toUpperCase()+'</div>'; }
+}
+
+async function loadSubjectQueries(usubjid) {
+  try {
+    const queries = await api('GET', `/studies/${currentStudy}/queries?usubjid=${usubjid}`);
+    document.getElementById('sd-queries-content').innerHTML = queries.length ?
+      queries.map(q=>`<div class="query-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="query-id">${q.query_id}</div>
+          <div style="display:flex;gap:8px;"><span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span><span class="pill ${q.status?.toLowerCase()}">${q.status}</span></div>
+        </div>
+        <div class="query-issue">${q.issue}</div>
+        <div class="query-meta"><span>DOMAIN: ${q.domain}</span><span>FIELD: ${q.field}</span><span>${q.raised_at?.slice(0,10)||''}</span></div>
+      </div>`).join('') : '<div class="empty">No queries for this subject</div>';
+  } catch(e) { document.getElementById('sd-queries-content').innerHTML='<div class="empty">Could not load queries</div>'; }
+}
+
+function openEditSubjectModal() {
+  if(!currentSubjectDetail) return;
+  openEditSubjectModalFor(currentSubjectDetail.usubjid);
+}
+
+function openEditSubjectModalFor(usubjid) {
+  const s = subjectList.find(x=>x.usubjid===usubjid);
+  if(!s) return;
+  document.getElementById('es-usubjid').value = usubjid;
+  document.getElementById('es-subjid').value = s.subjid||'';
+  document.getElementById('es-initials').value = s.initials||'';
+  document.getElementById('es-status').value = s.status||'ENROLLED';
+  document.getElementById('es-sex').value = s.sex||'';
+  document.getElementById('es-race').value = s.race||'';
+  document.getElementById('es-ethnic').value = s.ethnic||'';
+  document.getElementById('es-country').value = s.country||'';
+  document.getElementById('es-wdreason').value = s.withdraw_reason||'';
+  document.getElementById('es-consent').value = s.consent_date||'';
+  document.getElementById('es-enroll').value = s.enroll_date||'';
+  openModal('modal-edit-subject');
+}
+
+async function saveSubjectEdit() {
+  const usubjid = document.getElementById('es-usubjid').value;
+  const body = {
+    subjid: document.getElementById('es-subjid').value||null,
+    initials: document.getElementById('es-initials').value||null,
+    status: document.getElementById('es-status').value,
+    sex: document.getElementById('es-sex').value,
+    race: document.getElementById('es-race').value||null,
+    ethnic: document.getElementById('es-ethnic').value||null,
+    country: document.getElementById('es-country').value||null,
+    withdraw_reason: document.getElementById('es-wdreason').value||null,
+    consent_date: document.getElementById('es-consent').value||null,
+    enroll_date: document.getElementById('es-enroll').value||null,
+  };
+  try {
+    await api('PATCH', `/studies/${currentStudy}/subjects/${usubjid}`, body);
+    showAlert('alert-modal-edit-subj','Subject updated!','success');
+    await loadSubjectsTable();
+    if(currentSubjectDetail?.usubjid===usubjid) currentSubjectDetail = {...currentSubjectDetail,...body};
+    setTimeout(()=>closeModal('modal-edit-subject'),800);
+  } catch(e) { showAlert('alert-modal-edit-subj', e.message, 'error'); }
+}
+
+async function deleteCurrentSubject() {
+  if(!currentSubjectDetail) return;
+  confirmDelete('subject', currentSubjectDetail.usubjid, ()=>showPanel('subjects'));
+}
+
+// ── DELETE CONFIRM ────────────────────────────────────────────
+function confirmDelete(type, id, afterFn=null) {
+  const msgs = {
+    study: `Delete study "${id}"? This cannot be undone.`,
+    subject: `Delete subject "${id}"? All CRF data will be lost.`,
+    visit: `Delete visit ${id} from protocol?`,
+    user: `Delete user "${id}"?`,
+  };
+  document.getElementById('confirm-msg').textContent = msgs[type]||`Delete ${id}?`;
+  confirmDeleteFn = async () => {
+    try {
+      if(type==='study') await api('DELETE', `/studies/${id}`);
+      else if(type==='subject') await api('DELETE', `/studies/${currentStudy}/subjects/${id}`);
+      else if(type==='visit') await api('DELETE', `/studies/${currentStudy}/protocol/visits/${id}`);
+      else if(type==='user') await api('DELETE', `/users/${id}`);
+      closeModal('modal-confirm');
+      if(afterFn) afterFn();
+      else {
+        if(type==='study') { await loadStudies(); loadStudiesTable(); }
+        if(type==='subject') loadSubjectsTable();
+        if(type==='visit') loadProtocol();
+        if(type==='user') loadUsersTable();
+      }
+    } catch(e) { alert(e.message); closeModal('modal-confirm'); }
+  };
+  openModal('modal-confirm');
 }
 
 // ── CRF ───────────────────────────────────────────────────────
@@ -840,11 +1277,9 @@ function onCRFSubjectChange() {
 }
 
 function showCRFTab(tab) {
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    const tabs=['dm','vs','lb','ae','ex','cm'];
-    t.classList.toggle('active', tabs[i]===tab);
-  });
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  const tabs=['dm','vs','lb','ae','ex','cm'];
+  document.querySelectorAll('#panel-crf .tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));
+  document.querySelectorAll('#panel-crf .tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('crf-'+tab).classList.add('active');
   if(tab==='ae') { const uid=document.getElementById('crf-subject').value; if(uid) loadAEList(uid); }
 }
@@ -853,7 +1288,7 @@ async function loadAEList(usubjid) {
   try {
     const aes = await api('GET', `/studies/${currentStudy}/subjects/${usubjid}/crf/ae`);
     const wrap = document.getElementById('ae-list-wrap');
-    if(aes.length===0) { wrap.style.display='none'; return; }
+    if(!aes.length) { wrap.style.display='none'; return; }
     wrap.style.display='block';
     document.getElementById('ae-table').innerHTML = `<table><thead><tr><th>Seq</th><th>AE Term</th><th>Severity</th><th>Serious</th><th>Start</th><th>Outcome</th></tr></thead><tbody>${
       aes.map(a=>`<tr><td class="mono">${a.aeseq}</td><td>${a.aeterm}</td><td><span class="pill ${a.aesev?.toLowerCase()}">${a.aesev}</span></td><td>${a.aeser==='Y'?'<span class="pill severe">SAE</span>':'No'}</td><td class="mono">${a.aestdtc}</td><td>${a.aeout||'—'}</td></tr>`).join('')
@@ -885,7 +1320,7 @@ async function submitCRF(type) {
   }
   try {
     await api('POST', `/studies/${currentStudy}/subjects/${usubjid}/crf/${type}`, body);
-    showAlert('alert-crf', `${type.toUpperCase()} CRF saved successfully!`, 'success');
+    showAlert('alert-crf', `${type.toUpperCase()} CRF saved!`, 'success');
     if(type==='ae') loadAEList(usubjid);
   } catch(e) { showAlert('alert-crf', e.message, 'error'); }
 }
@@ -908,12 +1343,9 @@ async function loadQueries() {
         </div>
         <div class="query-issue">${q.issue}</div>
         <div class="query-meta">
-          <span>SUBJ: ${q.usubjid}</span>
-          <span>DOMAIN: ${q.domain}</span>
-          <span>FIELD: ${q.field}</span>
+          <span>SUBJ: ${q.usubjid}</span><span>DOMAIN: ${q.domain}</span><span>FIELD: ${q.field}</span>
           ${q.value?`<span>VALUE: ${q.value}</span>`:''}
-          <span>BY: ${q.raised_by}</span>
-          <span>${q.raised_at?.slice(0,10)||''}</span>
+          <span>BY: ${q.raised_by}</span><span>${q.raised_at?.slice(0,10)||''}</span>
         </div>
         ${q.status==='Open'?`<div style="margin-top:10px;display:flex;gap:8px;"><input id="ans-${q.query_id}" style="flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:6px 10px;border-radius:2px;" placeholder="Enter response..."/><button class="btn btn-outline btn-sm" onclick="respondQuery('${q.query_id}')">RESPOND</button></div>`:''}
         ${q.status==='Answered'?`<div style="margin-top:8px;display:flex;gap:8px;align-items:center;"><span style="font-size:12px;color:var(--text2);flex:1;">Response: ${q.answer_text||'—'}</span><button class="btn btn-green btn-sm" onclick="closeQuery('${q.query_id}')">CLOSE</button></div>`:''}
@@ -936,23 +1368,19 @@ async function raiseQuery() {
     await api('POST', `/studies/${currentStudy}/queries`, body);
     showAlert('alert-modal-query','Query raised!','success');
     setTimeout(()=>{ closeModal('modal-query'); loadQueries(); },800);
-  } catch(e) { showAlert('alert-modal-query',e.message,'error'); }
+  } catch(e) { showAlert('alert-modal-query', e.message, 'error'); }
 }
 
 async function respondQuery(qid) {
   const answer = document.getElementById('ans-'+qid)?.value;
   if(!answer) return;
-  try {
-    await api('PATCH', `/studies/${currentStudy}/queries/${qid}/respond`, {answer_text: answer});
-    loadQueries();
-  } catch(e) { alert(e.message); }
+  try { await api('PATCH', `/studies/${currentStudy}/queries/${qid}/respond`, {answer_text: answer}); loadQueries(); }
+  catch(e) { alert(e.message); }
 }
 
 async function closeQuery(qid) {
-  try {
-    await api('PATCH', `/studies/${currentStudy}/queries/${qid}/close`);
-    loadQueries();
-  } catch(e) { alert(e.message); }
+  try { await api('PATCH', `/studies/${currentStudy}/queries/${qid}/close`); loadQueries(); }
+  catch(e) { alert(e.message); }
 }
 
 // ── AUDIT ─────────────────────────────────────────────────────
@@ -961,10 +1389,137 @@ async function loadAudit() {
   try {
     const rows = await api('GET', `/studies/${currentStudy}/audit?limit=100`);
     document.getElementById('audit-table').innerHTML = rows.length ?
-      `<table><thead><tr><th>Time</th><th>Action</th><th>Table</th><th>Record</th><th>Field</th><th>Old Value</th><th>New Value</th><th>By</th></tr></thead><tbody>${
+      `<table><thead><tr><th>Time</th><th>Action</th><th>Table</th><th>Record</th><th>Field</th><th>Old</th><th>New</th><th>By</th></tr></thead><tbody>${
         rows.map(r=>`<tr><td class="mono" style="font-size:11px;">${r.event_time?.slice(0,19)||'—'}</td><td class="mono" style="color:var(--accent);font-size:11px;">${r.action}</td><td>${r.table_name||'—'}</td><td class="mono">${r.record_id||'—'}</td><td>${r.field_name||'—'}</td><td style="color:var(--danger);">${r.old_value||'—'}</td><td style="color:var(--accent2);">${r.new_value||'—'}</td><td class="mono">${r.performed_by||'—'}</td></tr>`).join('')
       }</tbody></table>` : '<div class="empty">No audit records</div>';
   } catch(e) {}
+}
+
+// ── USERS ─────────────────────────────────────────────────────
+async function loadUsersTable() {
+  try {
+    const users = await api('GET', '/users');
+    document.getElementById('users-table').innerHTML = users.length ?
+      `<table><thead><tr><th>User ID</th><th>Full Name</th><th>Email</th><th>Role</th><th>Active</th><th>Last Login</th><th>Actions</th></tr></thead><tbody>${
+        users.map(u=>`<tr>
+          <td class="mono">${u.user_id}</td><td>${u.full_name}</td>
+          <td>${u.email||'—'}</td>
+          <td><span class="pill ${u.role?.toLowerCase()}">${u.role}</span></td>
+          <td>${u.is_active?'<span style="color:var(--accent2)">●</span>':'<span style="color:var(--danger)">●</span>'}</td>
+          <td class="mono" style="font-size:11px;">${u.last_login?.slice(0,16)||'Never'}</td>
+          <td><div class="action-btns">
+            ${u.user_id!=='ADMIN'?`<button class="btn btn-danger btn-sm" onclick="confirmDelete('user','${u.user_id}')">DEL</button>`:'<span style="font-size:11px;color:var(--text3);">PROTECTED</span>'}
+          </div></td>
+        </tr>`).join('')
+      }</tbody></table>` : '<div class="empty">No users found</div>';
+  } catch(e) { document.getElementById('users-table').innerHTML='<div class="empty">Could not load users (check /users endpoint)</div>'; }
+}
+
+async function createUser() {
+  const body = {
+    user_id: document.getElementById('u-id').value.trim(),
+    full_name: document.getElementById('u-name').value.trim(),
+    email: document.getElementById('u-email').value.trim()||null,
+    role: document.getElementById('u-role').value,
+    password: document.getElementById('u-pass').value,
+  };
+  if(!body.user_id||!body.full_name||!body.role||!body.password) { showAlert('alert-modal-user','Fill required fields','error'); return; }
+  try {
+    await api('POST', '/users', body);
+    showAlert('alert-modal-user','User created!','success');
+    setTimeout(()=>{ closeModal('modal-user'); loadUsersTable(); },800);
+  } catch(e) { showAlert('alert-modal-user', e.message, 'error'); }
+}
+
+// ── DATA LOCK ─────────────────────────────────────────────────
+async function loadDataLock() {
+  if(!currentStudy) return;
+  try {
+    const locks = await api('GET', `/studies/${currentStudy}/locks`);
+    const active = locks.find(l=>l.is_active);
+    const banner = document.getElementById('lock-status-banner');
+    if(active) {
+      banner.innerHTML = `<div class="lock-banner"><div class="lock-banner-text">🔒 STUDY LOCKED — Locked by ${active.locked_by} on ${active.locked_at?.slice(0,10)} — ${active.lock_reason||''}</div></div>`;
+    } else {
+      banner.innerHTML = '';
+    }
+    document.getElementById('lock-history').innerHTML = locks.length ?
+      `<table><thead><tr><th>Locked By</th><th>Locked At</th><th>Reason</th><th>Active</th></tr></thead><tbody>${
+        locks.map(l=>`<tr><td class="mono">${l.locked_by}</td><td class="mono">${l.locked_at?.slice(0,16)||'—'}</td><td>${l.lock_reason||'—'}</td><td>${l.is_active?'<span class="pill enrolled">YES</span>':'<span class="pill withdrawn">NO</span>'}</td></tr>`).join('')
+      }</tbody></table>` : '<div class="empty">No lock history</div>';
+  } catch(e) { document.getElementById('lock-history').innerHTML='<div class="empty">Could not load lock history</div>'; }
+}
+
+async function lockStudy() {
+  const reason = document.getElementById('lock-reason').value.trim();
+  if(!reason) { showAlert('alert-datalock','Lock reason required','error'); return; }
+  if(!confirm('Are you sure you want to lock this study? This will prevent all data modifications.')) return;
+  try {
+    await api('POST', `/studies/${currentStudy}/locks`, {lock_reason: reason});
+    showAlert('alert-datalock','Study locked successfully!','success');
+    loadDataLock();
+  } catch(e) { showAlert('alert-datalock', e.message, 'error'); }
+}
+
+async function unlockStudy() {
+  if(!confirm('Unlock study? This requires admin authorization.')) return;
+  try {
+    await api('DELETE', `/studies/${currentStudy}/locks/active`);
+    showAlert('alert-datalock','Study unlocked.','success');
+    loadDataLock();
+  } catch(e) { showAlert('alert-datalock', e.message, 'error'); }
+}
+
+// ── REPORTS / EXPORTS ─────────────────────────────────────────
+async function exportSDTM(domain) {
+  if(!currentStudy) { showAlert('alert-reports','Select a study first','error'); return; }
+  try {
+    const subjects = await api('GET', `/studies/${currentStudy}/subjects`);
+    let rows = [];
+    for(const s of subjects) {
+      try {
+        const data = await api('GET', `/studies/${currentStudy}/subjects/${s.usubjid}/crf/${domain}`);
+        const items = Array.isArray(data) ? data : (data ? [data] : []);
+        items.forEach(r=>rows.push({STUDYID:currentStudy, USUBJID:s.usubjid, SITEID:s.site_id, ...r}));
+      } catch(e) {}
+    }
+    if(!rows.length) { showAlert('alert-reports','No '+domain.toUpperCase()+' data found','error'); return; }
+    downloadCSV(rows, `SDTM_${domain.toUpperCase()}_${currentStudy}.csv`);
+  } catch(e) { showAlert('alert-reports', e.message, 'error'); }
+}
+
+async function exportSubjects() {
+  if(!currentStudy) return;
+  try {
+    const subjects = await api('GET', `/studies/${currentStudy}/subjects`);
+    downloadCSV(subjects, `SUBJECTS_${currentStudy}.csv`);
+  } catch(e) { showAlert('alert-reports', e.message, 'error'); }
+}
+
+async function exportQueries() {
+  if(!currentStudy) return;
+  try {
+    const queries = await api('GET', `/studies/${currentStudy}/queries`);
+    downloadCSV(queries, `QUERIES_${currentStudy}.csv`);
+  } catch(e) { showAlert('alert-reports', e.message, 'error'); }
+}
+
+async function exportAudit() {
+  if(!currentStudy) return;
+  try {
+    const rows = await api('GET', `/studies/${currentStudy}/audit?limit=10000`);
+    downloadCSV(rows, `AUDIT_${currentStudy}.csv`);
+  } catch(e) { showAlert('alert-reports', e.message, 'error'); }
+}
+
+function downloadCSV(data, filename) {
+  if(!data.length) return;
+  const keys = Object.keys(data[0]);
+  const csv = [keys.join(','), ...data.map(r=>keys.map(k=>JSON.stringify(r[k]??'')).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = filename;
+  a.click();
 }
 
 // ── MODAL HELPERS ─────────────────────────────────────────────
@@ -975,6 +1530,11 @@ function openModal(id) {
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
+// Fix + NEW STUDY button to use openNewStudy
+document.querySelector('[onclick="openModal(\'modal-study\')"]')?.setAttribute('onclick','openNewStudy()');
+// Fix + ADD VISIT button
+document.querySelector('[onclick="openModal(\'modal-visit\')"]')?.setAttribute('onclick','openAddVisit()');
+
 // ── ALERT HELPER ──────────────────────────────────────────────
 function showAlert(id, msg, type) {
   const el = document.getElementById(id);
@@ -982,7 +1542,7 @@ function showAlert(id, msg, type) {
   el.textContent = msg;
   el.className = `alert ${type}`;
   el.style.display = 'block';
-  setTimeout(()=>el.style.display='none', 3000);
+  setTimeout(()=>el.style.display='none', 3500);
 }
 </script>
 </body>
