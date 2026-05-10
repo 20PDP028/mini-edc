@@ -4,6 +4,8 @@ Multi-study, Multi-site, Protocol & CRF Data Entry
 """
 
 from fastapi import FastAPI, HTTPException, Depends, Query, Body, Path
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, List, Literal
