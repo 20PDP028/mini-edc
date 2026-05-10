@@ -232,7 +232,7 @@ def startup():
     existing = db_exec(f"SELECT user_id FROM global_users WHERE user_id={PH}", ("ADMIN",), fetchone=True)
     if not existing:
         db_exec(
-            f"INSERT INTO global_users (user_id, full_name, email, role, password_hash) VALUES ({PH},{PH},{PH},{PH},{PH})",
+            f"INSERT INTO global_users (user_id, full_name, email, role, password_hash) VALUES ({PH},{PH},{PH},{PH},{PH}) ON CONFLICT (user_id) DO NOTHING",
             ("ADMIN", "System Administrator", "admin@mini-edc.com", "ADMIN", hash_password("Admin@1234")),
             commit=True
         )
