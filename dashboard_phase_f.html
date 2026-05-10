@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mini EDC — Phase F</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0a0e14;
+  --bg2: #111620;
+  --bg3: #1a2030;
+  --border: #1e2a3a;
+  --accent: #00d4ff;
+  --accent2: #00ff9d;
+  --accent3: #ff6b35;
+  --warn: #ffcc00;
+  --danger: #ff4455;
+  --text: #e0eaf5;
+  --text2: #7a90a8;
+  --text3: #4a5a6a;
+  --card: #111820;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font: 'IBM Plex Sans', sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden;}
+
+/* GRID LINES BG */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:40px 40px;opacity:0.3;pointer-events:none;z-index:0;
+}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:56px 1fr;min-height:100vh;position:relative;z-index:1;}
+
+/* TOPBAR */
+.topbar{
+  grid-column:1/-1;
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;padding:0 24px;
+  position:sticky;top:0;z-index:100;
+}
+.logo{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--accent);letter-spacing:2px;text-transform:uppercase;}
+.logo span{color:var(--accent2);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.badge{font-family:var(--font-mono);font-size:11px;padding:3px 8px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);}
+.badge.online{border-color:var(--accent2);color:var(--accent2);}
+.study-select{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:4px 10px;border-radius:2px;outline:none;cursor:pointer;}
+.study-select:focus{border-color:var(--accent);}
+#user-badge{font-family:var(--font-mono);font-size:11px;color:var(--accent);padding:4px 10px;border:1px solid var(--accent);border-radius:2px;cursor:pointer;}
+#logout-btn{background:transparent;border:1px solid var(--border);color:var(--text2);font-family:var(--font-mono);font-size:11px;padding:4px 10px;border-radius:2px;cursor:pointer;transition:all .2s;}
+#logout-btn:hover{border-color:var(--danger);color:var(--danger);}
+
+/* SIDEBAR */
+.sidebar{
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  padding:16px 0;
+  display:flex;flex-direction:column;gap:2px;
+  overflow-y:auto;
+}
+.nav-section{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:2px;padding:12px 16px 6px;text-transform:uppercase;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 16px;cursor:pointer;
+  font-size:13px;color:var(--text2);
+  border-left:2px solid transparent;
+  transition:all .15s;
+}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:var(--bg3);color:var(--accent);border-left-color:var(--accent);}
+.nav-item .icon{font-size:15px;width:18px;text-align:center;}
+
+/* MAIN */
+.main{padding:24px;overflow-y:auto;background:var(--bg);}
+
+/* PANELS */
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:24px;}
+.page-title{font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--text);letter-spacing:1px;}
+.page-sub{font-size:13px;color:var(--text2);margin-top:4px;}
+
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;}
+.stat-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:4px;padding:16px;
+  position:relative;overflow:hidden;
+}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);}
+.stat-card.green::before{background:var(--accent2);}
+.stat-card.orange::before{background:var(--accent3);}
+.stat-card.yellow::before{background:var(--warn);}
+.stat-card.red::before{background:var(--danger);}
+.stat-val{font-family:var(--font-mono);font-size:28px;font-weight:600;color:var(--text);}
+.stat-label{font-size:12px;color:var(--text2);margin-top:4px;}
+
+/* TABLES */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:24px;}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);}
+.table-title{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--text);}
+table{width:100%;border-collapse:collapse;}
+th{font-family:var(--font-mono);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg2);}
+td{font-size:13px;padding:10px 16px;border-bottom:1px solid var(--border);color:var(--text2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg3);color:var(--text);}
+.mono{font-family:var(--font-mono);font-size:12px;}
+
+/* STATUS PILLS */
+.pill{font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:2px;font-weight:600;letter-spacing:1px;}
+.pill.active,.pill.enrolled,.pill.open{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.3);}
+.pill.completed,.pill.closed{background:rgba(0,255,157,.1);color:var(--accent2);border:1px solid rgba(0,255,157,.3);}
+.pill.pending,.pill.planned,.pill.answered{background:rgba(255,204,0,.1);color:var(--warn);border:1px solid rgba(255,204,0,.3);}
+.pill.withdrawn,.pill.screen_failed{background:rgba(255,68,85,.1);color:var(--danger);border:1px solid rgba(255,68,85,.3);}
+.pill.mild{background:rgba(0,255,157,.1);color:var(--accent2);border:1px solid rgba(0,255,157,.3);}
+.pill.moderate{background:rgba(255,204,0,.1);color:var(--warn);border:1px solid rgba(255,204,0,.3);}
+.pill.severe{background:rgba(255,68,85,.1);color:var(--danger);border:1px solid rgba(255,68,85,.3);}
+
+/* BUTTONS */
+.btn{font-family:var(--font-mono);font-size:12px;padding:7px 14px;border-radius:2px;cursor:pointer;border:1px solid;transition:all .2s;letter-spacing:.5px;}
+.btn-primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600;}
+.btn-primary:hover{background:transparent;color:var(--accent);}
+.btn-outline{background:transparent;color:var(--text2);border-color:var(--border);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:transparent;color:var(--danger);border-color:var(--danger);}
+.btn-danger:hover{background:var(--danger);color:#fff;}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.btn-green{background:var(--accent2);color:var(--bg);border-color:var(--accent2);font-weight:600;}
+.btn-green:hover{background:transparent;color:var(--accent2);}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:16px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group label{font-family:var(--font-mono);font-size:11px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;}
+.form-group input,.form-group select,.form-group textarea{
+  background:var(--bg2);border:1px solid var(--border);color:var(--text);
+  font-family:var(--font-mono);font-size:12px;padding:8px 10px;border-radius:2px;outline:none;
+  transition:border-color .2s;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);}
+.form-group select option{background:var(--bg2);}
+.form-section{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;margin-bottom:16px;}
+.form-section-title{font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.form-actions{display:flex;gap:10px;padding-top:8px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:4px;width:90%;max-width:600px;max-height:85vh;overflow-y:auto;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+.modal-title{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--accent);}
+.modal-close{background:transparent;border:none;color:var(--text2);font-size:20px;cursor:pointer;}
+.modal-body{padding:20px;}
+
+/* LOGIN */
+#login-screen{
+  position:fixed;inset:0;background:var(--bg);z-index:300;
+  display:flex;align-items:center;justify-content:center;
+}
+.login-box{
+  background:var(--bg2);border:1px solid var(--border);border-radius:4px;
+  padding:40px;width:360px;
+}
+.login-logo{font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--accent);letter-spacing:3px;margin-bottom:6px;}
+.login-sub{font-size:12px;color:var(--text2);margin-bottom:28px;font-family:var(--font-mono);}
+.login-box .form-group{margin-bottom:14px;}
+.login-box .form-group input{width:100%;padding:10px;}
+.login-error{font-family:var(--font-mono);font-size:12px;color:var(--danger);margin-bottom:12px;display:none;}
+.login-btn{width:100%;padding:12px;font-size:13px;margin-top:6px;}
+
+/* ALERT */
+.alert{
+  font-family:var(--font-mono);font-size:12px;padding:10px 14px;border-radius:2px;
+  margin-bottom:14px;display:none;
+}
+.alert.success{background:rgba(0,255,157,.1);border:1px solid rgba(0,255,157,.3);color:var(--accent2);}
+.alert.error{background:rgba(255,68,85,.1);border:1px solid rgba(255,68,85,.3);color:var(--danger);}
+
+/* TABS */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab{font-family:var(--font-mono);font-size:12px;padding:10px 16px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:40px;color:var(--text3);font-family:var(--font-mono);font-size:13px;}
+
+/* LOADING */
+.loading{text-align:center;padding:30px;color:var(--text2);font-family:var(--font-mono);font-size:12px;}
+.loading::after{content:'...';animation:dots 1s infinite;}
+@keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
+
+/* QUERY CARD */
+.query-card{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px;margin-bottom:10px;}
+.query-id{font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-bottom:6px;}
+.query-issue{font-size:13px;color:var(--text);margin-bottom:8px;}
+.query-meta{font-family:var(--font-mono);font-size:11px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text3);}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .app{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">MINI·EDC</div>
+    <div class="login-sub">Phase F // Multi-Study Clinical Data Capture</div>
+    <div class="form-group"><label>User ID</label><input id="login-user" type="text" value="ADMIN" placeholder="ADMIN"/></div>
+    <div class="form-group"><label>Password</label><input id="login-pass" type="password" value="Admin@1234" placeholder="••••••••"/></div>
+    <div class="login-error" id="login-error"></div>
+    <button class="btn btn-primary login-btn" onclick="doLogin()">AUTHENTICATE</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app-shell" style="display:none;">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="logo">MINI·<span>EDC</span></div>
+    <div class="badge">PHASE F</div>
+    <select class="study-select" id="study-selector" onchange="onStudyChange()">
+      <option value="">— SELECT STUDY —</option>
+    </select>
+    <div class="topbar-right">
+      <div class="badge online" id="api-status">● CONNECTED</div>
+      <div id="user-badge">—</div>
+      <button id="logout-btn" onclick="doLogout()">LOGOUT</button>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showPanel('dashboard')" id="nav-dashboard"><span class="icon">◈</span> Dashboard</div>
+    <div class="nav-section">Studies</div>
+    <div class="nav-item" onclick="showPanel('studies')" id="nav-studies"><span class="icon">◉</span> Studies</div>
+    <div class="nav-item" onclick="showPanel('sites')" id="nav-sites"><span class="icon">◎</span> Sites</div>
+    <div class="nav-item" onclick="showPanel('protocol')" id="nav-protocol"><span class="icon">≡</span> Protocol</div>
+    <div class="nav-section">Subjects</div>
+    <div class="nav-item" onclick="showPanel('subjects')" id="nav-subjects"><span class="icon">◆</span> Subjects</div>
+    <div class="nav-item" onclick="showPanel('enroll')" id="nav-enroll"><span class="icon">+</span> Enroll</div>
+    <div class="nav-section">Data Entry</div>
+    <div class="nav-item" onclick="showPanel('crf')" id="nav-crf"><span class="icon">▣</span> CRF Entry</div>
+    <div class="nav-section">Quality</div>
+    <div class="nav-item" onclick="showPanel('queries')" id="nav-queries"><span class="icon">⚑</span> Queries</div>
+    <div class="nav-item" onclick="showPanel('audit')" id="nav-audit"><span class="icon">◌</span> Audit Trail</div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="page-header">
+        <div class="page-title">DASHBOARD</div>
+        <div class="page-sub" id="dash-study-name">Select a study to view statistics</div>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-val" id="stat-enrolled">—</div><div class="stat-label">Enrolled Subjects</div></div>
+        <div class="stat-card green"><div class="stat-val" id="stat-completed">—</div><div class="stat-label">Completed</div></div>
+        <div class="stat-card yellow"><div class="stat-val" id="stat-open-q">—</div><div class="stat-label">Open Queries</div></div>
+        <div class="stat-card orange"><div class="stat-val" id="stat-ae">—</div><div class="stat-label">Adverse Events</div></div>
+        <div class="stat-card red"><div class="stat-val" id="stat-sae">—</div><div class="stat-label">Serious AEs</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-withdrawn">—</div><div class="stat-label">Withdrawn</div></div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">RECENT SUBJECTS</div><button class="btn btn-outline btn-sm" onclick="showPanel('subjects')">VIEW ALL</button></div>
+        <div id="dash-subjects-table"><div class="loading">Loading</div></div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">OPEN QUERIES</div><button class="btn btn-outline btn-sm" onclick="showPanel('queries')">VIEW ALL</button></div>
+        <div id="dash-queries-table"><div class="loading">Loading</div></div>
+      </div>
+    </div>
+
+    <!-- STUDIES -->
+    <div class="panel" id="panel-studies">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="page-title">STUDIES</div><div class="page-sub">Manage clinical studies</div></div>
+        <button class="btn btn-primary" onclick="openModal('modal-study')">+ NEW STUDY</button>
+      </div>
+      <div id="alert-studies" class="alert"></div>
+      <div class="table-wrap">
+        <div id="studies-table"><div class="loading">Loading</div></div>
+      </div>
+    </div>
+
+    <!-- SITES -->
+    <div class="panel" id="panel-sites">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="page-title">SITES</div><div class="page-sub">Manage study sites</div></div>
+        <button class="btn btn-primary" onclick="openModal('modal-site')">+ ADD SITE</button>
+      </div>
+      <div id="alert-sites" class="alert"></div>
+      <div class="table-wrap">
+        <div id="sites-table"><div class="loading">Loading</div></div>
+      </div>
+    </div>
+
+    <!-- PROTOCOL -->
+    <div class="panel" id="panel-protocol">
+      <div class="page-header"><div class="page-title">PROTOCOL VISITS</div><div class="page-sub">Visit schedule for selected study</div></div>
+      <div class="table-wrap">
+        <div id="protocol-table"><div class="loading">Loading</div></div>
+      </div>
+    </div>
+
+    <!-- SUBJECTS -->
+    <div class="panel" id="panel-subjects">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="page-title">SUBJECTS</div><div class="page-sub">All enrolled subjects</div></div>
+        <button class="btn btn-primary" onclick="showPanel('enroll')">+ ENROLL</button>
+      </div>
+      <div class="table-wrap">
+        <div id="subjects-table"><div class="loading">Loading</div></div>
+      </div>
+    </div>
+
+    <!-- ENROLL -->
+    <div class="panel" id="panel-enroll">
+      <div class="page-header"><div class="page-title">ENROLL SUBJECT</div><div class="page-sub">Add a new subject to the study</div></div>
+      <div id="alert-enroll" class="alert"></div>
+      <div class="form-section">
+        <div class="form-section-title">Subject Information</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Unique Subject ID *</label><input id="e-usubjid" placeholder="STUDY001-SITE01-001"/></div>
+          <div class="form-group"><label>Subject ID</label><input id="e-subjid" placeholder="001"/></div>
+          <div class="form-group"><label>Initials</label><input id="e-initials" placeholder="JS"/></div>
+          <div class="form-group"><label>Site *</label><select id="e-site"><option value="">Select site...</option></select></div>
+          <div class="form-group"><label>Sex *</label>
+            <select id="e-sex"><option value="">Select...</option><option value="M">Male</option><option value="F">Female</option><option value="U">Unknown</option><option value="N">Not reported</option></select>
+          </div>
+          <div class="form-group"><label>Race</label><input id="e-race" placeholder="WHITE"/></div>
+          <div class="form-group"><label>Ethnicity</label><input id="e-ethnic" placeholder="NOT HISPANIC OR LATINO"/></div>
+          <div class="form-group"><label>Country</label><input id="e-country" placeholder="USA"/></div>
+          <div class="form-group"><label>Consent Date *</label><input id="e-consent" type="date"/></div>
+          <div class="form-group"><label>Enrollment Date</label><input id="e-enroll" type="date"/></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="enrollSubject()">ENROLL SUBJECT</button>
+          <button class="btn btn-outline" onclick="showPanel('subjects')">CANCEL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRF ENTRY -->
+    <div class="panel" id="panel-crf">
+      <div class="page-header"><div class="page-title">CRF DATA ENTRY</div><div class="page-sub">Enter clinical data for a subject</div></div>
+      <div id="alert-crf" class="alert"></div>
+      <div class="form-section" style="margin-bottom:16px;">
+        <div class="form-section-title">Select Subject</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Subject</label><select id="crf-subject" onchange="onCRFSubjectChange()"><option value="">Select subject...</option></select></div>
+        </div>
+      </div>
+      <div id="crf-tabs-wrap" style="display:none;">
+        <div class="tabs">
+          <div class="tab active" onclick="showCRFTab('dm')">DEMOGRAPHICS</div>
+          <div class="tab" onclick="showCRFTab('vs')">VITAL SIGNS</div>
+          <div class="tab" onclick="showCRFTab('lb')">LABORATORY</div>
+          <div class="tab" onclick="showCRFTab('ae')">ADVERSE EVENTS</div>
+          <div class="tab" onclick="showCRFTab('ex')">EXPOSURE</div>
+          <div class="tab" onclick="showCRFTab('cm')">MEDICATIONS</div>
+        </div>
+        <!-- DM -->
+        <div class="tab-panel active" id="crf-dm">
+          <div class="form-section">
+            <div class="form-section-title">Demographics CRF</div>
+            <div class="form-grid">
+              <div class="form-group"><label>Age</label><input id="dm-age" type="number" placeholder="45"/></div>
+              <div class="form-group"><label>Sex</label><select id="dm-sex"><option value="">Select...</option><option value="M">Male</option><option value="F">Female</option><option value="U">Unknown</option></select></div>
+              <div class="form-group"><label>Race</label><input id="dm-race" placeholder="WHITE"/></div>
+              <div class="form-group"><label>Ethnicity</label><input id="dm-ethnic" placeholder="NOT HISPANIC OR LATINO"/></div>
+              <div class="form-group"><label>Country</label><input id="dm-country" placeholder="USA"/></div>
+              <div class="form-group"><label>Reference Start Date</label><input id="dm-rfstdtc" type="date"/></div>
+              <div class="form-group"><label>Reference End Date</label><input id="dm-rfendtc" type="date"/></div>
+              <div class="form-group"><label>DM Date</label><input id="dm-dmdtc" type="date"/></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="submitCRF('dm')">SAVE DM CRF</button></div>
+          </div>
+        </div>
+        <!-- VS -->
+        <div class="tab-panel" id="crf-vs">
+          <div class="form-section">
+            <div class="form-section-title">Vital Signs CRF</div>
+            <div class="form-grid">
+              <div class="form-group"><label>Visit Number *</label><input id="vs-visit" type="number" placeholder="1"/></div>
+              <div class="form-group"><label>Visit Name</label><input id="vs-visitname" placeholder="BASELINE"/></div>
+              <div class="form-group"><label>Date *</label><input id="vs-date" type="date"/></div>
+              <div class="form-group"><label>Systolic BP (mmHg)</label><input id="vs-sysbp" type="number" step="0.1" placeholder="120"/></div>
+              <div class="form-group"><label>Diastolic BP (mmHg)</label><input id="vs-diabp" type="number" step="0.1" placeholder="80"/></div>
+              <div class="form-group"><label>Pulse (bpm)</label><input id="vs-pulse" type="number" step="0.1" placeholder="72"/></div>
+              <div class="form-group"><label>Temperature (°C)</label><input id="vs-temp" type="number" step="0.1" placeholder="36.8"/></div>
+              <div class="form-group"><label>Weight (kg)</label><input id="vs-weight" type="number" step="0.1" placeholder="70.5"/></div>
+              <div class="form-group"><label>Height (cm)</label><input id="vs-height" type="number" step="0.1" placeholder="175"/></div>
+              <div class="form-group"><label>Resp Rate (/min)</label><input id="vs-resp" type="number" step="0.1" placeholder="16"/></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="submitCRF('vs')">SAVE VS CRF</button></div>
+          </div>
+        </div>
+        <!-- LB -->
+        <div class="tab-panel" id="crf-lb">
+          <div class="form-section">
+            <div class="form-section-title">Laboratory CRF</div>
+            <div class="form-grid">
+              <div class="form-group"><label>Visit Number *</label><input id="lb-visit" type="number" placeholder="1"/></div>
+              <div class="form-group"><label>Visit Name</label><input id="lb-visitname" placeholder="BASELINE"/></div>
+              <div class="form-group"><label>Date *</label><input id="lb-date" type="date"/></div>
+              <div class="form-group"><label>HGB (g/dL)</label><input id="lb-hgb" type="number" step="0.1" placeholder="14.5"/></div>
+              <div class="form-group"><label>WBC (10³/μL)</label><input id="lb-wbc" type="number" step="0.1" placeholder="7.2"/></div>
+              <div class="form-group"><label>PLT (10³/μL)</label><input id="lb-plt" type="number" step="0.1" placeholder="250"/></div>
+              <div class="form-group"><label>ALT (U/L)</label><input id="lb-alt" type="number" step="0.1" placeholder="25"/></div>
+              <div class="form-group"><label>AST (U/L)</label><input id="lb-ast" type="number" step="0.1" placeholder="22"/></div>
+              <div class="form-group"><label>Creatinine (mg/dL)</label><input id="lb-creat" type="number" step="0.01" placeholder="0.9"/></div>
+              <div class="form-group"><label>Glucose (mg/dL)</label><input id="lb-glucose" type="number" step="0.1" placeholder="95"/></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="submitCRF('lb')">SAVE LB CRF</button></div>
+          </div>
+        </div>
+        <!-- AE -->
+        <div class="tab-panel" id="crf-ae">
+          <div class="form-section">
+            <div class="form-section-title">Adverse Event CRF</div>
+            <div class="form-grid">
+              <div class="form-group"><label>AE Term *</label><input id="ae-term" placeholder="HEADACHE"/></div>
+              <div class="form-group"><label>Decoded Term</label><input id="ae-decod" placeholder="Headache"/></div>
+              <div class="form-group"><label>Body System</label><input id="ae-bodsys" placeholder="NERVOUS SYSTEM DISORDERS"/></div>
+              <div class="form-group"><label>Start Date *</label><input id="ae-start" type="date"/></div>
+              <div class="form-group"><label>End Date</label><input id="ae-end" type="date"/></div>
+              <div class="form-group"><label>Severity *</label>
+                <select id="ae-sev"><option value="">Select...</option><option value="MILD">Mild</option><option value="MODERATE">Moderate</option><option value="SEVERE">Severe</option></select>
+              </div>
+              <div class="form-group"><label>Serious *</label>
+                <select id="ae-ser"><option value="">Select...</option><option value="N">No</option><option value="Y">Yes</option></select>
+              </div>
+              <div class="form-group"><label>Relationship</label><input id="ae-rel" placeholder="POSSIBLY RELATED"/></div>
+              <div class="form-group"><label>Outcome</label><input id="ae-out" placeholder="RECOVERED/RESOLVED"/></div>
+              <div class="form-group"><label>Death</label>
+                <select id="ae-death"><option value="N">No</option><option value="Y">Yes</option></select>
+              </div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="submitCRF('ae')">SAVE AE</button></div>
+          </div>
+          <div class="table-wrap" id="ae-list-wrap" style="display:none;">
+            <div class="table-header"><div class="table-title">AE RECORDS</div></div>
+            <div id="ae-table"></div>
+          </div>
+        </div>
+        <!-- EX -->
+        <div class="tab-panel" id="crf-ex">
+          <div class="form-section">
+            <div class="form-section-title">Exposure CRF</div>
+            <div class="form-grid">
+              <div class="form-group"><label>Visit Number *</label><input id="ex-visit" type="number" placeholder="1"/></div>
+              <div class="form-group"><label>Visit Name</label><input id="ex-visitname" placeholder="BASELINE"/></div>
+              <div class="form-group"><label>Treatment *</label><input id="ex-trt" placeholder="STUDY DRUG"/></div>
+              <div class="form-group"><label>Dose</label><input id="ex-dose" type="number" step="0.1" placeholder="100"/></div>
+              <div class="form-group"><label>Dose Unit</label><input id="ex-dosu" placeholder="mg"/></div>
+              <div class="form-group"><label>Frequency</label><input id="ex-freq" placeholder="QD"/></div>
+              <div class="form-group"><label>Route</label><input id="ex-route" placeholder="ORAL"/></div>
+              <div class="form-group"><label>Start Date</label><input id="ex-start" type="date"/></div>
+              <div class="form-group"><label>End Date</label><input id="ex-end" type="date"/></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="submitCRF('ex')">SAVE EX CRF</button></div>
+          </div>
+        </div>
+        <!-- CM -->
+        <div class="tab-panel" id="crf-cm">
+          <div class="form-section">
+            <div class="form-section-title">Concomitant Medication CRF</div>
+            <div class="form-grid">
+              <div class="form-group"><label>Treatment *</label><input id="cm-trt" placeholder="ASPIRIN"/></div>
+              <div class="form-group"><label>Dose</label><input id="cm-dose" type="number" step="0.1" placeholder="100"/></div>
+              <div class="form-group"><label>Dose Unit</label><input id="cm-dosu" placeholder="mg"/></div>
+              <div class="form-group"><label>Route</label><input id="cm-route" placeholder="ORAL"/></div>
+              <div class="form-group"><label>Start Date</label><input id="cm-start" type="date"/></div>
+              <div class="form-group"><label>End Date</label><input id="cm-end" type="date"/></div>
+              <div class="form-group"><label>Indication</label><input id="cm-indc" placeholder="Pain relief"/></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary" onclick="submitCRF('cm')">SAVE CM</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUERIES -->
+    <div class="panel" id="panel-queries">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="page-title">DATA QUERIES</div><div class="page-sub">Raise and manage data queries</div></div>
+        <button class="btn btn-primary" onclick="openModal('modal-query')">+ RAISE QUERY</button>
+      </div>
+      <div id="alert-queries" class="alert"></div>
+      <div id="queries-list"><div class="loading">Loading</div></div>
+    </div>
+
+    <!-- AUDIT -->
+    <div class="panel" id="panel-audit">
+      <div class="page-header"><div class="page-title">AUDIT TRAIL</div><div class="page-sub">All system actions</div></div>
+      <div class="table-wrap">
+        <div id="audit-table"><div class="loading">Loading</div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODALS -->
+<!-- New Study -->
+<div class="modal-overlay" id="modal-study">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">NEW STUDY</div><button class="modal-close" onclick="closeModal('modal-study')">×</button></div>
+    <div class="modal-body">
+      <div id="alert-modal-study" class="alert"></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Study ID *</label><input id="s-id" placeholder="STUDY002"/></div>
+        <div class="form-group"><label>Study Title *</label><input id="s-title" placeholder="A Phase II Study of..."/></div>
+        <div class="form-group"><label>Protocol No</label><input id="s-proto" placeholder="PROTO-2024-002"/></div>
+        <div class="form-group"><label>Phase</label><select id="s-phase"><option value="">Select...</option><option>I</option><option>II</option><option>III</option><option>IV</option></select></div>
+        <div class="form-group"><label>Sponsor</label><input id="s-sponsor" placeholder="Pharma Corp"/></div>
+        <div class="form-group"><label>Indication</label><input id="s-indication" placeholder="Hypertension"/></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-primary" onclick="createStudy()">CREATE STUDY</button><button class="btn btn-outline" onclick="closeModal('modal-study')">CANCEL</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- New Site -->
+<div class="modal-overlay" id="modal-site">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">ADD SITE</div><button class="modal-close" onclick="closeModal('modal-site')">×</button></div>
+    <div class="modal-body">
+      <div id="alert-modal-site" class="alert"></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Site ID *</label><input id="si-id" placeholder="SITE-04"/></div>
+        <div class="form-group"><label>Site Name *</label><input id="si-name" placeholder="City Hospital"/></div>
+        <div class="form-group"><label>Investigator</label><input id="si-inv" placeholder="Dr. Kumar"/></div>
+        <div class="form-group"><label>Country</label><input id="si-country" placeholder="IND"/></div>
+        <div class="form-group"><label>City</label><input id="si-city" placeholder="Mumbai"/></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-primary" onclick="addSite()">ADD SITE</button><button class="btn btn-outline" onclick="closeModal('modal-site')">CANCEL</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- Raise Query -->
+<div class="modal-overlay" id="modal-query">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">RAISE QUERY</div><button class="modal-close" onclick="closeModal('modal-query')">×</button></div>
+    <div class="modal-body">
+      <div id="alert-modal-query" class="alert"></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Subject *</label><select id="q-subj"><option value="">Select...</option></select></div>
+        <div class="form-group"><label>Domain *</label><select id="q-domain"><option value="">Select...</option><option>DM</option><option>VS</option><option>LB</option><option>AE</option><option>EX</option><option>CM</option></select></div>
+        <div class="form-group"><label>Visit No</label><input id="q-visit" type="number" placeholder="1"/></div>
+        <div class="form-group"><label>Field *</label><input id="q-field" placeholder="SYSBP"/></div>
+        <div class="form-group"><label>Value</label><input id="q-value" placeholder="200"/></div>
+        <div class="form-group"><label>Severity *</label><select id="q-sev"><option value="">Select...</option><option>Minor</option><option>Major</option><option>Critical</option></select></div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;"><label>Issue Description *</label><textarea id="q-issue" rows="3" style="width:100%;resize:vertical;" placeholder="Describe the data issue..."></textarea></div>
+      <div class="form-actions"><button class="btn btn-primary" onclick="raiseQuery()">RAISE QUERY</button><button class="btn btn-outline" onclick="closeModal('modal-query')">CANCEL</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://mini-edc-production.up.railway.app';
+let token = '';
+let currentUser = {};
+let currentStudy = '';
+let studyList = [];
+let subjectList = [];
+
+// ── API HELPER ────────────────────────────────────────────────
+async function api(method, path, body=null) {
+  const url = `${API}${path}${path.includes('?') ? '&' : '?'}token=${token}`;
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if(body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  const data = await r.json();
+  if(!r.ok) throw new Error(data.detail || 'Request failed');
+  return data;
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────
+async function doLogin() {
+  const uid = document.getElementById('login-user').value.trim();
+  const pw = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display='none';
+  try {
+    const r = await fetch(`${API}/auth/login`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,password:pw})});
+    const data = await r.json();
+    if(!r.ok) { errEl.textContent = data.detail; errEl.style.display='block'; return; }
+    token = data.token;
+    currentUser = data;
+    document.getElementById('user-badge').textContent = `${data.user_id} [${data.role}]`;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-shell').style.display='grid';
+    await loadStudies();
+  } catch(e) { errEl.textContent = e.message; errEl.style.display='block'; }
+}
+
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+async function doLogout() {
+  try { await api('POST', '/auth/logout'); } catch(e) {}
+  token=''; currentUser={}; currentStudy='';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app-shell').style.display='none';
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  const nav = document.getElementById('nav-'+name);
+  if(nav) nav.classList.add('active');
+  if(name==='dashboard') loadDashboard();
+  if(name==='studies') loadStudiesTable();
+  if(name==='sites') loadSitesTable();
+  if(name==='protocol') loadProtocol();
+  if(name==='subjects') loadSubjectsTable();
+  if(name==='queries') loadQueries();
+  if(name==='audit') loadAudit();
+  if(name==='enroll') loadEnrollSites();
+  if(name==='crf') loadCRFSubjects();
+}
+
+// ── STUDY SELECTOR ────────────────────────────────────────────
+async function loadStudies() {
+  try {
+    studyList = await api('GET', '/studies');
+    const sel = document.getElementById('study-selector');
+    sel.innerHTML = '<option value="">— SELECT STUDY —</option>';
+    studyList.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.study_id; o.textContent = `${s.study_id} — ${s.study_title}`;
+      sel.appendChild(o);
+    });
+    if(studyList.length > 0) {
+      sel.value = studyList[0].study_id;
+      currentStudy = studyList[0].study_id;
+      onStudyChange();
+    }
+  } catch(e) { console.error(e); }
+}
+
+function onStudyChange() {
+  currentStudy = document.getElementById('study-selector').value;
+  loadDashboard();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+async function loadDashboard() {
+  if(!currentStudy) return;
+  const study = studyList.find(s=>s.study_id===currentStudy);
+  if(study) document.getElementById('dash-study-name').textContent = study.study_title;
+  try {
+    const stats = await api('GET', `/studies/${currentStudy}/stats`);
+    document.getElementById('stat-enrolled').textContent = stats.subjects.enrolled;
+    document.getElementById('stat-completed').textContent = stats.subjects.completed;
+    document.getElementById('stat-open-q').textContent = stats.queries.open;
+    document.getElementById('stat-ae').textContent = stats.adverse_events.total;
+    document.getElementById('stat-sae').textContent = stats.adverse_events.serious;
+    document.getElementById('stat-withdrawn').textContent = stats.subjects.withdrawn;
+  } catch(e) {}
+  try {
+    const subjects = await api('GET', `/studies/${currentStudy}/subjects`);
+    subjectList = subjects;
+    const recent = subjects.slice(0,5);
+    document.getElementById('dash-subjects-table').innerHTML = recent.length ? subjectsTableHTML(recent) : '<div class="empty">No subjects enrolled</div>';
+  } catch(e) {}
+  try {
+    const queries = await api('GET', `/studies/${currentStudy}/queries?status=Open`);
+    const el = document.getElementById('dash-queries-table');
+    if(queries.length === 0) { el.innerHTML = '<div class="empty">No open queries</div>'; return; }
+    el.innerHTML = `<table><thead><tr><th>Query ID</th><th>Subject</th><th>Domain</th><th>Field</th><th>Severity</th><th>Raised</th></tr></thead><tbody>${
+      queries.slice(0,5).map(q=>`<tr><td class="mono">${q.query_id}</td><td class="mono">${q.usubjid}</td><td>${q.domain}</td><td>${q.field}</td><td><span class="pill ${q.severity.toLowerCase()}">${q.severity}</span></td><td class="mono">${q.raised_at?.slice(0,10)||'—'}</td></tr>`).join('')
+    }</tbody></table>`;
+  } catch(e) {}
+}
+
+function subjectsTableHTML(subjects) {
+  return `<table><thead><tr><th>USUBJID</th><th>Site</th><th>Sex</th><th>Consent Date</th><th>Status</th></tr></thead><tbody>${
+    subjects.map(s=>`<tr><td class="mono">${s.usubjid}</td><td>${s.site_id}</td><td>${s.sex}</td><td class="mono">${s.consent_date||'—'}</td><td><span class="pill ${s.status?.toLowerCase()}">${s.status}</span></td></tr>`).join('')
+  }</tbody></table>`;
+}
+
+// ── STUDIES TABLE ─────────────────────────────────────────────
+async function loadStudiesTable() {
+  try {
+    const studies = await api('GET', '/studies');
+    studyList = studies;
+    document.getElementById('studies-table').innerHTML = studies.length ?
+      `<table><thead><tr><th>Study ID</th><th>Title</th><th>Phase</th><th>Sponsor</th><th>Indication</th><th>Status</th></tr></thead><tbody>${
+        studies.map(s=>`<tr><td class="mono">${s.study_id}</td><td>${s.study_title}</td><td>${s.phase||'—'}</td><td>${s.sponsor||'—'}</td><td>${s.indication||'—'}</td><td><span class="pill ${s.status?.toLowerCase()}">${s.status}</span></td></tr>`).join('')
+      }</tbody></table>` : '<div class="empty">No studies found</div>';
+  } catch(e) { document.getElementById('studies-table').innerHTML='<div class="empty">Failed to load</div>'; }
+}
+
+async function createStudy() {
+  const body = {
+    study_id: document.getElementById('s-id').value.trim(),
+    study_title: document.getElementById('s-title').value.trim(),
+    protocol_no: document.getElementById('s-proto').value.trim()||null,
+    phase: document.getElementById('s-phase').value||null,
+    sponsor: document.getElementById('s-sponsor').value.trim()||null,
+    indication: document.getElementById('s-indication').value.trim()||null,
+  };
+  try {
+    await api('POST', '/studies', body);
+    showAlert('alert-modal-study', 'Study created successfully!', 'success');
+    await loadStudies();
+    setTimeout(()=>closeModal('modal-study'),1000);
+  } catch(e) { showAlert('alert-modal-study', e.message, 'error'); }
+}
+
+// ── SITES ─────────────────────────────────────────────────────
+async function loadSitesTable() {
+  if(!currentStudy) { document.getElementById('sites-table').innerHTML='<div class="empty">Select a study first</div>'; return; }
+  try {
+    const sites = await api('GET', `/studies/${currentStudy}/sites`);
+    document.getElementById('sites-table').innerHTML = sites.length ?
+      `<table><thead><tr><th>Site ID</th><th>Site Name</th><th>Investigator</th><th>Country</th><th>City</th><th>Status</th></tr></thead><tbody>${
+        sites.map(s=>`<tr><td class="mono">${s.site_id}</td><td>${s.site_name}</td><td>${s.investigator||'—'}</td><td>${s.country||'—'}</td><td>${s.city||'—'}</td><td><span class="pill ${s.status?.toLowerCase()}">${s.status}</span></td></tr>`).join('')
+      }</tbody></table>` : '<div class="empty">No sites found</div>';
+  } catch(e) {}
+}
+
+async function addSite() {
+  const body = {
+    site_id: document.getElementById('si-id').value.trim(),
+    site_name: document.getElementById('si-name').value.trim(),
+    investigator: document.getElementById('si-inv').value.trim()||null,
+    country: document.getElementById('si-country').value.trim()||null,
+    city: document.getElementById('si-city').value.trim()||null,
+  };
+  try {
+    await api('POST', `/studies/${currentStudy}/sites`, body);
+    showAlert('alert-modal-site', 'Site added!', 'success');
+    setTimeout(()=>closeModal('modal-site'),1000);
+  } catch(e) { showAlert('alert-modal-site', e.message, 'error'); }
+}
+
+// ── PROTOCOL ──────────────────────────────────────────────────
+async function loadProtocol() {
+  if(!currentStudy) { document.getElementById('protocol-table').innerHTML='<div class="empty">Select a study first</div>'; return; }
+  try {
+    const data = await api('GET', `/studies/${currentStudy}/protocol`);
+    document.getElementById('protocol-table').innerHTML = `<table><thead><tr><th>#</th><th>Visit Name</th><th>Window Low</th><th>Window High</th><th>Unscheduled</th></tr></thead><tbody>${
+      data.visits.map(v=>`<tr><td class="mono">${v.visit_num}</td><td>${v.visit_name}</td><td>${v.visit_window_lo}</td><td>${v.visit_window_hi}</td><td>${v.is_unscheduled?'Yes':'No'}</td></tr>`).join('')
+    }</tbody></table>`;
+  } catch(e) { document.getElementById('protocol-table').innerHTML='<div class="empty">No protocol found</div>'; }
+}
+
+// ── SUBJECTS ──────────────────────────────────────────────────
+async function loadSubjectsTable() {
+  if(!currentStudy) return;
+  try {
+    const subjects = await api('GET', `/studies/${currentStudy}/subjects`);
+    subjectList = subjects;
+    document.getElementById('subjects-table').innerHTML = subjects.length ?
+      subjectsTableHTML(subjects) : '<div class="empty">No subjects enrolled</div>';
+  } catch(e) {}
+}
+
+async function loadEnrollSites() {
+  if(!currentStudy) return;
+  try {
+    const sites = await api('GET', `/studies/${currentStudy}/sites`);
+    const sel = document.getElementById('e-site');
+    sel.innerHTML = '<option value="">Select site...</option>';
+    sites.forEach(s => { const o=document.createElement('option'); o.value=s.site_id; o.textContent=`${s.site_id} — ${s.site_name}`; sel.appendChild(o); });
+  } catch(e) {}
+}
+
+async function enrollSubject() {
+  const body = {
+    usubjid: document.getElementById('e-usubjid').value.trim(),
+    site_id: document.getElementById('e-site').value,
+    subjid: document.getElementById('e-subjid').value.trim()||null,
+    initials: document.getElementById('e-initials').value.trim()||null,
+    sex: document.getElementById('e-sex').value,
+    race: document.getElementById('e-race').value.trim()||null,
+    ethnic: document.getElementById('e-ethnic').value.trim()||null,
+    country: document.getElementById('e-country').value.trim()||null,
+    consent_date: document.getElementById('e-consent').value,
+    enroll_date: document.getElementById('e-enroll').value||null,
+  };
+  if(!body.usubjid||!body.site_id||!body.sex||!body.consent_date) { showAlert('alert-enroll','Please fill required fields','error'); return; }
+  try {
+    await api('POST', `/studies/${currentStudy}/subjects`, body);
+    showAlert('alert-enroll', `Subject ${body.usubjid} enrolled successfully!`, 'success');
+    ['e-usubjid','e-subjid','e-initials','e-race','e-ethnic','e-country','e-consent','e-enroll'].forEach(id=>document.getElementById(id).value='');
+  } catch(e) { showAlert('alert-enroll', e.message, 'error'); }
+}
+
+// ── CRF ───────────────────────────────────────────────────────
+async function loadCRFSubjects() {
+  if(!currentStudy) return;
+  try {
+    const subjects = await api('GET', `/studies/${currentStudy}/subjects`);
+    subjectList = subjects;
+    const sel = document.getElementById('crf-subject');
+    sel.innerHTML = '<option value="">Select subject...</option>';
+    subjects.forEach(s => { const o=document.createElement('option'); o.value=s.usubjid; o.textContent=s.usubjid; sel.appendChild(o); });
+    const qSel = document.getElementById('q-subj');
+    if(qSel) { qSel.innerHTML='<option value="">Select...</option>'; subjects.forEach(s=>{const o=document.createElement('option');o.value=s.usubjid;o.textContent=s.usubjid;qSel.appendChild(o);}); }
+  } catch(e) {}
+}
+
+function onCRFSubjectChange() {
+  const uid = document.getElementById('crf-subject').value;
+  document.getElementById('crf-tabs-wrap').style.display = uid ? 'block' : 'none';
+  if(uid) loadAEList(uid);
+}
+
+function showCRFTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const tabs=['dm','vs','lb','ae','ex','cm'];
+    t.classList.toggle('active', tabs[i]===tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('crf-'+tab).classList.add('active');
+  if(tab==='ae') { const uid=document.getElementById('crf-subject').value; if(uid) loadAEList(uid); }
+}
+
+async function loadAEList(usubjid) {
+  try {
+    const aes = await api('GET', `/studies/${currentStudy}/subjects/${usubjid}/crf/ae`);
+    const wrap = document.getElementById('ae-list-wrap');
+    if(aes.length===0) { wrap.style.display='none'; return; }
+    wrap.style.display='block';
+    document.getElementById('ae-table').innerHTML = `<table><thead><tr><th>Seq</th><th>AE Term</th><th>Severity</th><th>Serious</th><th>Start</th><th>Outcome</th></tr></thead><tbody>${
+      aes.map(a=>`<tr><td class="mono">${a.aeseq}</td><td>${a.aeterm}</td><td><span class="pill ${a.aesev?.toLowerCase()}">${a.aesev}</span></td><td>${a.aeser==='Y'?'<span class="pill severe">SAE</span>':'No'}</td><td class="mono">${a.aestdtc}</td><td>${a.aeout||'—'}</td></tr>`).join('')
+    }</tbody></table>`;
+  } catch(e) {}
+}
+
+async function submitCRF(type) {
+  const usubjid = document.getElementById('crf-subject').value;
+  if(!usubjid) { showAlert('alert-crf','Select a subject first','error'); return; }
+  let body = {};
+  if(type==='dm') {
+    body = { age: parseInt(document.getElementById('dm-age').value)||null, sex: document.getElementById('dm-sex').value||null, race: document.getElementById('dm-race').value||null, ethnic: document.getElementById('dm-ethnic').value||null, country: document.getElementById('dm-country').value||null, rfstdtc: document.getElementById('dm-rfstdtc').value||null, rfendtc: document.getElementById('dm-rfendtc').value||null, dmdtc: document.getElementById('dm-dmdtc').value||null };
+  } else if(type==='vs') {
+    if(!document.getElementById('vs-visit').value||!document.getElementById('vs-date').value) { showAlert('alert-crf','Visit number and date required','error'); return; }
+    body = { visit_num: parseInt(document.getElementById('vs-visit').value), visit_name: document.getElementById('vs-visitname').value||null, vsdtc: document.getElementById('vs-date').value, sysbp: parseFloat(document.getElementById('vs-sysbp').value)||null, diabp: parseFloat(document.getElementById('vs-diabp').value)||null, pulse: parseFloat(document.getElementById('vs-pulse').value)||null, temp: parseFloat(document.getElementById('vs-temp').value)||null, weight: parseFloat(document.getElementById('vs-weight').value)||null, height: parseFloat(document.getElementById('vs-height').value)||null, resp_rate: parseFloat(document.getElementById('vs-resp').value)||null };
+  } else if(type==='lb') {
+    if(!document.getElementById('lb-visit').value||!document.getElementById('lb-date').value) { showAlert('alert-crf','Visit number and date required','error'); return; }
+    body = { visit_num: parseInt(document.getElementById('lb-visit').value), visit_name: document.getElementById('lb-visitname').value||null, lbdtc: document.getElementById('lb-date').value, hgb: parseFloat(document.getElementById('lb-hgb').value)||null, wbc: parseFloat(document.getElementById('lb-wbc').value)||null, plt: parseFloat(document.getElementById('lb-plt').value)||null, alt: parseFloat(document.getElementById('lb-alt').value)||null, ast: parseFloat(document.getElementById('lb-ast').value)||null, creatinine: parseFloat(document.getElementById('lb-creat').value)||null, glucose: parseFloat(document.getElementById('lb-glucose').value)||null };
+  } else if(type==='ae') {
+    if(!document.getElementById('ae-term').value||!document.getElementById('ae-start').value||!document.getElementById('ae-sev').value||!document.getElementById('ae-ser').value) { showAlert('alert-crf','AE term, start date, severity and serious required','error'); return; }
+    body = { aeterm: document.getElementById('ae-term').value, aedecod: document.getElementById('ae-decod').value||null, aebodsys: document.getElementById('ae-bodsys').value||null, aestdtc: document.getElementById('ae-start').value, aeendtc: document.getElementById('ae-end').value||null, aesev: document.getElementById('ae-sev').value, aeser: document.getElementById('ae-ser').value, aerel: document.getElementById('ae-rel').value||null, aeout: document.getElementById('ae-out').value||null, aesdth: document.getElementById('ae-death').value };
+  } else if(type==='ex') {
+    if(!document.getElementById('ex-visit').value||!document.getElementById('ex-trt').value) { showAlert('alert-crf','Visit and treatment required','error'); return; }
+    body = { visit_num: parseInt(document.getElementById('ex-visit').value), visit_name: document.getElementById('ex-visitname').value||null, extrt: document.getElementById('ex-trt').value, exdose: parseFloat(document.getElementById('ex-dose').value)||null, exdosu: document.getElementById('ex-dosu').value||null, exdosfrq: document.getElementById('ex-freq').value||null, exroute: document.getElementById('ex-route').value||null, exstdtc: document.getElementById('ex-start').value||null, exendtc: document.getElementById('ex-end').value||null };
+  } else if(type==='cm') {
+    if(!document.getElementById('cm-trt').value) { showAlert('alert-crf','Treatment required','error'); return; }
+    body = { cmtrt: document.getElementById('cm-trt').value, cmdose: parseFloat(document.getElementById('cm-dose').value)||null, cmdosu: document.getElementById('cm-dosu').value||null, cmroute: document.getElementById('cm-route').value||null, cmstdtc: document.getElementById('cm-start').value||null, cmendtc: document.getElementById('cm-end').value||null, cmindc: document.getElementById('cm-indc').value||null };
+  }
+  try {
+    await api('POST', `/studies/${currentStudy}/subjects/${usubjid}/crf/${type}`, body);
+    showAlert('alert-crf', `${type.toUpperCase()} CRF saved successfully!`, 'success');
+    if(type==='ae') loadAEList(usubjid);
+  } catch(e) { showAlert('alert-crf', e.message, 'error'); }
+}
+
+// ── QUERIES ───────────────────────────────────────────────────
+async function loadQueries() {
+  if(!currentStudy) return;
+  try {
+    const queries = await api('GET', `/studies/${currentStudy}/queries`);
+    const el = document.getElementById('queries-list');
+    if(!queries.length) { el.innerHTML='<div class="empty">No queries found</div>'; return; }
+    el.innerHTML = queries.map(q=>`
+      <div class="query-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="query-id">${q.query_id}</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span>
+            <span class="pill ${q.status?.toLowerCase()}">${q.status}</span>
+          </div>
+        </div>
+        <div class="query-issue">${q.issue}</div>
+        <div class="query-meta">
+          <span>SUBJ: ${q.usubjid}</span>
+          <span>DOMAIN: ${q.domain}</span>
+          <span>FIELD: ${q.field}</span>
+          ${q.value?`<span>VALUE: ${q.value}</span>`:''}
+          <span>BY: ${q.raised_by}</span>
+          <span>${q.raised_at?.slice(0,10)||''}</span>
+        </div>
+        ${q.status==='Open'?`<div style="margin-top:10px;display:flex;gap:8px;"><input id="ans-${q.query_id}" style="flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:6px 10px;border-radius:2px;" placeholder="Enter response..."/><button class="btn btn-outline btn-sm" onclick="respondQuery('${q.query_id}')">RESPOND</button></div>`:''}
+        ${q.status==='Answered'?`<div style="margin-top:8px;display:flex;gap:8px;align-items:center;"><span style="font-size:12px;color:var(--text2);flex:1;">Response: ${q.answer_text||'—'}</span><button class="btn btn-green btn-sm" onclick="closeQuery('${q.query_id}')">CLOSE</button></div>`:''}
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function raiseQuery() {
+  const body = {
+    usubjid: document.getElementById('q-subj').value,
+    domain: document.getElementById('q-domain').value,
+    visit_num: parseInt(document.getElementById('q-visit').value)||null,
+    field: document.getElementById('q-field').value,
+    value: document.getElementById('q-value').value||null,
+    issue: document.getElementById('q-issue').value,
+    severity: document.getElementById('q-sev').value,
+  };
+  if(!body.usubjid||!body.domain||!body.field||!body.issue||!body.severity) { showAlert('alert-modal-query','Fill required fields','error'); return; }
+  try {
+    await api('POST', `/studies/${currentStudy}/queries`, body);
+    showAlert('alert-modal-query','Query raised!','success');
+    setTimeout(()=>{ closeModal('modal-query'); loadQueries(); },800);
+  } catch(e) { showAlert('alert-modal-query',e.message,'error'); }
+}
+
+async function respondQuery(qid) {
+  const answer = document.getElementById('ans-'+qid)?.value;
+  if(!answer) return;
+  try {
+    await api('PATCH', `/studies/${currentStudy}/queries/${qid}/respond`, {answer_text: answer});
+    loadQueries();
+  } catch(e) { alert(e.message); }
+}
+
+async function closeQuery(qid) {
+  try {
+    await api('PATCH', `/studies/${currentStudy}/queries/${qid}/close`);
+    loadQueries();
+  } catch(e) { alert(e.message); }
+}
+
+// ── AUDIT ─────────────────────────────────────────────────────
+async function loadAudit() {
+  if(!currentStudy) return;
+  try {
+    const rows = await api('GET', `/studies/${currentStudy}/audit?limit=100`);
+    document.getElementById('audit-table').innerHTML = rows.length ?
+      `<table><thead><tr><th>Time</th><th>Action</th><th>Table</th><th>Record</th><th>Field</th><th>Old Value</th><th>New Value</th><th>By</th></tr></thead><tbody>${
+        rows.map(r=>`<tr><td class="mono" style="font-size:11px;">${r.event_time?.slice(0,19)||'—'}</td><td class="mono" style="color:var(--accent);font-size:11px;">${r.action}</td><td>${r.table_name||'—'}</td><td class="mono">${r.record_id||'—'}</td><td>${r.field_name||'—'}</td><td style="color:var(--danger);">${r.old_value||'—'}</td><td style="color:var(--accent2);">${r.new_value||'—'}</td><td class="mono">${r.performed_by||'—'}</td></tr>`).join('')
+      }</tbody></table>` : '<div class="empty">No audit records</div>';
+  } catch(e) {}
+}
+
+// ── MODAL HELPERS ─────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if(id==='modal-query') loadCRFSubjects();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+// ── ALERT HELPER ──────────────────────────────────────────────
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = msg;
+  el.className = `alert ${type}`;
+  el.style.display = 'block';
+  setTimeout(()=>el.style.display='none', 3000);
+}
+</script>
+</body>
+</html>
