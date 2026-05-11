@@ -1022,7 +1022,7 @@ async function toggleSiteStatus(siteId, currentStatus) {
 // ── PROTOCOL ──────────────────────────────────────────────────
 async function loadProtocol() {
 
-  if(!currentStudy){
+  if (!currentStudy) {
     document.getElementById('protocol-table').innerHTML =
       '<div class="empty">Select a study</div>';
     return;
@@ -1035,22 +1035,77 @@ async function loadProtocol() {
       `/studies/${currentStudy}/protocol-visits`
     );
 
+    console.log("PROTOCOL VISITS:", visits);
+
     const table = document.getElementById('protocol-table');
 
-    if(!visits.length){
+    if (!visits || !visits.length) {
       table.innerHTML =
         '<div class="empty">No protocol visits found</div>';
       return;
     }
 
-    table.innerHTML = protocolTableHTML(visits);
+    table.innerHTML = `
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>VISIT NAME</th>
+            <th>WINDOW BEFORE</th>
+            <th>WINDOW AFTER</th>
+            <th>UNSCHEDULED</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${visits.map(v => `
+            <tr>
+              <td>${v.visit_num ?? '-'}</td>
+              <td>${v.visit_name ?? '-'}</td>
 
-  } catch(e) {
+              <td>
+                ${v.visit_window_before != null
+                  ? `±${Math.abs(v.visit_window_before)} days`
+                  : '-'}
+              </td>
+
+              <td>
+                ${v.visit_window_after != null
+                  ? `±${Math.abs(v.visit_window_after)} days`
+                  : '-'}
+              </td>
+
+              <td>${v.is_required ? 'No' : 'Yes'}</td>
+
+              <td>
+                <div class="action-btns">
+                  <button
+                    class="btn btn-warn btn-sm"
+                    onclick="editVisit(${v.visit_num})"
+                  >
+                    EDIT
+                  </button>
+
+                  <button
+                    class="btn btn-danger btn-sm"
+                    onclick="deleteVisit(${v.visit_num})"
+                  >
+                    DEL
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+  } catch (e) {
+
+    console.error("PROTOCOL LOAD ERROR:", e);
 
     document.getElementById('protocol-table').innerHTML =
-      '<div class="empty">Failed to load protocol</div>';
-
-    console.error(e);
+      `<div class="empty">${e.message}</div>`;
   }
 }
 
