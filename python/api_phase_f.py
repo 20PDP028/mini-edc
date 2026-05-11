@@ -502,16 +502,14 @@ def submit_crf_ae(study_id: str, usubjid: str, crf: CRFAdverseEvent, current_use
         raise HTTPException(status_code=404, detail=f"Subject {usubjid} not found")
     site_id = subject["site_id"]
     ts = datetime.utcnow().isoformat() + "Z"
-    count = db_exec(f"SELECT COUNT(*) as c FROM crf_ae WHERE usubjid={PH} AND study_id={PH}", (usubjid, study_id), fetchone=True)
-    aeseq = (count["c"] if count else 0) + 1
-    db_exec(f"INSERT INTO crf_ae (usubjid,study_id,site_id,aeseq,aeterm,aedecod,aebodsys,aestdtc,aeendtc,aesev,aeser,aerel,aeout,aesdth,filled_by,filled_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
-        (usubjid, study_id, site_id, aeseq, crf.aeterm, crf.aedecod, crf.aebodsys, crf.aestdtc, crf.aeendtc, crf.aesev, crf.aeser, crf.aerel, crf.aeout, crf.aesdth, current_user["user_id"], ts), commit=True)
-    log_audit(study_id, current_user["user_id"], "CRF_AE_SUBMIT", "crf_ae", f"{usubjid}-AE{aeseq}")
-    return {"message": "Adverse Event CRF saved", "usubjid": usubjid, "study_id": study_id, "aeseq": aeseq, **crf.dict(), "filled_by": current_user["user_id"], "filled_at": ts}
+    db_exec(f"INSERT INTO crf_ae (usubjid,study_id,aeterm,aedecod,aebodsys,aestdtc,aeendtc,aesev,aeser,aerel,aeout,aesdth,created_by,created_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
+        (usubjid, study_id, crf.aeterm, crf.aedecod, crf.aebodsys, crf.aestdtc, crf.aeendtc, crf.aesev, crf.aeser, crf.aerel, crf.aeout, crf.aesdth, current_user["user_id"], ts), commit=True)
+    log_audit(study_id, current_user["user_id"], "CRF_AE_SUBMIT", "crf_ae", usubjid)
+    return {"message": "Adverse Event CRF saved", "usubjid": usubjid, "study_id": study_id, **crf.dict(), "created_by": current_user["user_id"], "created_at": ts}
 
 @app.get("/studies/{study_id}/subjects/{usubjid}/crf/ae", tags=["crf"], summary="Get all Adverse Event CRF records")
 def get_crf_ae(study_id: str, usubjid: str, current_user: dict = Depends(get_current_user)):
-    return db_exec(f"SELECT * FROM crf_ae WHERE usubjid={PH} AND study_id={PH} ORDER BY aeseq", (usubjid, study_id), fetchall=True) or []
+    return db_exec(f"SELECT * FROM crf_ae WHERE usubjid={PH} AND study_id={PH} ORDER BY id", (usubjid, study_id), fetchall=True) or []
 
 @app.post("/studies/{study_id}/subjects/{usubjid}/crf/ex", tags=["crf"], summary="Submit Exposure CRF")
 def submit_crf_ex(study_id: str, usubjid: str, crf: CRFExposure, current_user: dict = Depends(get_current_user)):
@@ -522,13 +520,13 @@ def submit_crf_ex(study_id: str, usubjid: str, crf: CRFExposure, current_user: d
     ts = datetime.utcnow().isoformat() + "Z"
     existing = db_exec(f"SELECT id FROM crf_ex WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}", (usubjid, study_id, crf.visit_num), fetchone=True)
     if existing:
-        db_exec(f"UPDATE crf_ex SET extrt={PH},exdose={PH},exdosu={PH},exdosfrq={PH},exroute={PH},exstdtc={PH},exendtc={PH},ex_reason_mod={PH},filled_by={PH},filled_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
+        db_exec(f"UPDATE crf_ex SET extrt={PH},exdose={PH},exdosu={PH},exdosfrq={PH},exroute={PH},exstdtc={PH},exendtc={PH},ex_reason_mod={PH},created_by={PH},created_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
             (crf.extrt, crf.exdose, crf.exdosu, crf.exdosfrq, crf.exroute, crf.exstdtc, crf.exendtc, crf.ex_reason_mod, current_user["user_id"], ts, usubjid, study_id, crf.visit_num), commit=True)
     else:
-        db_exec(f"INSERT INTO crf_ex (usubjid,study_id,site_id,visit_num,visit_name,extrt,exdose,exdosu,exdosfrq,exroute,exstdtc,exendtc,ex_reason_mod,filled_by,filled_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
-            (usubjid, study_id, site_id, crf.visit_num, crf.visit_name, crf.extrt, crf.exdose, crf.exdosu, crf.exdosfrq, crf.exroute, crf.exstdtc, crf.exendtc, crf.ex_reason_mod, current_user["user_id"], ts), commit=True)
+        db_exec(f"INSERT INTO crf_ex (usubjid,study_id,visit_num,visit_name,extrt,exdose,exdosu,exdosfrq,exroute,exstdtc,exendtc,ex_reason_mod,created_by,created_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
+            (usubjid, study_id, crf.visit_num, crf.visit_name, crf.extrt, crf.exdose, crf.exdosu, crf.exdosfrq, crf.exroute, crf.exstdtc, crf.exendtc, crf.ex_reason_mod, current_user["user_id"], ts), commit=True)
     log_audit(study_id, current_user["user_id"], "CRF_EX_SUBMIT", "crf_ex", f"{usubjid}-V{crf.visit_num}")
-    return {"message": "Exposure CRF saved", "usubjid": usubjid, "study_id": study_id, "visit_num": crf.visit_num, **crf.dict(), "filled_by": current_user["user_id"], "filled_at": ts}
+    return {"message": "Exposure CRF saved", "usubjid": usubjid, "study_id": study_id, "visit_num": crf.visit_num, **crf.dict(), "created_by": current_user["user_id"], "created_at": ts}
 
 @app.post("/studies/{study_id}/subjects/{usubjid}/crf/cm", tags=["crf"], summary="Submit Concomitant Medication CRF")
 def submit_crf_cm(study_id: str, usubjid: str, crf: CRFConcomitantMed, current_user: dict = Depends(get_current_user)):
@@ -537,16 +535,14 @@ def submit_crf_cm(study_id: str, usubjid: str, crf: CRFConcomitantMed, current_u
         raise HTTPException(status_code=404, detail=f"Subject {usubjid} not found")
     site_id = subject["site_id"]
     ts = datetime.utcnow().isoformat() + "Z"
-    count = db_exec(f"SELECT COUNT(*) as c FROM crf_cm WHERE usubjid={PH} AND study_id={PH}", (usubjid, study_id), fetchone=True)
-    cmseq = (count["c"] if count else 0) + 1
-    db_exec(f"INSERT INTO crf_cm (usubjid,study_id,site_id,cmseq,cmtrt,cmdose,cmdosu,cmroute,cmstdtc,cmendtc,cmindc,filled_by,filled_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
-        (usubjid, study_id, site_id, cmseq, crf.cmtrt, crf.cmdose, crf.cmdosu, crf.cmroute, crf.cmstdtc, crf.cmendtc, crf.cmindc, current_user["user_id"], ts), commit=True)
-    log_audit(study_id, current_user["user_id"], "CRF_CM_SUBMIT", "crf_cm", f"{usubjid}-CM{cmseq}")
-    return {"message": "Concomitant Medication CRF saved", "usubjid": usubjid, "cmseq": cmseq, **crf.dict(), "filled_by": current_user["user_id"], "filled_at": ts}
+    db_exec(f"INSERT INTO crf_cm (usubjid,study_id,cmtrt,cmdose,cmdosu,cmroute,cmstdtc,cmendtc,cmindc,created_by,created_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
+        (usubjid, study_id, crf.cmtrt, crf.cmdose, crf.cmdosu, crf.cmroute, crf.cmstdtc, crf.cmendtc, crf.cmindc, current_user["user_id"], ts), commit=True)
+    log_audit(study_id, current_user["user_id"], "CRF_CM_SUBMIT", "crf_cm", usubjid)
+    return {"message": "Concomitant Medication CRF saved", "usubjid": usubjid, **crf.dict(), "created_by": current_user["user_id"], "created_at": ts}
 
 @app.get("/studies/{study_id}/subjects/{usubjid}/crf/cm", tags=["crf"], summary="Get all Concomitant Medication records")
 def get_crf_cm(study_id: str, usubjid: str, current_user: dict = Depends(get_current_user)):
-    return db_exec(f"SELECT * FROM crf_cm WHERE usubjid={PH} AND study_id={PH} ORDER BY cmseq", (usubjid, study_id), fetchall=True) or []
+    return db_exec(f"SELECT * FROM crf_cm WHERE usubjid={PH} AND study_id={PH} ORDER BY id", (usubjid, study_id), fetchall=True) or []
 
 # ── Routes: Queries ───────────────────────────────────────────
 
