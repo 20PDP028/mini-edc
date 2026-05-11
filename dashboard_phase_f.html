@@ -138,6 +138,9 @@ tr:hover td{background:var(--bg3);color:var(--text);}
 .visit-box.done{border-color:var(--accent2);}
 .visit-box.done .vb-num{color:var(--accent2);}
 .visit-box.planned .vb-num{color:var(--text3);}
+.visit-box.missed{border-color:var(--danger);}
+.visit-box.missed .vb-num{color:var(--danger);}
+.visit-box.missed .vb-status{color:var(--danger);}
 .vb-num{font-family:var(--font-mono);font-size:10px;color:var(--accent);margin-bottom:4px;}
 .vb-name{font-size:12px;font-weight:500;margin-bottom:4px;}
 .vb-status{font-family:var(--font-mono);font-size:10px;color:var(--text3);}
@@ -1246,11 +1249,13 @@ async function loadSubjectVisits(usubjid) {
     subjVisits.forEach(v=>svMap[v.visit_num]=v);
     document.getElementById('sd-visit-grid').innerHTML = visits.map(v=>{
       const sv = svMap[v.visit_num];
-      const done = sv && (sv.status==='COMPLETED'||sv.visit_date);
-      return `<div class="visit-box ${done?'done':'planned'}" onclick="selectVisit(${v.visit_num},'${v.visit_name}')">
+      const done = sv && sv.status==='COMPLETED';
+      const missed = sv && sv.status==='MISSED';
+      const boxClass = done ? 'done' : missed ? 'missed' : 'planned';
+      return `<div class="visit-box ${boxClass}" onclick="selectVisit(${v.visit_num},'${v.visit_name}')">
         <div class="vb-num">VISIT ${v.visit_num}</div>
         <div class="vb-name">${v.visit_name}</div>
-        <div class="vb-status">${done ? '✓ '+( sv.visit_date||'DONE') : 'PLANNED'}</div>
+        <div class="vb-status">${done ? '✓ '+(sv.visit_date||'DONE') : missed ? '✗ MISSED' : 'PLANNED'}</div>
       </div>`;
     }).join('') || '<div class="empty">No visits in protocol</div>';
   } catch(e) { document.getElementById('sd-visit-grid').innerHTML='<div class="empty">Could not load visits</div>'; }
