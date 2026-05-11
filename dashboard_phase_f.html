@@ -626,8 +626,8 @@ tr:hover td{background:var(--bg3);color:var(--text);}
       <div class="form-grid">
         <div class="form-group"><label>Visit Number *</label><input id="v-num" type="number" placeholder="11"/></div>
         <div class="form-group"><label>Visit Name *</label><input id="v-name" placeholder="WEEK 28"/></div>
-        <div class="form-group"><label>Window Low (days)</label><input id="v-lo" type="number" placeholder="-3" value="0"/></div>
-        <div class="form-group"><label>Window High (days)</label><input id="v-hi" type="number" placeholder="3" value="0"/></div>
+        <div class="form-group"><label>Visit Window Before (days)</label><input id="v-lo" type="number" placeholder="-3" value="0"/></div>
+        <div class="form-group"><label>Visit Window After (days)</label><input id="v-hi" type="number" placeholder="3" value="0"/></div>
         <div class="form-group"><label>Unscheduled?</label><select id="v-unsched"><option value="0">No</option><option value="1">Yes</option></select></div>
       </div>
       <div class="form-actions"><button class="btn btn-primary" id="visit-save-btn" onclick="saveVisit()">ADD VISIT</button><button class="btn btn-outline" onclick="closeModal('modal-visit')">CANCEL</button></div>
@@ -1122,7 +1122,61 @@ async function loadEnrollSites() {
     sites.forEach(s => { const o=document.createElement('option'); o.value=s.site_id; o.textContent=`${s.site_id} — ${s.site_name}`; sel.appendChild(o); });
   } catch(e) {}
 }
+function protocolTableHTML(visits) {
 
+  return `
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>VISIT NAME</th>
+          <th>WINDOW LOW</th>
+          <th>WINDOW HIGH</th>
+          <th>UNSCHEDULED</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        ${visits.map(visit => `
+
+          <tr>
+
+            <td>${visit.visit_num || ''}</td>
+
+            <td>${visit.visit_name || ''}</td>
+
+            <td>
+              ±${visit.visit_window_before ?? 0} days
+            </td>
+
+            <td>
+              ±${visit.visit_window_after ?? 0} days
+            </td>
+
+            <td>
+              ${(visit.is_unscheduled || false) ? 'Yes' : 'No'}
+            </td>
+
+            <td>
+              <button class="btn btn-warn btn-sm">
+                EDIT
+              </button>
+
+              <button class="btn btn-danger btn-sm">
+                DEL
+              </button>
+            </td>
+
+          </tr>
+
+        `).join('')}
+
+      </tbody>
+    </table>
+  `;
+}
 async function enrollSubject() {
   const body = {
     usubjid: document.getElementById('e-usubjid').value.trim(),
