@@ -771,7 +771,12 @@ function showPanel(name) {
   if(name==='dashboard') loadDashboard();
   if(name==='studies') loadStudiesTable();
   if(name==='sites') loadSitesTable();
-  if(name==='protocol') loadProtocol();
+  if(name==='protocol'){
+  document.getElementById('protocol-table').innerHTML =
+    '<div class="loading">Loading</div>';
+
+  loadProtocol();
+  }
   if(name==='subjects') loadSubjectsTable();
   if(name==='queries') loadQueries();
   if(name==='audit') loadAudit();
@@ -800,9 +805,53 @@ async function loadStudies() {
   } catch(e) { console.error(e); }
 }
 
-function onStudyChange() {
+async function onStudyChange() {
+
   currentStudy = document.getElementById('study-selector').value;
-  loadDashboard();
+
+  if (!currentStudy) return;
+
+  // clear stale screens immediately
+  document.getElementById('protocol-table').innerHTML =
+    '<div class="loading">Loading</div>';
+
+  document.getElementById('subjects-table').innerHTML =
+    '<div class="loading">Loading</div>';
+
+  document.getElementById('queries-list').innerHTML =
+    '<div class="loading">Loading</div>';
+
+  // reload all dependent modules
+  await Promise.all([
+    loadDashboard(),
+    loadSubjectsTable(),
+    loadQueries(),
+    loadSitesTable()
+  ]);
+
+  // protocol must reload separately
+  if (
+    document.getElementById('panel-protocol')
+      .classList.contains('active')
+  ) {
+    await loadProtocol();
+  }
+
+  // refresh enroll page
+  if (
+    document.getElementById('panel-enroll')
+      .classList.contains('active')
+  ) {
+    await loadEnrollSites();
+  }
+
+  // refresh CRF subjects
+  if (
+    document.getElementById('panel-crf')
+      .classList.contains('active')
+  ) {
+    await loadCRFSubjects();
+  }
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
@@ -972,22 +1021,37 @@ async function toggleSiteStatus(siteId, currentStatus) {
 
 // ── PROTOCOL ──────────────────────────────────────────────────
 async function loadProtocol() {
-  if(!currentStudy) { document.getElementById('protocol-table').innerHTML='<div class="empty">Select a study first</div>'; return; }
+
+  if(!currentStudy){
+    document.getElementById('protocol-table').innerHTML =
+      '<div class="empty">Select a study</div>';
+    return;
+  }
+
   try {
-    const data = await api('GET', `/studies/${currentStudy}/protocol`);
-    document.getElementById('protocol-table').innerHTML = data.visits?.length ?
-      `<table><thead><tr><th>#</th><th>Visit Name</th><th>Window Low</th><th>Window High</th><th>Unscheduled</th><th>Actions</th></tr></thead><tbody>${
-        data.visits.map(v=>`<tr>
-          <td class="mono">${v.visit_num}</td><td>${v.visit_name}</td>
-          <td>${v.visit_window_lo}</td><td>${v.visit_window_hi}</td>
-          <td>${v.is_unscheduled?'Yes':'No'}</td>
-          <td><div class="action-btns">
-            <button class="btn btn-warn btn-sm" onclick="openEditVisit(${v.visit_num},'${v.visit_name}',${v.visit_window_lo},${v.visit_window_hi},${v.is_unscheduled})">EDIT</button>
-            <button class="btn btn-danger btn-sm" onclick="confirmDelete('visit',${v.visit_num})">DEL</button>
-          </div></td>
-        </tr>`).join('')
-      }</tbody></table>` : '<div class="empty">No visits defined</div>';
-  } catch(e) { document.getElementById('protocol-table').innerHTML='<div class="empty">No protocol found</div>'; }
+
+    const visits = await api(
+      'GET',
+      `/studies/${currentStudy}/protocol-visits`
+    );
+
+    const table = document.getElementById('protocol-table');
+
+    if(!visits.length){
+      table.innerHTML =
+        '<div class="empty">No protocol visits found</div>';
+      return;
+    }
+
+    table.innerHTML = protocolTableHTML(visits);
+
+  } catch(e) {
+
+    document.getElementById('protocol-table').innerHTML =
+      '<div class="empty">Failed to load protocol</div>';
+
+    console.error(e);
+  }
 }
 
 function openAddVisit() {
