@@ -576,53 +576,45 @@ def list_queries(study_id: str, status: Optional[str] = Query(None), usubjid: Op
     sql += " ORDER BY raised_at DESC"
     return db_exec(sql, tuple(params), fetchall=True) or []
 
-@app.patch("/studies/{study_id}/queries/{query_id}/respond", tags=["queries"], summary="Respond to a query")
-def respond_query(study_id: str, query_id: str, answer_text: str = Body(..., embed=True), current_user: dict = Depends(get_current_user)):
-    q = db_exec(f"SELECT * FROM queries WHERE query_id={PH} AND study_id={PH}", (query_id, study_id), fetchone=True)
-    if not q:
-        raise HTTPException(status_code=404, detail=f"Query {query_id} not found")
-    if q["status"] != "Open":
-        raise HTTPException(status_code=400, detail="Query is not Open")
-    ts = datetime.utcnow().isoformat() + "Z"
-    db_exec(f"UPDATE queries SET status='Answered', answer_text={PH}, answered_by={PH}, answered_at={PH} WHERE query_id={PH} AND study_id={PH}",
-        (answer_text, current_user["user_id"], ts, query_id, study_id), commit=True)
-    log_audit(study_id, current_user["user_id"], "QUERY_ANSWERED", "queries", query_id)
-    return {"query_id": query_id, "status": "Answered", "answer_text": answer_text, "answered_by": current_user["user_id"], "answered_at": ts}
 @app.get("/studies/{study_id}/protocol-visits")
 def get_protocol_visits(study_id: str):
 
-    conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-    cur.execute("""
-        SELECT
-            visit_num,
-            visit_name,
-            visit_window_before,
-            visit_window_after,
-            is_required
-        FROM protocol_visits
-        WHERE study_id = %s
-        ORDER BY visit_num
-    """, (study_id,))
+        cur.execute("""
+            SELECT
+                visit_num,
+                visit_name,
+                visit_window_before,
+                visit_window_after,
+                is_required
+            FROM protocol_visits
+            WHERE study_id = %s
+            ORDER BY visit_num
+        """, (study_id,))
 
-    rows = cur.fetchall()
+        rows = cur.fetchall()
 
-    visits = []
+        visits = []
 
-    for row in rows:
-        visits.append({
-            "visit_num": row[0],
-            "visit_name": row[1],
-            "visit_window_before": row[2],
-            "visit_window_after": row[3],
-            "is_required": row[4]
-        })
+        for row in rows:
+            visits.append({
+                "visit_num": row[0],
+                "visit_name": row[1],
+                "visit_window_before": row[2] if row[2] is not None else 0,
+                "visit_window_after": row[3] if row[3] is not None else 0,
+                "is_required": row[4]
+            })
 
-    cur.close()
-    conn.close()
+        cur.close()
+        conn.close()
 
-    return visits
+        return visits
+
+    except Exception as e:
+        return {"error": str(e)}
 @app.patch("/studies/{study_id}/queries/{query_id}/close", tags=["queries"], summary="Close an answered query")
 def close_query(study_id: str, query_id: str, current_user: dict = Depends(get_current_user)):
     q = db_exec(f"SELECT * FROM queries WHERE query_id={PH} AND study_id={PH}", (query_id, study_id), fetchone=True)
