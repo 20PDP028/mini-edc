@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Mini EDC — Phase F</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
   --bg: #0a0e14;
@@ -242,6 +243,26 @@ tr:hover td{background:var(--bg3);color:var(--text);}
       <div class="table-wrap">
         <div class="table-header"><div class="table-title">OPEN QUERIES</div><button class="btn btn-outline btn-sm" onclick="showPanel('queries')">VIEW ALL</button></div>
         <div id="dash-queries-table"><div class="loading">Loading</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+        <div class="table-wrap" style="margin:0;padding:16px;">
+          <div class="table-title" style="margin-bottom:14px;font-family:var(--font-mono);font-size:13px;">SUBJECT STATUS</div>
+          <canvas id="chart-subjects" height="200"></canvas>
+        </div>
+        <div class="table-wrap" style="margin:0;padding:16px;">
+          <div class="table-title" style="margin-bottom:14px;font-family:var(--font-mono);font-size:13px;">QUERY STATUS</div>
+          <canvas id="chart-queries" height="200"></canvas>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+        <div class="table-wrap" style="margin:0;padding:16px;">
+          <div class="table-title" style="margin-bottom:14px;font-family:var(--font-mono);font-size:13px;">ENROLLMENT BY SITE</div>
+          <canvas id="chart-sites" height="200"></canvas>
+        </div>
+        <div class="table-wrap" style="margin:0;padding:16px;">
+          <div class="table-title" style="margin-bottom:14px;font-family:var(--font-mono);font-size:13px;">AE SEVERITY</div>
+          <canvas id="chart-ae" height="200"></canvas>
+        </div>
       </div>
     </div>
 
@@ -554,6 +575,27 @@ tr:hover td{background:var(--bg3);color:var(--text);}
           <div class="report-desc">Complete audit trail export (CSV)</div>
         </div>
         <button class="btn btn-outline" onclick="exportAudit()">EXPORT CSV</button>
+      </div>
+      <div class="report-card">
+        <div class="report-info">
+          <div class="report-name">DATA COMPLETENESS REPORT</div>
+          <div class="report-desc">CRF completion status per subject per domain (CSV)</div>
+        </div>
+        <button class="btn btn-outline" onclick="exportCompleteness()">EXPORT CSV</button>
+      </div>
+      <div class="report-card">
+        <div class="report-info">
+          <div class="report-name">SDTM DATASET — EX</div>
+          <div class="report-desc">Exposure domain in CDISC SDTM format (CSV)</div>
+        </div>
+        <button class="btn btn-outline" onclick="exportSDTM('ex')">EXPORT CSV</button>
+      </div>
+      <div class="report-card">
+        <div class="report-info">
+          <div class="report-name">SDTM DATASET — CM</div>
+          <div class="report-desc">Concomitant Medications domain in CDISC SDTM format (CSV)</div>
+        </div>
+        <button class="btn btn-outline" onclick="exportSDTM('cm')">EXPORT CSV</button>
       </div>
     </div>
 
@@ -879,6 +921,10 @@ async function onStudyChange() {
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
+let chartSubjects, chartQueries, chartSites, chartAE;
+
+function destroyChart(c) { if(c) { try { c.destroy(); } catch(e){} } }
+
 async function loadDashboard() {
   if(!currentStudy) return;
   const study = studyList.find(s=>s.study_id===currentStudy);
@@ -891,21 +937,127 @@ async function loadDashboard() {
     document.getElementById('stat-ae').textContent = stats.adverse_events?.total ?? '—';
     document.getElementById('stat-sae').textContent = stats.adverse_events?.serious ?? '—';
     document.getElementById('stat-withdrawn').textContent = stats.subjects?.withdrawn ?? '—';
+
+    // Subject status doughnut
+    destroyChart(chartSubjects);
+    chartSubjects = new Chart(document.getElementById('chart-subjects'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Enrolled','Completed','Withdrawn','Screen Failed'],
+        datasets: [{
+          data: [stats.subjects?.enrolled||0, stats.subjects?.completed||0, stats.subjects?.withdrawn||0, stats.subjects?.screen_failed||0],
+          backgroundColor: ['#00d4ff','#00ff9d','#ff4455','#ffcc00'],
+          borderWidth: 0
+        }]
+      },
+      options: { plugins: { legend: { labels: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} } } }, cutout:'65%' }
+    });
+
+    // Query status doughnut
+    destroyChart(chartQueries);
+    chartQueries = new Chart(document.getElementById('chart-queries'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Open','Answered','Closed'],
+        datasets: [{
+          data: [stats.queries?.open||0, stats.queries?.answered||0, stats.queries?.closed||0],
+          backgroundColor: ['#ff4455','#ffcc00','#00ff9d'],
+          borderWidth: 0
+        }]
+      },
+      options: { plugins: { legend: { labels: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} } } }, cutout:'65%' }
+    });
   } catch(e) {}
+
   try {
     const subjects = await api('GET', `/studies/${currentStudy}/subjects`);
     subjectList = subjects;
     const recent = subjects.slice(0,5);
     document.getElementById('dash-subjects-table').innerHTML = recent.length ? subjectsTableHTML(recent) : '<div class="empty">No subjects enrolled</div>';
+
+    // Enrollment by site bar chart
+    const siteCounts = {};
+    subjects.forEach(s => { siteCounts[s.site_id] = (siteCounts[s.site_id]||0)+1; });
+    destroyChart(chartSites);
+    chartSites = new Chart(document.getElementById('chart-sites'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(siteCounts),
+        datasets: [{ label:'Subjects', data: Object.values(siteCounts), backgroundColor:'#00d4ff', borderRadius:2 }]
+      },
+      options: {
+        plugins: { legend: { display:false } },
+        scales: {
+          x: { ticks: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} }, grid: { color:'#1e2a3a' } },
+          y: { ticks: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} }, grid: { color:'#1e2a3a' }, beginAtZero:true }
+        }
+      }
+    });
   } catch(e) {}
+
+  try {
+    // AE severity bar chart — collect from all subjects
+    const aeSev = { MILD:0, MODERATE:0, SEVERE:0 };
+    for(const s of subjectList.slice(0,20)) {
+      try {
+        const aes = await api('GET', `/studies/${currentStudy}/subjects/${s.usubjid}/crf/ae`);
+        aes.forEach(ae => { if(ae.aesev) aeSev[ae.aesev] = (aeSev[ae.aesev]||0)+1; });
+      } catch(e) {}
+    }
+    destroyChart(chartAE);
+    chartAE = new Chart(document.getElementById('chart-ae'), {
+      type: 'bar',
+      data: {
+        labels: ['MILD','MODERATE','SEVERE'],
+        datasets: [{ label:'AEs', data: [aeSev.MILD, aeSev.MODERATE, aeSev.SEVERE], backgroundColor:['#00ff9d','#ffcc00','#ff4455'], borderRadius:2 }]
+      },
+      options: {
+        plugins: { legend: { display:false } },
+        scales: {
+          x: { ticks: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} }, grid: { color:'#1e2a3a' } },
+          y: { ticks: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} }, grid: { color:'#1e2a3a' }, beginAtZero:true }
+        }
+      }
+    });
+  } catch(e) {}
+
   try {
     const queries = await api('GET', `/studies/${currentStudy}/queries?status=Open`);
-    const el = document.getElementById('dash-queries-table');
-    if(!queries.length) { el.innerHTML = '<div class="empty">No open queries</div>'; return; }
-    el.innerHTML = `<table><thead><tr><th>Query ID</th><th>Subject</th><th>Domain</th><th>Field</th><th>Severity</th><th>Raised</th></tr></thead><tbody>${
-      queries.slice(0,5).map(q=>`<tr><td class="mono">${q.query_id}</td><td class="mono">${q.usubjid}</td><td>${q.domain}</td><td>${q.field}</td><td><span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span></td><td class="mono">${q.raised_at?.slice(0,10)||'—'}</td></tr>`).join('')
-    }</tbody></table>`;
+    const openQ = queries.slice(0,5);
+    document.getElementById('dash-queries-table').innerHTML = openQ.length ?
+      `<table><thead><tr><th>Query ID</th><th>Subject</th><th>Field</th><th>Severity</th><th>Raised</th></tr></thead><tbody>${
+        openQ.map(q=>`<tr><td class="mono">${q.query_id}</td><td class="mono">${q.usubjid}</td><td>${q.field}</td><td><span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span></td><td class="mono">${q.raised_at?.slice(0,10)||'—'}</td></tr>`).join('')
+      }</tbody></table>` : '<div class="empty">No open queries</div>';
   } catch(e) {}
+}
+
+async function exportCompleteness() {
+  if(!currentStudy) { showAlert('alert-reports','Select a study first','error'); return; }
+  try {
+    const subjects = await api('GET', `/studies/${currentStudy}/subjects`);
+    const rows = [];
+    for(const s of subjects) {
+      const row = { STUDYID: currentStudy, USUBJID: s.usubjid, SITE_ID: s.site_id, STATUS: s.status };
+      for(const domain of ['dm','vs','lb','ae','ex','cm']) {
+        try {
+          const data = await api('GET', `/studies/${currentStudy}/subjects/${s.usubjid}/crf/${domain}`);
+          const items = Array.isArray(data) ? data : (data ? [data] : []);
+          row[`${domain.toUpperCase()}_COMPLETE`] = items.length > 0 ? 'YES' : 'NO';
+          row[`${domain.toUpperCase()}_RECORDS`] = items.length;
+        } catch(e) {
+          row[`${domain.toUpperCase()}_COMPLETE`] = 'NO';
+          row[`${domain.toUpperCase()}_RECORDS`] = 0;
+        }
+      }
+      const totalDomains = 6;
+      const completedDomains = ['DM','VS','LB','AE','EX','CM'].filter(d=>row[`${d}_COMPLETE`]==='YES').length;
+      row['COMPLETENESS_PCT'] = Math.round((completedDomains/totalDomains)*100) + '%';
+      rows.push(row);
+    }
+    if(!rows.length) { showAlert('alert-reports','No subjects found','error'); return; }
+    downloadCSV(rows, `COMPLETENESS_${currentStudy}_${new Date().toISOString().slice(0,10)}.csv`);
+    showAlert('alert-reports', `Completeness report exported for ${rows.length} subjects`, 'success');
+  } catch(e) { showAlert('alert-reports', e.message, 'error'); }
 }
 
 function subjectsTableHTML(subjects) {
