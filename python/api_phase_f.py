@@ -528,6 +528,10 @@ def submit_crf_ex(study_id: str, usubjid: str, crf: CRFExposure, current_user: d
     log_audit(study_id, current_user["user_id"], "CRF_EX_SUBMIT", "crf_ex", f"{usubjid}-V{crf.visit_num}")
     return {"message": "Exposure CRF saved", "usubjid": usubjid, "study_id": study_id, "visit_num": crf.visit_num, **crf.dict(), "created_by": current_user["user_id"], "created_at": ts}
 
+@app.get("/studies/{study_id}/subjects/{usubjid}/crf/ex", tags=["crf"], summary="Get all Exposure CRF records")
+def get_crf_ex(study_id: str, usubjid: str, current_user: dict = Depends(get_current_user)):
+    return db_exec(f"SELECT * FROM crf_ex WHERE usubjid={PH} AND study_id={PH} ORDER BY visit_num", (usubjid, study_id), fetchall=True) or []
+
 @app.post("/studies/{study_id}/subjects/{usubjid}/crf/cm", tags=["crf"], summary="Submit Concomitant Medication CRF")
 def submit_crf_cm(study_id: str, usubjid: str, crf: CRFConcomitantMed, current_user: dict = Depends(get_current_user)):
     subject = db_exec(f"SELECT site_id FROM subjects WHERE usubjid={PH} AND study_id={PH}", (usubjid, study_id), fetchone=True)
