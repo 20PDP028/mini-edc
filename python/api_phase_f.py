@@ -577,44 +577,28 @@ def list_queries(study_id: str, status: Optional[str] = Query(None), usubjid: Op
     return db_exec(sql, tuple(params), fetchall=True) or []
 
 @app.get("/studies/{study_id}/protocol-visits")
-def get_protocol_visits(study_id: str):
+def get_protocol_visits(
+    study_id: str,
+    current_user: dict = Depends(get_current_user)
+):
 
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+    visits = db_exec(
+        f"""
+        SELECT
+            visit_num,
+            visit_name,
+            visit_window_before,
+            visit_window_after,
+            is_required
+        FROM protocol_visits
+        WHERE study_id={PH}
+        ORDER BY visit_num
+        """,
+        (study_id,),
+        fetchall=True
+    ) or []
 
-        cur.execute("""
-            SELECT
-                visit_num,
-                visit_name,
-                visit_window_before,
-                visit_window_after,
-                is_required
-            FROM protocol_visits
-            WHERE study_id = %s
-            ORDER BY visit_num
-        """, (study_id,))
-
-        rows = cur.fetchall()
-
-        visits = []
-
-        for row in rows:
-            visits.append({
-                "visit_num": row[0],
-                "visit_name": row[1],
-                "visit_window_before": row[2] if row[2] is not None else 0,
-                "visit_window_after": row[3] if row[3] is not None else 0,
-                "is_required": row[4]
-            })
-
-        cur.close()
-        conn.close()
-
-        return visits
-
-    except Exception as e:
-        return {"error": str(e)}
+    return visits
 @app.patch("/studies/{study_id}/queries/{query_id}/close", tags=["queries"], summary="Close an answered query")
 def close_query(study_id: str, query_id: str, current_user: dict = Depends(get_current_user)):
     q = db_exec(f"SELECT * FROM queries WHERE query_id={PH} AND study_id={PH}", (query_id, study_id), fetchone=True)
