@@ -1035,74 +1035,35 @@ async function loadProtocol() {
       `/studies/${currentStudy}/protocol-visits`
     );
 
-    console.log("PROTOCOL VISITS:", visits);
+    console.log("Protocol API Response:", visits);
 
     const table = document.getElementById('protocol-table');
 
-    if (!visits || !visits.length) {
+    // handle backend errors
+    if (visits.error) {
+      table.innerHTML =
+        `<div class="empty">${visits.error}</div>`;
+      return;
+    }
+
+    // ensure array
+    if (!Array.isArray(visits)) {
+      table.innerHTML =
+        '<div class="empty">Invalid protocol response</div>';
+      return;
+    }
+
+    if (!visits.length) {
       table.innerHTML =
         '<div class="empty">No protocol visits found</div>';
       return;
     }
 
-    table.innerHTML = `
-      <table class="table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>VISIT NAME</th>
-            <th>WINDOW BEFORE</th>
-            <th>WINDOW AFTER</th>
-            <th>UNSCHEDULED</th>
-            <th>ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${visits.map(v => `
-            <tr>
-              <td>${v.visit_num ?? '-'}</td>
-              <td>${v.visit_name ?? '-'}</td>
-
-              <td>
-                ${v.visit_window_before != null
-                  ? `±${Math.abs(v.visit_window_before)} days`
-                  : '-'}
-              </td>
-
-              <td>
-                ${v.visit_window_after != null
-                  ? `±${Math.abs(v.visit_window_after)} days`
-                  : '-'}
-              </td>
-
-              <td>${v.is_required ? 'No' : 'Yes'}</td>
-
-              <td>
-                <div class="action-btns">
-                  <button
-                    class="btn btn-warn btn-sm"
-                    onclick="editVisit(${v.visit_num})"
-                  >
-                    EDIT
-                  </button>
-
-                  <button
-                    class="btn btn-danger btn-sm"
-                    onclick="deleteVisit(${v.visit_num})"
-                  >
-                    DEL
-                  </button>
-                </div>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
+    table.innerHTML = protocolTableHTML(visits);
 
   } catch (e) {
 
-    console.error("PROTOCOL LOAD ERROR:", e);
+    console.error(e);
 
     document.getElementById('protocol-table').innerHTML =
       `<div class="empty">${e.message}</div>`;
