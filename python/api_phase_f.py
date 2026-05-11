@@ -232,6 +232,77 @@ def log_audit(study_id, user_id, action, table_name, record_id, field_name=None,
         commit=True
     )
 
+# ── Validation Rules ──────────────────────────────────────────
+
+VS_RULES = [
+    ("sysbp",    "SysBP",       60,  200,  "Critical"),
+    ("diabp",    "DiaBP",       40,  130,  "Critical"),
+    ("pulse",    "Pulse",       30,  150,  "Major"),
+    ("temp",     "Temperature", 34.0,40.5, "Major"),
+    ("weight",   "Weight",       3,  300,  "Minor"),
+    ("resp_rate","Resp Rate",    8,   40,  "Minor"),
+]
+
+LB_RULES = [
+    ("hgb",        "Hemoglobin",  4.0,  20.0, "Major"),
+    ("wbc",        "WBC",         1.0,  50.0, "Major"),
+    ("plt",        "Platelets",   10,   900,  "Major"),
+    ("alt",        "ALT",         0,    500,  "Major"),
+    ("ast",        "AST",         0,    500,  "Major"),
+    ("creatinine", "Creatinine",  0.3,  15.0, "Critical"),
+    ("glucose",    "Glucose",     40,   600,  "Critical"),
+]
+
+def auto_raise_query(study_id, usubjid, domain, visit_num, field, value, issue, severity, user_id):
+    try:
+        site = db_exec(f"SELECT site_id FROM subjects WHERE usubjid={PH} AND study_id={PH}", (usubjid, study_id), fetchone=True)
+        site_id = site["site_id"] if site else None
+        count = db_exec(f"SELECT COUNT(*) as c FROM queries WHERE study_id={PH}", (study_id,), fetchone=True)
+        qid = f"QRY-{(count['c'] if count else 0)+1:04d}"
+        ts = datetime.utcnow().isoformat() + "Z"
+        db_exec(
+            f"INSERT INTO queries (query_id,study_id,usubjid,site_id,domain,visit_num,field,value,issue,severity,status,raised_by,raised_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
+            (qid, study_id, usubjid, site_id, domain, visit_num, field, str(value), issue, severity, "Open", user_id, ts),
+            commit=True
+        )
+        log_audit(study_id, user_id, "AUTO_QUERY_RAISED", "queries", qid)
+    except Exception:
+        pass
+
+def validate_vs(study_id, usubjid, visit_num, data: dict, user_id: str):
+    flags = []
+    for field, label, lo, hi, sev in VS_RULES:
+        val = data.get(field)
+        if val is not None:
+            if val < lo or val > hi:
+                issue = f"{label} value {val} is outside normal range ({lo}–{hi})"
+                auto_raise_query(study_id, usubjid, "VS", visit_num, field.upper(), val, issue, sev, user_id)
+                flags.append({"field": field, "value": val, "issue": issue, "severity": sev})
+    return flags
+
+def validate_lb(study_id, usubjid, visit_num, data: dict, user_id: str):
+    flags = []
+    for field, label, lo, hi, sev in LB_RULES:
+        val = data.get(field)
+        if val is not None:
+            if val < lo or val > hi:
+                issue = f"{label} value {val} is outside normal range ({lo}–{hi})"
+                auto_raise_query(study_id, usubjid, "LB", visit_num, field.upper(), val, issue, sev, user_id)
+                flags.append({"field": field, "value": val, "issue": issue, "severity": sev})
+    return flags
+
+def validate_ae(study_id, usubjid, data: dict, user_id: str):
+    flags = []
+    if data.get("aeser") == "Y" and data.get("aeout") in (None, "", "RECOVERED/RESOLVED") and data.get("aesdth") == "Y":
+        issue = "SAE marked as fatal but outcome shows recovered — please verify"
+        auto_raise_query(study_id, usubjid, "AE", None, "AEOUT", data.get("aeout",""), issue, "Critical", user_id)
+        flags.append({"field": "aeout", "issue": issue, "severity": "Critical"})
+    if data.get("aeser") == "Y" and data.get("aesev") == "MILD":
+        issue = "SAE (serious=Y) flagged as MILD severity — please verify"
+        auto_raise_query(study_id, usubjid, "AE", None, "AESEV", "MILD", issue, "Major", user_id)
+        flags.append({"field": "aesev", "issue": issue, "severity": "Major"})
+    return flags
+
 # ── Startup ───────────────────────────────────────────────────
 
 @app.on_event("startup")
@@ -468,7 +539,8 @@ def submit_crf_vs(study_id: str, usubjid: str, crf: CRFVitalSigns, current_user:
         db_exec(f"INSERT INTO crf_vs (usubjid,study_id,site_id,visit_num,visit_name,vsdtc,sysbp,diabp,pulse,temp,weight,height,resp_rate,filled_by,filled_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
             (usubjid, study_id, site_id, crf.visit_num, crf.visit_name, crf.vsdtc, crf.sysbp, crf.diabp, crf.pulse, crf.temp, crf.weight, crf.height, crf.resp_rate, current_user["user_id"], ts), commit=True)
     log_audit(study_id, current_user["user_id"], "CRF_VS_SUBMIT", "crf_vs", f"{usubjid}-V{crf.visit_num}")
-    return {"message": "Vital Signs CRF saved", "usubjid": usubjid, "study_id": study_id, "visit_num": crf.visit_num, **crf.dict(), "filled_by": current_user["user_id"], "filled_at": ts}
+    flags = validate_vs(study_id, usubjid, crf.visit_num, crf.dict(), current_user["user_id"])
+    return {"message": "Vital Signs CRF saved", "usubjid": usubjid, "study_id": study_id, "visit_num": crf.visit_num, **crf.dict(), "filled_by": current_user["user_id"], "filled_at": ts, "validation_flags": flags}
 
 @app.get("/studies/{study_id}/subjects/{usubjid}/crf/vs", tags=["crf"], summary="Get all Vital Signs CRF records")
 def get_crf_vs(study_id: str, usubjid: str, current_user: dict = Depends(get_current_user)):
@@ -489,7 +561,8 @@ def submit_crf_lb(study_id: str, usubjid: str, crf: CRFLaboratory, current_user:
         db_exec(f"INSERT INTO crf_lb (usubjid,study_id,site_id,visit_num,visit_name,lbdtc,hgb,wbc,plt,alt,ast,creatinine,glucose,filled_by,filled_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
             (usubjid, study_id, site_id, crf.visit_num, crf.visit_name, crf.lbdtc, crf.hgb, crf.wbc, crf.plt, crf.alt, crf.ast, crf.creatinine, crf.glucose, current_user["user_id"], ts), commit=True)
     log_audit(study_id, current_user["user_id"], "CRF_LB_SUBMIT", "crf_lb", f"{usubjid}-V{crf.visit_num}")
-    return {"message": "Laboratory CRF saved", "usubjid": usubjid, "study_id": study_id, "visit_num": crf.visit_num, **crf.dict(), "filled_by": current_user["user_id"], "filled_at": ts}
+    flags = validate_lb(study_id, usubjid, crf.visit_num, crf.dict(), current_user["user_id"])
+    return {"message": "Laboratory CRF saved", "usubjid": usubjid, "study_id": study_id, "visit_num": crf.visit_num, **crf.dict(), "filled_by": current_user["user_id"], "filled_at": ts, "validation_flags": flags}
 
 @app.get("/studies/{study_id}/subjects/{usubjid}/crf/lb", tags=["crf"], summary="Get all Laboratory CRF records")
 def get_crf_lb(study_id: str, usubjid: str, current_user: dict = Depends(get_current_user)):
@@ -505,7 +578,8 @@ def submit_crf_ae(study_id: str, usubjid: str, crf: CRFAdverseEvent, current_use
     db_exec(f"INSERT INTO crf_ae (usubjid,study_id,aeterm,aedecod,aebodsys,aestdtc,aeendtc,aesev,aeser,aerel,aeout,aesdth,created_by,created_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
         (usubjid, study_id, crf.aeterm, crf.aedecod, crf.aebodsys, crf.aestdtc, crf.aeendtc, crf.aesev, crf.aeser, crf.aerel, crf.aeout, crf.aesdth, current_user["user_id"], ts), commit=True)
     log_audit(study_id, current_user["user_id"], "CRF_AE_SUBMIT", "crf_ae", usubjid)
-    return {"message": "Adverse Event CRF saved", "usubjid": usubjid, "study_id": study_id, **crf.dict(), "created_by": current_user["user_id"], "created_at": ts}
+    flags = validate_ae(study_id, usubjid, crf.dict(), current_user["user_id"])
+    return {"message": "Adverse Event CRF saved", "usubjid": usubjid, "study_id": study_id, **crf.dict(), "created_by": current_user["user_id"], "created_at": ts, "validation_flags": flags}
 
 @app.get("/studies/{study_id}/subjects/{usubjid}/crf/ae", tags=["crf"], summary="Get all Adverse Event CRF records")
 def get_crf_ae(study_id: str, usubjid: str, current_user: dict = Depends(get_current_user)):
@@ -548,7 +622,90 @@ def submit_crf_cm(study_id: str, usubjid: str, crf: CRFConcomitantMed, current_u
 def get_crf_cm(study_id: str, usubjid: str, current_user: dict = Depends(get_current_user)):
     return db_exec(f"SELECT * FROM crf_cm WHERE usubjid={PH} AND study_id={PH} ORDER BY id", (usubjid, study_id), fetchall=True) or []
 
-# ── Routes: Queries ───────────────────────────────────────────
+# ── CRF Edit Endpoints ────────────────────────────────────────
+
+@app.patch("/studies/{study_id}/subjects/{usubjid}/crf/vs/{visit_num}", tags=["crf"], summary="Edit Vital Signs CRF record")
+def edit_crf_vs(study_id: str, usubjid: str, visit_num: int, crf: CRFVitalSigns, current_user: dict = Depends(get_current_user)):
+    existing = db_exec(f"SELECT * FROM crf_vs WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}", (usubjid, study_id, visit_num), fetchone=True)
+    if not existing:
+        raise HTTPException(status_code=404, detail="VS record not found")
+    ts = datetime.utcnow().isoformat() + "Z"
+    for field in ["sysbp","diabp","pulse","temp","weight","height","resp_rate"]:
+        old = existing.get(field); new = getattr(crf, field, None)
+        if old != new:
+            log_audit(study_id, current_user["user_id"], "CRF_VS_EDIT", "crf_vs", f"{usubjid}-V{visit_num}", field, str(old), str(new))
+    db_exec(f"UPDATE crf_vs SET vsdtc={PH},sysbp={PH},diabp={PH},pulse={PH},temp={PH},weight={PH},height={PH},resp_rate={PH},filled_by={PH},filled_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
+        (crf.vsdtc, crf.sysbp, crf.diabp, crf.pulse, crf.temp, crf.weight, crf.height, crf.resp_rate, current_user["user_id"], ts, usubjid, study_id, visit_num), commit=True)
+    flags = validate_vs(study_id, usubjid, visit_num, crf.dict(), current_user["user_id"])
+    return {"message": "VS record updated", "validation_flags": flags}
+
+@app.patch("/studies/{study_id}/subjects/{usubjid}/crf/lb/{visit_num}", tags=["crf"], summary="Edit Laboratory CRF record")
+def edit_crf_lb(study_id: str, usubjid: str, visit_num: int, crf: CRFLaboratory, current_user: dict = Depends(get_current_user)):
+    existing = db_exec(f"SELECT * FROM crf_lb WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}", (usubjid, study_id, visit_num), fetchone=True)
+    if not existing:
+        raise HTTPException(status_code=404, detail="LB record not found")
+    ts = datetime.utcnow().isoformat() + "Z"
+    for field in ["hgb","wbc","plt","alt","ast","creatinine","glucose"]:
+        old = existing.get(field); new = getattr(crf, field, None)
+        if old != new:
+            log_audit(study_id, current_user["user_id"], "CRF_LB_EDIT", "crf_lb", f"{usubjid}-V{visit_num}", field, str(old), str(new))
+    db_exec(f"UPDATE crf_lb SET lbdtc={PH},hgb={PH},wbc={PH},plt={PH},alt={PH},ast={PH},creatinine={PH},glucose={PH},filled_by={PH},filled_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
+        (crf.lbdtc, crf.hgb, crf.wbc, crf.plt, crf.alt, crf.ast, crf.creatinine, crf.glucose, current_user["user_id"], ts, usubjid, study_id, visit_num), commit=True)
+    flags = validate_lb(study_id, usubjid, visit_num, crf.dict(), current_user["user_id"])
+    return {"message": "LB record updated", "validation_flags": flags}
+
+@app.patch("/studies/{study_id}/subjects/{usubjid}/crf/dm", tags=["crf"], summary="Edit Demographics CRF")
+def edit_crf_dm(study_id: str, usubjid: str, crf: CRFDemographics, current_user: dict = Depends(get_current_user)):
+    existing = db_exec(f"SELECT * FROM crf_dm WHERE usubjid={PH} AND study_id={PH}", (usubjid, study_id), fetchone=True)
+    if not existing:
+        raise HTTPException(status_code=404, detail="DM record not found")
+    ts = datetime.utcnow().isoformat() + "Z"
+    for field in ["age","sex","race","ethnic","country","rfstdtc","rfendtc","dmdtc"]:
+        old = existing.get(field); new = getattr(crf, field, None)
+        if str(old) != str(new):
+            log_audit(study_id, current_user["user_id"], "CRF_DM_EDIT", "crf_dm", usubjid, field, str(old), str(new))
+    db_exec(f"UPDATE crf_dm SET age={PH},sex={PH},race={PH},ethnic={PH},country={PH},rfstdtc={PH},rfendtc={PH},dmdtc={PH},filled_by={PH},filled_at={PH} WHERE usubjid={PH} AND study_id={PH}",
+        (crf.age, crf.sex, crf.race, crf.ethnic, crf.country, crf.rfstdtc, crf.rfendtc, crf.dmdtc, current_user["user_id"], ts, usubjid, study_id), commit=True)
+    return {"message": "DM record updated"}
+
+# ── Data Completeness ─────────────────────────────────────────
+
+@app.get("/studies/{study_id}/subjects/{usubjid}/completeness", tags=["crf"], summary="Check CRF completeness for a subject")
+def check_completeness(study_id: str, usubjid: str, current_user: dict = Depends(get_current_user)):
+    completed_visits = db_exec(f"SELECT visit_num FROM subject_visits WHERE usubjid={PH} AND study_id={PH} AND status='COMPLETED'", (usubjid, study_id), fetchall=True) or []
+    completed_nums = [v["visit_num"] for v in completed_visits]
+    has_dm = db_exec(f"SELECT id FROM crf_dm WHERE usubjid={PH} AND study_id={PH}", (usubjid, study_id), fetchone=True)
+    vs_visits = {r["visit_num"] for r in (db_exec(f"SELECT visit_num FROM crf_vs WHERE usubjid={PH} AND study_id={PH}", (usubjid, study_id), fetchall=True) or [])}
+    lb_visits = {r["visit_num"] for r in (db_exec(f"SELECT visit_num FROM crf_lb WHERE usubjid={PH} AND study_id={PH}", (usubjid, study_id), fetchall=True) or [])}
+    missing = []
+    if not has_dm:
+        missing.append({"domain": "DM", "visit_num": None, "issue": "Demographics CRF not submitted"})
+    for vnum in completed_nums:
+        if vnum not in vs_visits:
+            missing.append({"domain": "VS", "visit_num": vnum, "issue": f"Vital Signs missing for completed visit {vnum}"})
+        if vnum not in lb_visits:
+            missing.append({"domain": "LB", "visit_num": vnum, "issue": f"Lab results missing for completed visit {vnum}"})
+    total_expected = 1 + (len(completed_nums) * 2)
+    total_present = (1 if has_dm else 0) + len(vs_visits) + len(lb_visits)
+    pct = round((total_present / total_expected * 100) if total_expected > 0 else 100, 1)
+    return {"usubjid": usubjid, "study_id": study_id, "completed_visits": len(completed_nums), "completeness_pct": pct, "missing": missing}
+
+@app.get("/studies/{study_id}/completeness", tags=["crf"], summary="Completeness summary for all subjects in a study")
+def study_completeness(study_id: str, current_user: dict = Depends(get_current_user)):
+    subjects = db_exec(f"SELECT usubjid FROM subjects WHERE study_id={PH}", (study_id,), fetchall=True) or []
+    results = []
+    for s in subjects:
+        uid = s["usubjid"]
+        completed_visits = db_exec(f"SELECT visit_num FROM subject_visits WHERE usubjid={PH} AND study_id={PH} AND status='COMPLETED'", (uid, study_id), fetchall=True) or []
+        completed_nums = [v["visit_num"] for v in completed_visits]
+        has_dm = bool(db_exec(f"SELECT id FROM crf_dm WHERE usubjid={PH} AND study_id={PH}", (uid, study_id), fetchone=True))
+        vs_count = (db_exec(f"SELECT COUNT(*) as c FROM crf_vs WHERE usubjid={PH} AND study_id={PH}", (uid, study_id), fetchone=True) or {}).get("c", 0)
+        lb_count = (db_exec(f"SELECT COUNT(*) as c FROM crf_lb WHERE usubjid={PH} AND study_id={PH}", (uid, study_id), fetchone=True) or {}).get("c", 0)
+        total_expected = 1 + (len(completed_nums) * 2)
+        total_present = (1 if has_dm else 0) + vs_count + lb_count
+        pct = round((total_present / total_expected * 100) if total_expected > 0 else 100, 1)
+        results.append({"usubjid": uid, "completed_visits": len(completed_nums), "completeness_pct": pct, "has_dm": has_dm})
+    return sorted(results, key=lambda x: x["completeness_pct"])
 
 @app.post("/studies/{study_id}/queries", tags=["queries"], summary="Raise a data query", status_code=201)
 def raise_query(study_id: str, q: QueryIn, current_user: dict = Depends(get_current_user)):

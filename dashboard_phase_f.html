@@ -117,6 +117,7 @@ tr:hover td{background:var(--bg3);color:var(--text);}
 .alert{font-family:var(--font-mono);font-size:12px;padding:10px 14px;border-radius:2px;margin-bottom:14px;display:none;}
 .alert.success{background:rgba(0,255,157,.1);border:1px solid rgba(0,255,157,.3);color:var(--accent2);}
 .alert.error{background:rgba(255,68,85,.1);border:1px solid rgba(255,68,85,.3);color:var(--danger);}
+.alert.warn{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.4);color:#f5a623;white-space:pre-line;}
 .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;flex-wrap:wrap;}
 .tab{font-family:var(--font-mono);font-size:12px;padding:10px 16px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;}
 .tab:hover{color:var(--text);}
@@ -298,6 +299,7 @@ tr:hover td{background:var(--bg3);color:var(--text);}
         <div class="tab active" onclick="showSDTab('visits')">VISIT TRACKER</div>
         <div class="tab" onclick="showSDTab('crf')">CRF DATA</div>
         <div class="tab" onclick="showSDTab('queries')">QUERIES</div>
+        <div class="tab" onclick="showSDTab('completeness')">COMPLETENESS</div>
       </div>
       <div class="tab-panel active" id="sd-visits">
         <div class="visit-grid" id="sd-visit-grid"><div class="loading">Loading</div></div>
@@ -315,6 +317,9 @@ tr:hover td{background:var(--bg3);color:var(--text);}
       </div>
       <div class="tab-panel" id="sd-queries">
         <div id="sd-queries-content"><div class="loading">Loading</div></div>
+      </div>
+      <div class="tab-panel" id="sd-completeness">
+        <div id="sd-completeness-content"><div class="loading">Loading</div></div>
       </div>
     </div>
 
@@ -713,6 +718,22 @@ tr:hover td{background:var(--bg3);color:var(--text);}
     </div>
   </div>
 </div>
+
+<div class="modal-overlay" id="modal-edit-crf">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header"><div class="modal-title">EDIT CRF RECORD</div><button class="modal-close" onclick="closeModal('modal-edit-crf')">×</button></div>
+    <div class="modal-body">
+      <div id="alert-edit-crf" class="alert"></div>
+      <div id="edit-crf-fields"></div>
+      <div class="form-actions" style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="saveEditCRF()">SAVE CHANGES</button>
+        <button class="btn btn-outline" onclick="closeModal('modal-edit-crf')">CANCEL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="alert-global" class="alert" style="position:fixed;bottom:24px;right:24px;max-width:400px;z-index:9999;display:none;"></div>
 
 <script>
 const API = 'https://mini-edc-production.up.railway.app';
@@ -1275,9 +1296,11 @@ function showSDTab(tab) {
   document.querySelectorAll('#panel-subject-detail .tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('sd-'+tab).classList.add('active');
   document.querySelectorAll('#panel-subject-detail > .tabs .tab').forEach((t,i)=>{
-    t.classList.toggle('active',['visits','crf','queries'][i]===tab);
+    t.classList.toggle('active',['visits','crf','queries','completeness'][i]===tab);
   });
   if(tab==='queries'&&currentSubjectDetail) loadSubjectQueries(currentSubjectDetail.usubjid);
+  if(tab==='completeness'&&currentSubjectDetail) loadSubjectCompleteness(currentSubjectDetail.usubjid);
+  if(tab==='crf'&&currentSubjectDetail) showSDCRFTab('dm');
 }
 
 function showSDCRFTab(tab) {
@@ -1288,16 +1311,51 @@ function showSDCRFTab(tab) {
   loadSubjectCRF(currentSubjectDetail.usubjid, tab);
 }
 
+async function loadSubjectCompleteness(usubjid) {
+  const el = document.getElementById('sd-completeness-content');
+  el.innerHTML = '<div class="loading">Loading</div>';
+  try {
+    const data = await api('GET', `/studies/${currentStudy}/subjects/${usubjid}/completeness`);
+    const pct = data.completeness_pct;
+    const color = pct >= 90 ? '#00c896' : pct >= 60 ? '#f5a623' : '#e85d5d';
+    el.innerHTML = `
+      <div style="margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+          <div style="font-size:2rem;font-weight:700;color:${color};">${pct}%</div>
+          <div>
+            <div style="font-size:0.85rem;color:var(--text-muted);">CRF Completeness</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">${data.completed_visits} completed visit(s)</div>
+          </div>
+        </div>
+        <div style="background:var(--bg-card);border-radius:6px;height:8px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:${color};transition:width 0.4s;"></div>
+        </div>
+      </div>
+      ${data.missing.length ? `
+        <div style="font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em;">Missing CRF Data</div>
+        ${data.missing.map(m=>`
+          <div style="background:var(--bg-card);border:1px solid #e85d5d44;border-left:3px solid #e85d5d;border-radius:6px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <span style="font-family:monospace;color:#e85d5d;font-weight:600;">${m.domain}</span>
+              ${m.visit_num ? `<span style="color:var(--text-muted);font-size:0.8rem;margin-left:8px;">Visit ${m.visit_num}</span>` : ''}
+              <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">${m.issue}</div>
+            </div>
+          </div>`).join('')}
+      ` : '<div class="empty" style="color:#00c896;">✓ All CRF data complete for completed visits</div>'}`;
+  } catch(e) { el.innerHTML='<div class="empty">Could not load completeness</div>'; }
+}
+
 async function loadSubjectCRF(usubjid, domain) {
   const el = document.getElementById('sd-crf-content');
   el.innerHTML = '<div class="loading">Loading</div>';
   try {
     const data = await api('GET', `/studies/${currentStudy}/subjects/${usubjid}/crf/${domain}`);
-    if(!data || (Array.isArray(data) && !data.length)) { el.innerHTML='<div class="empty">No '+domain.toUpperCase()+' data</div>'; return; }
+    if(!data || (Array.isArray(data) && !data.length)) { el.innerHTML='<div class="empty">No '+domain.toUpperCase()+' data — use CRF Entry to add data</div>'; return; }
     const rows = Array.isArray(data) ? data : [data];
-    const keys = Object.keys(rows[0]).filter(k=>k!=='id'&&k!=='study_id'&&k!=='site_id'&&k!=='locked');
-    el.innerHTML = `<div class="table-wrap"><table><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>${
-      rows.map(r=>`<tr>${keys.map(k=>`<td>${r[k]??'—'}</td>`).join('')}</tr>`).join('')
+    const keys = Object.keys(rows[0]).filter(k=>!['id','study_id','site_id','locked'].includes(k));
+    const canEdit = ['dm','vs','lb'].includes(domain);
+    el.innerHTML = `<div class="table-wrap"><table><thead><tr>${keys.map(k=>`<th>${k.toUpperCase()}</th>`).join('')}${canEdit?'<th>ACTION</th>':''}</tr></thead><tbody>${
+      rows.map((r,i)=>`<tr>${keys.map(k=>`<td>${r[k]??'—'}</td>`).join('')}${canEdit?`<td><button class="btn btn-outline btn-sm" onclick="openEditCRFModal('${domain}',${JSON.stringify(r).replace(/'/g,"\\'")})">EDIT</button></td>`:''}</tr>`).join('')
     }</tbody></table></div>`;
   } catch(e) { el.innerHTML='<div class="empty">Could not load '+domain.toUpperCase()+'</div>'; }
 }
@@ -1458,10 +1516,96 @@ async function submitCRF(type) {
     body = { cmtrt: document.getElementById('cm-trt').value, cmdose: parseFloat(document.getElementById('cm-dose').value)||null, cmdosu: document.getElementById('cm-dosu').value||null, cmroute: document.getElementById('cm-route').value||null, cmstdtc: document.getElementById('cm-start').value||null, cmendtc: document.getElementById('cm-end').value||null, cmindc: document.getElementById('cm-indc').value||null };
   }
   try {
-    await api('POST', `/studies/${currentStudy}/subjects/${usubjid}/crf/${type}`, body);
-    showAlert('alert-crf', `${type.toUpperCase()} CRF saved!`, 'success');
+    const res = await api('POST', `/studies/${currentStudy}/subjects/${usubjid}/crf/${type}`, body);
+    const flags = res.validation_flags || [];
+    if(flags.length) {
+      const flagMsg = flags.map(f=>`⚠ ${f.field?.toUpperCase()||''}: ${f.issue}`).join('\n');
+      showAlert('alert-crf', `${type.toUpperCase()} saved — ${flags.length} auto-query(s) raised:\n${flagMsg}`, 'warn');
+    } else {
+      showAlert('alert-crf', `${type.toUpperCase()} CRF saved!`, 'success');
+    }
     if(type==='ae') loadAEList(usubjid);
   } catch(e) { showAlert('alert-crf', e.message, 'error'); }
+}
+
+// ── EDIT CRF ─────────────────────────────────────────────────
+let editCRFDomain = null;
+let editCRFRecord = null;
+
+function openEditCRFModal(domain, record) {
+  editCRFDomain = domain;
+  editCRFRecord = record;
+  const el = document.getElementById('edit-crf-fields');
+  let html = `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:12px;">Editing ${domain.toUpperCase()} — all changes are audit logged</div>`;
+  if(domain==='dm') {
+    html += `
+      <div class="form-grid">
+        <div class="form-group"><label>Age</label><input id="ecrf-age" type="number" value="${record.age??''}"/></div>
+        <div class="form-group"><label>Sex</label><select id="ecrf-sex"><option value="M" ${record.sex==='M'?'selected':''}>M</option><option value="F" ${record.sex==='F'?'selected':''}>F</option><option value="U" ${record.sex==='U'?'selected':''}>U</option></select></div>
+        <div class="form-group"><label>Race</label><input id="ecrf-race" value="${record.race??''}"/></div>
+        <div class="form-group"><label>Ethnicity</label><input id="ecrf-ethnic" value="${record.ethnic??''}"/></div>
+        <div class="form-group"><label>Country</label><input id="ecrf-country" value="${record.country??''}"/></div>
+        <div class="form-group"><label>Ref Start (rfstdtc)</label><input id="ecrf-rfstdtc" type="date" value="${record.rfstdtc??''}"/></div>
+        <div class="form-group"><label>Ref End (rfendtc)</label><input id="ecrf-rfendtc" type="date" value="${record.rfendtc??''}"/></div>
+        <div class="form-group"><label>DM Date</label><input id="ecrf-dmdtc" type="date" value="${record.dmdtc??''}"/></div>
+      </div>`;
+  } else if(domain==='vs') {
+    html += `
+      <div class="form-grid">
+        <div class="form-group"><label>Visit Num</label><input id="ecrf-visit_num" type="number" value="${record.visit_num??''}" readonly style="opacity:0.5;"/></div>
+        <div class="form-group"><label>Date</label><input id="ecrf-vsdtc" type="date" value="${record.vsdtc??''}"/></div>
+        <div class="form-group"><label>SysBP</label><input id="ecrf-sysbp" type="number" step="0.1" value="${record.sysbp??''}"/></div>
+        <div class="form-group"><label>DiaBP</label><input id="ecrf-diabp" type="number" step="0.1" value="${record.diabp??''}"/></div>
+        <div class="form-group"><label>Pulse</label><input id="ecrf-pulse" type="number" step="0.1" value="${record.pulse??''}"/></div>
+        <div class="form-group"><label>Temp (°C)</label><input id="ecrf-temp" type="number" step="0.1" value="${record.temp??''}"/></div>
+        <div class="form-group"><label>Weight (kg)</label><input id="ecrf-weight" type="number" step="0.1" value="${record.weight??''}"/></div>
+        <div class="form-group"><label>Height (cm)</label><input id="ecrf-height" type="number" step="0.1" value="${record.height??''}"/></div>
+        <div class="form-group"><label>Resp Rate</label><input id="ecrf-resp_rate" type="number" step="0.1" value="${record.resp_rate??''}"/></div>
+      </div>`;
+  } else if(domain==='lb') {
+    html += `
+      <div class="form-grid">
+        <div class="form-group"><label>Visit Num</label><input id="ecrf-visit_num" type="number" value="${record.visit_num??''}" readonly style="opacity:0.5;"/></div>
+        <div class="form-group"><label>Date</label><input id="ecrf-lbdtc" type="date" value="${record.lbdtc??''}"/></div>
+        <div class="form-group"><label>HGB (g/dL)</label><input id="ecrf-hgb" type="number" step="0.1" value="${record.hgb??''}"/></div>
+        <div class="form-group"><label>WBC (K/uL)</label><input id="ecrf-wbc" type="number" step="0.1" value="${record.wbc??''}"/></div>
+        <div class="form-group"><label>PLT (K/uL)</label><input id="ecrf-plt" type="number" step="0.1" value="${record.plt??''}"/></div>
+        <div class="form-group"><label>ALT (U/L)</label><input id="ecrf-alt" type="number" step="0.1" value="${record.alt??''}"/></div>
+        <div class="form-group"><label>AST (U/L)</label><input id="ecrf-ast" type="number" step="0.1" value="${record.ast??''}"/></div>
+        <div class="form-group"><label>Creatinine</label><input id="ecrf-creatinine" type="number" step="0.01" value="${record.creatinine??''}"/></div>
+        <div class="form-group"><label>Glucose</label><input id="ecrf-glucose" type="number" step="0.1" value="${record.glucose??''}"/></div>
+      </div>`;
+  }
+  el.innerHTML = html;
+  openModal('modal-edit-crf');
+}
+
+async function saveEditCRF() {
+  if(!editCRFDomain || !editCRFRecord || !currentSubjectDetail) return;
+  const usubjid = currentSubjectDetail.usubjid;
+  let body = {};
+  const g = id => { const el=document.getElementById('ecrf-'+id); return el?el.value:null; };
+  const gf = id => { const v=g(id); return v?parseFloat(v):null; };
+  const gi = id => { const v=g(id); return v?parseInt(v):null; };
+  if(editCRFDomain==='dm') {
+    body = { age:gi('age'), sex:g('sex'), race:g('race')||null, ethnic:g('ethnic')||null, country:g('country')||null, rfstdtc:g('rfstdtc')||null, rfendtc:g('rfendtc')||null, dmdtc:g('dmdtc')||null };
+  } else if(editCRFDomain==='vs') {
+    body = { visit_num:parseInt(editCRFRecord.visit_num), visit_name:editCRFRecord.visit_name||null, vsdtc:g('vsdtc'), sysbp:gf('sysbp'), diabp:gf('diabp'), pulse:gf('pulse'), temp:gf('temp'), weight:gf('weight'), height:gf('height'), resp_rate:gf('resp_rate') };
+  } else if(editCRFDomain==='lb') {
+    body = { visit_num:parseInt(editCRFRecord.visit_num), visit_name:editCRFRecord.visit_name||null, lbdtc:g('lbdtc'), hgb:gf('hgb'), wbc:gf('wbc'), plt:gf('plt'), alt:gf('alt'), ast:gf('ast'), creatinine:gf('creatinine'), glucose:gf('glucose') };
+  }
+  try {
+    const url = editCRFDomain==='dm'
+      ? `/studies/${currentStudy}/subjects/${usubjid}/crf/dm`
+      : `/studies/${currentStudy}/subjects/${usubjid}/crf/${editCRFDomain}/${editCRFRecord.visit_num}`;
+    const res = await api('PATCH', url, body);
+    const flags = res.validation_flags || [];
+    closeModal('modal-edit-crf');
+    loadSubjectCRF(usubjid, editCRFDomain);
+    if(flags.length) {
+      showAlert('alert-global', `Saved — ${flags.length} validation query(s) raised`, 'warn');
+    }
+  } catch(e) { showAlert('alert-edit-crf', e.message, 'error'); }
 }
 
 // ── QUERIES ───────────────────────────────────────────────────
