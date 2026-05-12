@@ -934,19 +934,18 @@ function renderQueries(queries){
       </div>
       ${q.response?`<div style="background:var(--surface3);border-radius:4px;padding:8px 12px;margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--text2);">Response: ${q.response}</div>`:''}
       <div class="query-actions">
-        ${q.status==='Open'?`<button class="btn btn-sm btn-outline" onclick="openQueryModal('${q.query_id}','answer')">ANSWER</button>`:''}
+        ${q.status==='Open'?`<button class="btn btn-sm btn-outline" onclick="openQueryModal('${q.query_id}','answer')">ANSWER</button><button class="btn btn-sm btn-danger" onclick="closeQuery('${q.query_id}')">CLOSE</button>`:''}
         ${q.status==='Answered'?`<button class="btn btn-sm btn-green" onclick="closeQuery('${q.query_id}')">CLOSE</button>`:''}
-        ${q.status!=='Closed'?`<button class="btn btn-sm btn-danger" onclick="closeQuery('${q.query_id}')">CLOSE</button>`:''}
       </div>
     </div>`).join('');
 }
 
 function filterQueries(){
-  const q=document.getElementById('q-search').value.toLowerCase();
+  const searchTerm=document.getElementById('q-search').value.toLowerCase();
   const st=document.getElementById('q-status-filter').value;
   const sv=document.getElementById('q-sev-filter').value;
   const filtered=allQueriesData.filter(qr=>
-    (!q||qr.usubjid?.toLowerCase().includes(q)||qr.issue?.toLowerCase().includes(q)||qr.field?.toLowerCase().includes(q))&&
+    (!searchTerm||qr.usubjid?.toLowerCase().includes(searchTerm)||qr.issue?.toLowerCase().includes(searchTerm)||qr.field?.toLowerCase().includes(searchTerm))&&
     (!st||qr.status===st)&&
     (!sv||qr.severity===sv)
   );
