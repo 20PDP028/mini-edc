@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SARA · CRC Portal</title>
+<title>SARA · CRC Portal v2</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-:root{
+/* ─ THEME VARIABLES ─ */
+:root[data-theme="dark"]{
   --bg:#07090d;
   --surface:#0e1117;
   --surface2:#141a24;
@@ -23,186 +24,264 @@
   --text:#d4e4f4;
   --text2:#7a8fa3;
   --text3:#3a5066;
-  --mono:'JetBrains Mono',monospace;
-  --sans:'Syne',sans-serif;
-  --r:8px;
-  --step:0;
+  --shadow:rgba(0,0,0,.4);
+  --topbar-bg:#0e1117;
+  --login-overlay:#07090d;
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;overflow-x:hidden;}
+:root[data-theme="light"]{
+  --bg:#f0f4f8;
+  --surface:#ffffff;
+  --surface2:#f5f8fb;
+  --surface3:#eaf0f6;
+  --border:#d1dde8;
+  --border2:#b8ccdb;
+  --accent:#007c6e;
+  --accent-dim:rgba(0,124,110,.09);
+  --accent-glow:rgba(0,124,110,.18);
+  --green:#12904e;
+  --yellow:#b08000;
+  --red:#c8003a;
+  --blue:#1a6fc4;
+  --text:#1a2a38;
+  --text2:#4d677c;
+  --text3:#8aa3b5;
+  --shadow:rgba(0,0,0,.1);
+  --topbar-bg:#ffffff;
+  --login-overlay:#e8eef4;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;transition:background-color .2s,border-color .2s,color .15s;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-size:14px;line-height:1.5;overflow-x:hidden;}
+
+/* ─ THEME TOGGLE ─ */
+.theme-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:var(--surface2);transition:all .2s;}
+.theme-toggle:hover{border-color:var(--accent);}
+.theme-toggle-icon{font-size:14px;line-height:1;}
+.theme-toggle-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);letter-spacing:1px;}
 
 /* ─ LOGIN ─ */
-#login-screen{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:var(--bg);}
-#login-screen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(0,229,195,.07),transparent);}
-.login-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;width:380px;position:relative;}
-.login-brand{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);letter-spacing:3px;margin-bottom:2px;}
-.login-role{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:3px;margin-bottom:28px;}
+#login-screen{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:var(--login-overlay);}
+#login-screen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,var(--accent-glow),transparent);pointer-events:none;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px;width:min(380px,90vw);position:relative;box-shadow:0 20px 60px var(--shadow);}
+.login-brand{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--accent);letter-spacing:3px;margin-bottom:2px;}
+.login-role{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:3px;margin-bottom:28px;}
 .login-field{margin-bottom:14px;}
-.login-field label{display:block;font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:5px;}
-.login-field input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 12px;border-radius:6px;outline:none;}
+.login-field label{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:5px;}
+.login-field input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:10px 12px;border-radius:6px;outline:none;}
 .login-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
-.login-btn{width:100%;padding:12px;background:var(--accent);color:#07090d;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:2px;border:none;border-radius:6px;cursor:pointer;margin-top:6px;transition:opacity .2s;}
+.login-btn{width:100%;padding:12px;background:var(--accent);color:var(--bg);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px;border:none;border-radius:6px;cursor:pointer;margin-top:6px;transition:opacity .2s;}
 .login-btn:hover{opacity:.85;}
-.login-err{font-family:var(--mono);font-size:11px;color:var(--red);background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);border-radius:4px;padding:8px 10px;margin-bottom:10px;display:none;}
+.login-err{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red);background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);border-radius:4px;padding:8px 10px;margin-bottom:10px;display:none;}
+.login-theme{position:absolute;top:16px;right:16px;}
 
 /* ─ APP SHELL ─ */
 #app{display:none;height:100vh;flex-direction:column;}
 #app.show{display:flex;}
 
 /* ─ TOPBAR ─ */
-.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0;position:sticky;top:0;z-index:100;}
-.topbar-brand{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);letter-spacing:2px;}
-.topbar-sep{width:1px;height:18px;background:var(--border);}
-.topbar-label{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px;}
-.topbar-study{font-family:var(--mono);font-size:11px;color:var(--text2);}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
-.user-chip{font-family:var(--mono);font-size:10px;color:var(--accent);padding:4px 10px;border:1px solid rgba(0,229,195,.25);border-radius:4px;background:var(--accent-dim);}
-.btn-logout{font-family:var(--mono);font-size:10px;color:var(--text3);padding:4px 10px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer;transition:all .2s;}
+.topbar{height:52px;background:var(--topbar-bg);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px var(--shadow);}
+.topbar-brand{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--accent);letter-spacing:2px;white-space:nowrap;}
+.topbar-sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
+.topbar-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:1px;white-space:nowrap;}
+.topbar-study{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.user-chip{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);padding:4px 10px;border:1px solid var(--accent-glow);border-radius:4px;background:var(--accent-dim);white-space:nowrap;}
+.btn-logout{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);padding:4px 10px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer;white-space:nowrap;}
 .btn-logout:hover{color:var(--red);border-color:rgba(255,68,102,.4);}
+
+/* ─ MOBILE HAMBURGER ─ */
+.mobile-menu-btn{display:none;background:none;border:1px solid var(--border);border-radius:6px;padding:6px 8px;cursor:pointer;color:var(--text2);font-size:16px;line-height:1;}
+@media(max-width:700px){
+  .mobile-menu-btn{display:block;}
+  .topbar-sep,.topbar-label,.topbar-study{display:none;}
+  .user-chip{display:none;}
+}
 
 /* ─ MAIN LAYOUT ─ */
 .app-body{flex:1;display:flex;overflow:hidden;}
 
 /* ─ STEP SIDEBAR ─ */
-.step-nav{width:200px;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
-.step-item{display:flex;align-items:center;gap:12px;padding:12px 20px;cursor:pointer;transition:all .15s;border-left:3px solid transparent;position:relative;}
+.step-nav{width:190px;background:var(--surface);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;gap:4px;flex-shrink:0;overflow-y:auto;}
+.step-item{display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;border-left:3px solid transparent;position:relative;}
 .step-item:hover{background:var(--surface2);}
 .step-item.active{background:var(--accent-dim);border-left-color:var(--accent);}
 .step-item.done{border-left-color:var(--green);}
-.step-num{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--text3);flex-shrink:0;transition:all .2s;}
+.step-num{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
 .step-item.active .step-num{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
 .step-item.done .step-num{border-color:var(--green);color:var(--green);background:rgba(34,217,132,.1);}
 .step-item.locked{opacity:.35;cursor:not-allowed;}
-.step-text{font-family:var(--mono);font-size:11px;color:var(--text2);}
+.step-text{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);}
 .step-item.active .step-text{color:var(--accent);}
 .step-item.done .step-text{color:var(--green);}
-.step-connector{width:1.5px;height:20px;background:var(--border);margin:0 auto 0 31px;}
+.step-connector{width:1.5px;height:16px;background:var(--border);margin:0 auto 0 29px;}
+/* Today's visits nav item */
+.step-item.today-tab{border-left-color:var(--yellow);background:rgba(245,200,66,.05);}
+.step-item.today-tab .step-num{border-color:var(--yellow);color:var(--yellow);background:rgba(245,200,66,.1);}
+.step-item.today-tab .step-text{color:var(--yellow);}
+.step-divider{height:1px;background:var(--border);margin:10px 16px;}
+
+/* ─ MOBILE SIDEBAR OVERLAY ─ */
+@media(max-width:700px){
+  .step-nav{position:fixed;top:52px;left:0;bottom:0;z-index:90;transform:translateX(-100%);box-shadow:4px 0 20px var(--shadow);}
+  .step-nav.mobile-open{transform:translateX(0);}
+  .main{padding:16px;}
+}
 
 /* ─ MAIN CONTENT ─ */
-.main{flex:1;overflow-y:auto;padding:28px 32px;}
+.main{flex:1;overflow-y:auto;padding:24px 28px;max-width:100%;}
+@media(max-width:500px){.main{padding:12px;}}
 
 /* ─ STEP PANELS ─ */
 .step-panel{display:none;}
-.step-panel.active{display:block;}
+.step-panel.active{display:block;animation:fadein .2s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* ─ PAGE HEADING ─ */
+.page-heading{margin-bottom:20px;}
+.page-heading h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.page-heading p{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+
+/* ─ TODAY'S PLANNED VISITS ─ */
+.today-panel-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.today-date-badge{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);padding:5px 12px;border-radius:4px;}
+.planned-visit-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;cursor:pointer;transition:all .2s;}
+.planned-visit-card:hover{border-color:var(--accent);background:var(--surface2);transform:translateY(-1px);box-shadow:0 4px 16px var(--shadow);}
+.pvc-left{}
+.pvc-subj{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);font-weight:600;}
+.pvc-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px;}
+.pvc-visit{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);margin-top:6px;}
+.pvc-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+.pvc-status{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 9px;border-radius:3px;}
+.pvc-status.planned{color:var(--yellow);background:rgba(245,200,66,.1);border:1px solid rgba(245,200,66,.2);}
+.pvc-status.overdue{color:var(--red);background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);}
+.pvc-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:5px 12px;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-glow);border-radius:4px;cursor:pointer;white-space:nowrap;}
+.pvc-btn:hover{background:var(--accent);color:var(--bg);}
 
 /* ─ STUDY SELECT ─ */
-.study-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:8px;}
-.study-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.study-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:8px;}
+.study-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
 .study-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent);opacity:0;transition:opacity .2s;}
-.study-card:hover{border-color:var(--accent);background:var(--surface2);}
-.study-card:hover::after{opacity:1;}
+.study-card:hover{border-color:var(--accent);background:var(--surface2);transform:translateY(-2px);box-shadow:0 6px 20px var(--shadow);}
+.study-card:hover::after,.study-card.selected::after{opacity:1;}
 .study-card.selected{border-color:var(--accent);background:var(--accent-dim);}
-.study-card.selected::after{opacity:1;}
-.sc-id{font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:6px;letter-spacing:1px;}
+.sc-id{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:6px;letter-spacing:1px;}
 .sc-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;line-height:1.3;}
-.sc-meta{display:flex;gap:10px;flex-wrap:wrap;}
-.sc-tag{font-family:var(--mono);font-size:10px;color:var(--text3);background:var(--surface3);padding:2px 7px;border-radius:3px;}
+.sc-meta{display:flex;gap:8px;flex-wrap:wrap;}
+.sc-tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);background:var(--surface3);padding:2px 7px;border-radius:3px;}
 
 /* ─ SUBJECT SEARCH ─ */
-.search-wrap{position:relative;margin-bottom:20px;}
-.search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:12px 16px 12px 44px;border-radius:var(--r);outline:none;transition:border-color .2s;}
+.search-wrap{position:relative;margin-bottom:16px;}
+.search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:11px 14px 11px 42px;border-radius:8px;outline:none;}
 .search-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
-.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;}
-.subject-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto;}
-.subj-item{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s;}
+.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;}
+.subject-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;}
+.subj-item{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:11px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;transition:all .15s;}
 .subj-item:hover{border-color:var(--accent);background:var(--surface2);}
 .subj-item.selected{border-color:var(--accent);background:var(--accent-dim);}
-.subj-id{font-family:var(--mono);font-size:12px;color:var(--accent);}
-.subj-meta{font-family:var(--mono);font-size:10px;color:var(--text3);}
-.subj-status{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;}
-.subj-status.enrolled{color:var(--accent);background:var(--accent-dim);border:1px solid rgba(0,229,195,.2);}
+.subj-id{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);}
+.subj-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);}
+.subj-status{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:3px;white-space:nowrap;}
+.subj-status.enrolled{color:var(--accent);background:var(--accent-dim);border:1px solid var(--accent-glow);}
 .subj-status.completed{color:var(--green);background:rgba(34,217,132,.1);border:1px solid rgba(34,217,132,.2);}
 .subj-status.withdrawn{color:var(--red);background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);}
+.subj-status.screened{color:var(--blue);background:rgba(77,166,255,.08);border:1px solid rgba(77,166,255,.2);}
 
 /* ─ VISIT SELECT ─ */
+.visit-filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.vf-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:5px 12px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;}
+.vf-btn.active{background:var(--accent-dim);color:var(--accent);border-color:var(--accent-glow);}
 .visit-timeline{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
-.visit-item{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px 16px;cursor:pointer;transition:all .15s;}
-.visit-item:hover{border-color:var(--accent);}
+.visit-item{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:11px 14px;cursor:pointer;transition:all .15s;flex-wrap:wrap;}
+.visit-item:hover{border-color:var(--accent);transform:translateX(3px);}
 .visit-item.selected{border-color:var(--accent);background:var(--accent-dim);}
-.visit-item.completed-v{border-color:rgba(34,217,132,.3);}
-.visit-item.planned-v{opacity:1;}
+.visit-item.completed-v{border-left:3px solid var(--green);}
+.visit-item.planned-v{border-left:3px solid var(--border2);}
 .vi-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 .vi-dot.done{background:var(--green);}
 .vi-dot.plan{background:var(--border2);}
-.vi-num{font-family:var(--mono);font-size:10px;color:var(--text3);width:50px;flex-shrink:0;}
-.vi-name{font-family:var(--mono);font-size:12px;color:var(--text);flex:1;}
-.vi-date{font-family:var(--mono);font-size:10px;color:var(--text3);}
-.vi-badge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;}
-.vi-badge.done{color:var(--green);background:rgba(34,217,132,.1);}
-.vi-badge.plan{color:var(--yellow);background:rgba(245,200,66,.08);}
+.vi-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);width:44px;flex-shrink:0;}
+.vi-name{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);flex:1;min-width:80px;}
+.vi-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);}
+.vi-badge{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:3px;white-space:nowrap;}
+.vi-badge.done{color:var(--green);background:rgba(34,217,132,.1);border:1px solid rgba(34,217,132,.2);}
+.vi-badge.plan{color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);}
+.vi-prefetch-indicator{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--green);background:rgba(34,217,132,.1);padding:2px 6px;border-radius:3px;display:none;}
+.visit-item.completed-v .vi-prefetch-indicator{display:inline;}
 
 /* ─ CRF ENTRY ─ */
-.crf-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
-.crf-subject-id{font-family:var(--mono);font-size:14px;color:var(--accent);font-weight:700;}
-.crf-visit-badge{font-family:var(--mono);font-size:11px;color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);padding:4px 12px;border-radius:4px;}
+.crf-header{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.crf-subject-id{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--accent);font-weight:700;}
+.crf-visit-badge{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);padding:4px 12px;border-radius:4px;}
 .crf-date-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.crf-date-label{font-family:var(--mono);font-size:10px;color:var(--text3);}
-.crf-date-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 10px;border-radius:4px;outline:none;}
+.crf-date-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);}
+.crf-date-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 10px;border-radius:4px;outline:none;}
 .crf-date-input:focus{border-color:var(--accent);}
-.btn-today{font-family:var(--mono);font-size:10px;padding:6px 10px;background:var(--accent-dim);color:var(--accent);border:1px solid rgba(0,229,195,.25);border-radius:4px;cursor:pointer;}
-.btn-today:hover{background:var(--accent);color:#07090d;}
+.btn-today{font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 10px;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-glow);border-radius:4px;cursor:pointer;}
+.btn-today:hover{background:var(--accent);color:var(--bg);}
+
+/* Pre-fetch status banner */
+.prefetch-banner{font-family:'JetBrains Mono',monospace;font-size:11px;padding:8px 14px;border-radius:6px;margin-bottom:14px;display:none;align-items:center;gap:8px;}
+.prefetch-banner.loading{background:rgba(77,166,255,.08);border:1px solid rgba(77,166,255,.2);color:var(--blue);display:flex;}
+.prefetch-banner.loaded{background:rgba(34,217,132,.08);border:1px solid rgba(34,217,132,.2);color:var(--green);display:flex;}
+.prefetch-banner.empty{background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);color:var(--yellow);display:flex;}
 
 .crf-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto;}
-.crf-tab{font-family:var(--mono);font-size:11px;padding:10px 18px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;}
+.crf-tab{font-family:'JetBrains Mono',monospace;font-size:10px;padding:10px 14px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;letter-spacing:.5px;}
 .crf-tab:hover{color:var(--text2);}
 .crf-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 .crf-tab-panel{display:none;}
-.crf-tab-panel.active{display:block;}
+.crf-tab-panel.active{display:block;animation:fadein .15s ease;}
 
-.field-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:18px;}
+.field-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:16px;}
+@media(max-width:500px){.field-grid{grid-template-columns:1fr 1fr;}}
 .field-group{display:flex;flex-direction:column;gap:5px;}
-.field-group label{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;}
-.field-group input,.field-group select,.field-group textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 11px;border-radius:5px;outline:none;transition:border-color .2s;}
+.field-group label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;}
+.field-group input,.field-group select,.field-group textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:9px 11px;border-radius:5px;outline:none;}
 .field-group input:focus,.field-group select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim);}
-.field-group select option{background:var(--surface2);}
-.field-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;}
-.field-section-title{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.field-group select option{background:var(--surface2);color:var(--text);}
+/* Highlight pre-fetched fields */
+.field-group input.prefetched,.field-group select.prefetched{border-color:rgba(34,217,132,.35);background:rgba(34,217,132,.04);}
+.field-section{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;}
+.field-section-title{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
 
-.save-bar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;gap:12px;z-index:50;}
-.btn-save{font-family:var(--mono);font-size:12px;font-weight:700;padding:11px 28px;background:var(--accent);color:#07090d;border:none;border-radius:6px;cursor:pointer;letter-spacing:1px;transition:opacity .2s;}
+/* ─ SAVE BAR ─ */
+.save-bar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;z-index:50;flex-wrap:wrap;box-shadow:0 -4px 12px var(--shadow);}
+.btn-save{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;padding:11px 28px;background:var(--accent);color:var(--bg);border:none;border-radius:6px;cursor:pointer;letter-spacing:1px;transition:opacity .2s;}
 .btn-save:hover{opacity:.85;}
-.btn-secondary{font-family:var(--mono);font-size:11px;padding:11px 18px;background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:all .2s;}
+.btn-secondary{font-family:'JetBrains Mono',monospace;font-size:11px;padding:11px 16px;background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:all .2s;}
 .btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
-.save-alert{font-family:var(--mono);font-size:11px;padding:8px 14px;border-radius:4px;display:none;}
-.save-alert.success{background:rgba(34,217,132,.08);border:1px solid rgba(34,217,132,.2);color:var(--green);}
-.save-alert.error{background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);color:var(--red);}
-.save-alert.warn{background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);color:var(--yellow);white-space:pre-line;}
+.save-alert{font-family:'JetBrains Mono',monospace;font-size:11px;padding:8px 14px;border-radius:4px;display:none;flex:1;min-width:200px;}
+.save-alert.success{background:rgba(34,217,132,.08);border:1px solid rgba(34,217,132,.2);color:var(--green);display:block;}
+.save-alert.error{background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);color:var(--red);display:block;}
+.save-alert.warn{background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);color:var(--yellow);white-space:pre-line;display:block;}
 
-/* ─ AE LIST ─ */
+/* ─ AE ─ */
 .ae-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
 .ae-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
-.ae-term{font-family:var(--mono);font-size:12px;color:var(--text);}
-.ae-sev{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;}
+.ae-term{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);}
+.ae-sev{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:3px;}
 .ae-sev.mild{color:var(--green);background:rgba(34,217,132,.1);}
 .ae-sev.moderate{color:var(--yellow);background:rgba(245,200,66,.08);}
 .ae-sev.severe{color:var(--red);background:rgba(255,68,102,.08);}
 
-/* ─ HEADERS ─ */
-.page-heading{margin-bottom:24px;}
-.page-heading h2{font-family:var(--sans);font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
-.page-heading p{font-family:var(--mono);font-size:11px;color:var(--text3);}
-.section-label{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
-
-/* ─ NEXT BUTTON ─ */
-.btn-next{font-family:var(--mono);font-size:11px;font-weight:700;padding:10px 24px;background:var(--accent);color:#07090d;border:none;border-radius:6px;cursor:pointer;letter-spacing:1px;margin-top:16px;transition:opacity .2s;}
+/* ─ BUTTONS ─ */
+.btn-next{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:10px 22px;background:var(--accent);color:var(--bg);border:none;border-radius:6px;cursor:pointer;letter-spacing:1px;margin-top:14px;transition:opacity .2s;}
 .btn-next:hover{opacity:.85;}
-.btn-back{font-family:var(--mono);font-size:11px;padding:10px 18px;background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:6px;cursor:pointer;margin-top:16px;transition:all .2s;}
+.btn-back{font-family:'JetBrains Mono',monospace;font-size:11px;padding:10px 16px;background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:6px;cursor:pointer;margin-top:14px;transition:all .2s;}
 .btn-back:hover{border-color:var(--text);color:var(--text);}
 
-/* ─ SCROLLBAR ─ */
+/* ─ MISC ─ */
+.info-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;}
+.info-chip{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);}
+.info-chip span{color:var(--text2);}
+.empty{text-align:center;padding:40px;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:12px;}
+.loading{text-align:center;padding:30px;color:var(--text2);font-family:'JetBrains Mono',monospace;font-size:12px;}
+.loading::after{content:'...';animation:dots 1s infinite;}
+@keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
-
-/* ─ EMPTY / LOADING ─ */
-.empty{text-align:center;padding:40px;color:var(--text3);font-family:var(--mono);font-size:12px;}
-.loading{text-align:center;padding:30px;color:var(--text2);font-family:var(--mono);font-size:12px;}
-.loading::after{content:'...';animation:dots 1s infinite;}
-@keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
-
-.info-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:6px;}
-.info-chip{font-family:var(--mono);font-size:10px;color:var(--text3);}
-.info-chip span{color:var(--text2);}
 </style>
 </head>
 <body>
@@ -216,6 +295,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
     <div class="login-field"><label>Password</label><input id="l-pass" type="password" value="Admin@1234" autocomplete="current-password"/></div>
     <div class="login-err" id="l-err"></div>
     <button class="login-btn" onclick="doLogin()">SIGN IN →</button>
+    <div class="login-theme" style="margin-top:12px;">
+      <div class="theme-toggle" onclick="toggleTheme()" style="width:fit-content;">
+        <span class="theme-toggle-icon" id="login-theme-icon">🌙</span>
+        <span class="theme-toggle-label" id="login-theme-label">DARK</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -223,12 +308,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 <div id="app">
   <!-- TOPBAR -->
   <div class="topbar">
+    <button class="mobile-menu-btn" onclick="toggleMobileNav()">☰</button>
     <div class="topbar-brand">SARA·EDC</div>
     <div class="topbar-sep"></div>
     <div class="topbar-label">CRC PORTAL</div>
     <div class="topbar-sep"></div>
     <div class="topbar-study" id="tb-study">No study selected</div>
     <div class="topbar-right">
+      <div class="theme-toggle" onclick="toggleTheme()">
+        <span class="theme-toggle-icon" id="app-theme-icon">🌙</span>
+        <span class="theme-toggle-label" id="app-theme-label">DARK</span>
+      </div>
       <div class="user-chip" id="tb-user">—</div>
       <button class="btn-logout" onclick="doLogout()">LOGOUT</button>
     </div>
@@ -236,23 +326,29 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 
   <div class="app-body">
     <!-- STEP NAV -->
-    <div class="step-nav">
-      <div class="step-item active" id="snav-1" onclick="goStep(1)">
+    <div class="step-nav" id="step-nav">
+      <!-- Today's Visits Tab -->
+      <div class="step-item today-tab" id="snav-today" onclick="goToday();closeMobileNav();">
+        <div class="step-num">📅</div>
+        <div class="step-text">TODAY'S VISITS</div>
+      </div>
+      <div class="step-divider"></div>
+      <div class="step-item active" id="snav-1" onclick="goStep(1);closeMobileNav();">
         <div class="step-num">1</div>
         <div class="step-text">SELECT STUDY</div>
       </div>
       <div class="step-connector"></div>
-      <div class="step-item locked" id="snav-2" onclick="goStep(2)">
+      <div class="step-item locked" id="snav-2" onclick="goStep(2);closeMobileNav();">
         <div class="step-num">2</div>
         <div class="step-text">SELECT SUBJECT</div>
       </div>
       <div class="step-connector"></div>
-      <div class="step-item locked" id="snav-3" onclick="goStep(3)">
+      <div class="step-item locked" id="snav-3" onclick="goStep(3);closeMobileNav();">
         <div class="step-num">3</div>
         <div class="step-text">SELECT VISIT</div>
       </div>
       <div class="step-connector"></div>
-      <div class="step-item locked" id="snav-4" onclick="goStep(4)">
+      <div class="step-item locked" id="snav-4" onclick="goStep(4);closeMobileNav();">
         <div class="step-num">4</div>
         <div class="step-text">ENTER CRF</div>
       </div>
@@ -260,6 +356,21 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 
     <!-- MAIN -->
     <div class="main" id="main-scroll">
+
+      <!-- TODAY'S PLANNED VISITS PANEL -->
+      <div class="step-panel" id="step-today">
+        <div class="page-heading">
+          <h2>Today's Planned Visits</h2>
+          <p>Subjects with visits scheduled for today</p>
+        </div>
+        <div class="today-panel-header">
+          <div class="today-date-badge" id="today-date-label">—</div>
+          <select id="today-study-filter" onchange="renderTodayVisits()" style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:4px;outline:none;">
+            <option value="">All Studies</option>
+          </select>
+        </div>
+        <div id="today-list"><div class="loading">Loading today's visits</div></div>
+      </div>
 
       <!-- STEP 1: STUDY -->
       <div class="step-panel active" id="step-1">
@@ -279,10 +390,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
         </div>
         <div class="search-wrap">
           <span class="search-icon">⌕</span>
-          <input type="text" id="subj-search" placeholder="Search by subject ID, site, sex..." oninput="filterSubjects()"/>
+          <input type="text" id="subj-search" placeholder="Search by subject ID, site, status..." oninput="filterSubjects()"/>
         </div>
         <div class="subject-list" id="subject-list"><div class="loading">Loading</div></div>
-        <div style="display:flex;gap:10px;margin-top:16px;">
+        <div style="display:flex;gap:10px;margin-top:14px;">
           <button class="btn-back" onclick="goStep(1)">← BACK</button>
         </div>
       </div>
@@ -293,9 +404,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
           <h2>Select Visit</h2>
           <p id="step3-subject-label">—</p>
         </div>
+        <div class="visit-filters">
+          <button class="vf-btn active" id="vf-all" onclick="filterVisits('all')">ALL</button>
+          <button class="vf-btn" id="vf-planned" onclick="filterVisits('planned')">PLANNED</button>
+          <button class="vf-btn" id="vf-completed" onclick="filterVisits('completed')">COMPLETED</button>
+        </div>
         <div class="section-label">VISIT SCHEDULE</div>
         <div class="visit-timeline" id="visit-timeline"><div class="loading">Loading</div></div>
-        <div style="display:flex;gap:10px;margin-top:16px;">
+        <div style="display:flex;gap:10px;margin-top:14px;">
           <button class="btn-back" onclick="goStep(2)">← BACK</button>
         </div>
       </div>
@@ -317,9 +433,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
           </div>
         </div>
 
-        <div class="save-alert" id="crf-alert"></div>
+        <!-- PRE-FETCH STATUS BANNER -->
+        <div class="prefetch-banner" id="prefetch-banner">
+          <span id="prefetch-icon">⟳</span>
+          <span id="prefetch-msg">Loading existing CRF data...</span>
+        </div>
 
-        <!-- CRF TABS — DM hidden, only VS/LB/AE/EX/CM -->
         <div class="crf-tabs" id="crf-tabs">
           <div class="crf-tab active" onclick="showCRFTab('vs')">VITAL SIGNS</div>
           <div class="crf-tab" onclick="showCRFTab('lb')">LABORATORY</div>
@@ -435,7 +554,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
     </div><!-- end main -->
   </div><!-- end app-body -->
 
-  <!-- SAVE BAR (only visible on step 4) -->
+  <!-- SAVE BAR -->
   <div class="save-bar" id="save-bar" style="display:none;">
     <button class="btn-save" onclick="saveCRF()">SAVE CRF</button>
     <button class="btn-secondary" onclick="goStep(3)">← CHANGE VISIT</button>
@@ -446,9 +565,38 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 <script>
 const API = 'https://mini-edc-production.up.railway.app';
 let token = '', currentUser = {}, currentStudy = '', currentSubject = null, currentVisit = null;
-let allSubjects = [], allVisits = [];
+let allSubjects = [], allVisits = [], allStudies = [], allTodayVisits = [];
 let activeCRFTab = 'vs';
+let visitFilter = 'all';
+let currentTheme = 'dark';
 
+// ─ THEME ─
+function toggleTheme(){
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  const isDark = currentTheme === 'dark';
+  document.getElementById('login-theme-icon').textContent = isDark ? '🌙' : '☀️';
+  document.getElementById('login-theme-label').textContent = isDark ? 'DARK' : 'LIGHT';
+  document.getElementById('app-theme-icon').textContent = isDark ? '🌙' : '☀️';
+  document.getElementById('app-theme-label').textContent = isDark ? 'DARK' : 'LIGHT';
+}
+
+// ─ MOBILE NAV ─
+function toggleMobileNav(){
+  document.getElementById('step-nav').classList.toggle('mobile-open');
+}
+function closeMobileNav(){
+  document.getElementById('step-nav').classList.remove('mobile-open');
+}
+document.addEventListener('click', e => {
+  const nav = document.getElementById('step-nav');
+  const btn = document.querySelector('.mobile-menu-btn');
+  if(nav.classList.contains('mobile-open') && !nav.contains(e.target) && e.target !== btn){
+    closeMobileNav();
+  }
+});
+
+// ─ API ─
 async function apiFetch(method, path, body=null){
   const url = `${API}${path}${path.includes('?')?'&':'?'}token=${token}`;
   const opts = {method, headers:{'Content-Type':'application/json'}};
@@ -459,6 +607,7 @@ async function apiFetch(method, path, body=null){
   return data;
 }
 
+// ─ LOGIN ─
 async function doLogin(){
   const uid = document.getElementById('l-user').value.trim();
   const pw = document.getElementById('l-pass').value;
@@ -473,13 +622,14 @@ async function doLogin(){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').classList.add('show');
     loadStudies();
+    loadTodayVisits();
   } catch(e){err.textContent=e.message;err.style.display='block';}
 }
 document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
 function doLogout(){
   try{apiFetch('POST','/auth/logout');}catch(e){}
-  token='';currentUser={};currentStudy='';currentSubject=null;currentVisit=null;
+  token='';currentUser={};currentStudy='';currentSubject=null;currentVisit=null;allStudies=[];allTodayVisits=[];
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app').classList.remove('show');
   goStep(1);
@@ -490,6 +640,11 @@ function goStep(n){
   if(n>1 && !currentStudy) return;
   if(n>2 && !currentSubject) return;
   if(n>3 && !currentVisit) return;
+  // Hide today panel
+  document.getElementById('step-today').classList.remove('active');
+  document.getElementById('snav-today').classList.remove('today-tab');
+  document.getElementById('snav-today').style.backgroundColor = '';
+
   [1,2,3,4].forEach(i=>{
     document.getElementById('step-'+i).classList.toggle('active',i===n);
     const nav=document.getElementById('snav-'+i);
@@ -505,14 +660,109 @@ function goStep(n){
   if(n===4) initCRF();
 }
 
+function goToday(){
+  [1,2,3,4].forEach(i=>{
+    document.getElementById('step-'+i).classList.remove('active');
+    document.getElementById('snav-'+i).classList.remove('active','done');
+    document.getElementById('snav-'+i).classList.add('locked');
+  });
+  document.getElementById('step-today').classList.add('active');
+  document.getElementById('save-bar').style.display='none';
+  document.getElementById('main-scroll').scrollTop=0;
+  document.getElementById('snav-today').classList.add('today-tab');
+  renderTodayVisits();
+}
+
+// ─ TODAY'S VISITS ─
+async function loadTodayVisits(){
+  // Set today date badge
+  const today = new Date();
+  const label = today.toLocaleDateString('en-IN', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  document.getElementById('today-date-label').textContent = label;
+
+  try {
+    // Load all studies first if not loaded
+    if(!allStudies.length) {
+      allStudies = await apiFetch('GET', '/studies');
+    }
+    // Populate study filter
+    const sel = document.getElementById('today-study-filter');
+    sel.innerHTML = '<option value="">All Studies</option>' +
+      allStudies.map(s=>`<option value="${s.study_id}">${s.study_id}</option>`).join('');
+
+    // Collect all subjects' visits across all studies
+    allTodayVisits = [];
+    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    for(const study of allStudies){
+      try {
+        const subjects = await apiFetch('GET', `/studies/${study.study_id}/subjects`);
+        for(const subj of subjects){
+          try {
+            const visits = await apiFetch('GET', `/studies/${study.study_id}/subjects/${subj.usubjid}/visits`);
+            const todayVisits = visits.filter(v => {
+              if(!v.visit_date) return false;
+              return v.visit_date === todayStr;
+            });
+            for(const v of todayVisits){
+              allTodayVisits.push({
+                study_id: study.study_id,
+                study_title: study.study_title,
+                subject: subj,
+                visit: v
+              });
+            }
+          } catch(e){}
+        }
+      } catch(e){}
+    }
+    renderTodayVisits();
+  } catch(e){
+    document.getElementById('today-list').innerHTML = `<div class="empty">${e.message}</div>`;
+  }
+}
+
+function renderTodayVisits(){
+  const filterStudy = document.getElementById('today-study-filter').value;
+  const list = document.getElementById('today-list');
+  let items = allTodayVisits;
+  if(filterStudy) items = items.filter(i=>i.study_id===filterStudy);
+  if(!items.length){
+    list.innerHTML='<div class="empty">No visits scheduled for today</div>';
+    return;
+  }
+  list.innerHTML = items.map(item=>`
+    <div class="planned-visit-card" onclick="jumpToVisit('${item.study_id}','${item.study_title.replace(/'/g,"\\'").replace(/"/g,'&quot;')}',${JSON.stringify(item.subject).replace(/"/g,'&quot;')},${JSON.stringify(item.visit).replace(/"/g,'&quot;')})">
+      <div class="pvc-left">
+        <div class="pvc-subj">${item.subject.usubjid}</div>
+        <div class="pvc-meta">${item.study_id} · ${item.subject.site_id} · SEX: ${item.subject.sex||'—'}</div>
+        <div class="pvc-visit">V${item.visit.visit_num} — ${item.visit.visit_name}</div>
+      </div>
+      <div class="pvc-right">
+        <span class="pvc-status ${item.visit.status==='COMPLETED'?'':'planned'}">${item.visit.status||'PLANNED'}</span>
+        <button class="pvc-btn" onclick="event.stopPropagation();jumpToVisit('${item.study_id}','${item.study_title.replace(/'/g,"\\'").replace(/"/g,'&quot;')}',${JSON.stringify(item.subject).replace(/"/g,'&quot;')},${JSON.stringify(item.visit).replace(/"/g,'&quot;')})">OPEN CRF →</button>
+      </div>
+    </div>`).join('');
+}
+
+function jumpToVisit(studyId, studyTitle, subject, visit){
+  currentStudy = studyId;
+  currentSubject = subject;
+  currentVisit = visit;
+  document.getElementById('tb-study').textContent = studyId;
+  document.getElementById('step2-study-label').textContent = studyTitle;
+  document.getElementById('step3-subject-label').textContent = `${subject.usubjid} · ${subject.site_id} · ${subject.sex} · ${subject.status}`;
+  goStep(4);
+}
+
 // ─ STEP 1: STUDIES ─
 async function loadStudies(){
   const grid=document.getElementById('study-grid');
   grid.innerHTML='<div class="loading">Loading</div>';
   try{
-    const studies = await apiFetch('GET','/studies');
-    if(!studies.length){grid.innerHTML='<div class="empty">No studies found</div>';return;}
-    grid.innerHTML=studies.map(s=>`
+    allStudies = await apiFetch('GET','/studies');
+    if(!allStudies.length){grid.innerHTML='<div class="empty">No studies found</div>';return;}
+    grid.innerHTML=allStudies.map(s=>`
       <div class="study-card" onclick="selectStudy('${s.study_id}','${s.study_title.replace(/'/g,"\\'")}')">
         <div class="sc-id">${s.study_id}</div>
         <div class="sc-title">${s.study_title}</div>
@@ -554,7 +804,7 @@ function renderSubjects(subjects){
         <div class="subj-id">${s.usubjid}</div>
         <div class="subj-meta">${s.site_id} · SEX: ${s.sex||'—'} · CONSENT: ${s.consent_date||'—'}</div>
       </div>
-      <span class="subj-status ${s.status?.toLowerCase()}">${s.status}</span>
+      <span class="subj-status ${(s.status||'').toLowerCase()}">${s.status}</span>
     </div>`).join('');
 }
 
@@ -579,19 +829,38 @@ function selectSubject(s){
 async function loadVisits(){
   const tl=document.getElementById('visit-timeline');
   tl.innerHTML='<div class="loading">Loading</div>';
+  visitFilter='all';
+  document.querySelectorAll('.vf-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('vf-all').classList.add('active');
   try{
     allVisits = await apiFetch('GET',`/studies/${currentStudy}/subjects/${currentSubject.usubjid}/visits`);
     allVisits.sort((a,b)=>a.visit_num-b.visit_num);
-    if(!allVisits.length){tl.innerHTML='<div class="empty">No visits found</div>';return;}
-    tl.innerHTML=allVisits.map(v=>`
-      <div class="visit-item ${v.status==='COMPLETED'?'completed-v':'planned-v'}" onclick="selectVisit(${JSON.stringify(v).replace(/"/g,'&quot;')})">
-        <div class="vi-dot ${v.status==='COMPLETED'?'done':'plan'}"></div>
-        <div class="vi-num">V${v.visit_num}</div>
-        <div class="vi-name">${v.visit_name}</div>
-        <div class="vi-date">${v.visit_date||'No date set'}</div>
-        <span class="vi-badge ${v.status==='COMPLETED'?'done':'plan'}">${v.status}</span>
-      </div>`).join('');
+    renderVisits();
   }catch(e){tl.innerHTML=`<div class="empty">${e.message}</div>`;}
+}
+
+function filterVisits(f){
+  visitFilter=f;
+  document.querySelectorAll('.vf-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('vf-'+f).classList.add('active');
+  renderVisits();
+}
+
+function renderVisits(){
+  const tl=document.getElementById('visit-timeline');
+  let visits = allVisits;
+  if(visitFilter==='planned') visits=visits.filter(v=>v.status!=='COMPLETED');
+  if(visitFilter==='completed') visits=visits.filter(v=>v.status==='COMPLETED');
+  if(!visits.length){tl.innerHTML='<div class="empty">No visits found for this filter</div>';return;}
+  tl.innerHTML=visits.map(v=>`
+    <div class="visit-item ${v.status==='COMPLETED'?'completed-v':'planned-v'}" onclick="selectVisit(${JSON.stringify(v).replace(/"/g,'&quot;')})">
+      <div class="vi-dot ${v.status==='COMPLETED'?'done':'plan'}"></div>
+      <div class="vi-num">V${v.visit_num}</div>
+      <div class="vi-name">${v.visit_name}</div>
+      <div class="vi-date">${v.visit_date||'No date set'}</div>
+      ${v.status==='COMPLETED'?'<span class="vi-prefetch-indicator">DATA SAVED</span>':''}
+      <span class="vi-badge ${v.status==='COMPLETED'?'done':'plan'}">${v.status||'PLANNED'}</span>
+    </div>`).join('');
 }
 
 function selectVisit(v){
@@ -607,12 +876,137 @@ function initCRF(){
     <div class="info-chip">SEX: <span>${currentSubject.sex||'—'}</span></div>
     <div class="info-chip">STATUS: <span>${currentSubject.status}</span></div>`;
   document.getElementById('crf-visit-display').textContent=`V${currentVisit.visit_num} — ${currentVisit.visit_name}`;
-  // Set today's date by default
+  clearCRFFields();
   setToday();
-  // Load AE list
   loadAEList();
-  // Reset to VS tab
   showCRFTab('vs');
+
+  // ── PRE-FETCH FIX: Load existing saved CRF data for this visit ──
+  if(currentVisit.status==='COMPLETED' || currentVisit.visit_date){
+    prefetchCRFData();
+  }
+}
+
+// ── THE FIX: Pre-populate CRF fields from saved data ──
+async function prefetchCRFData(){
+  const banner = document.getElementById('prefetch-banner');
+  banner.className='prefetch-banner loading';
+  document.getElementById('prefetch-icon').textContent='⟳';
+  document.getElementById('prefetch-msg').textContent='Loading existing CRF data for this visit...';
+
+  const uid = currentSubject.usubjid;
+  const vnum = currentVisit.visit_num;
+  let loaded = 0;
+
+  try {
+    // Fetch VS data
+    try {
+      const vsData = await apiFetch('GET', `/studies/${currentStudy}/subjects/${uid}/crf/vs?visit_num=${vnum}`);
+      if(vsData && (Array.isArray(vsData) ? vsData.length : vsData)){
+        const vs = Array.isArray(vsData) ? vsData.find(r=>r.visit_num===vnum)||vsData[0] : vsData;
+        if(vs){
+          setField('vs-sysbp', vs.sysbp);
+          setField('vs-diabp', vs.diabp);
+          setField('vs-pulse', vs.pulse);
+          setField('vs-temp', vs.temp);
+          setField('vs-weight', vs.weight);
+          setField('vs-height', vs.height);
+          setField('vs-resp', vs.resp_rate);
+          if(vs.vsdtc) document.getElementById('crf-visit-date').value = vs.vsdtc;
+          loaded++;
+        }
+      }
+    } catch(e){}
+
+    // Fetch LB data
+    try {
+      const lbData = await apiFetch('GET', `/studies/${currentStudy}/subjects/${uid}/crf/lb?visit_num=${vnum}`);
+      if(lbData && (Array.isArray(lbData) ? lbData.length : lbData)){
+        const lb = Array.isArray(lbData) ? lbData.find(r=>r.visit_num===vnum)||lbData[0] : lbData;
+        if(lb){
+          setField('lb-hgb', lb.hgb);
+          setField('lb-wbc', lb.wbc);
+          setField('lb-plt', lb.plt);
+          setField('lb-alt', lb.alt);
+          setField('lb-ast', lb.ast);
+          setField('lb-creat', lb.creatinine);
+          setField('lb-glucose', lb.glucose);
+          loaded++;
+        }
+      }
+    } catch(e){}
+
+    // Fetch EX data
+    try {
+      const exData = await apiFetch('GET', `/studies/${currentStudy}/subjects/${uid}/crf/ex?visit_num=${vnum}`);
+      if(exData && (Array.isArray(exData) ? exData.length : exData)){
+        const ex = Array.isArray(exData) ? exData.find(r=>r.visit_num===vnum)||exData[0] : exData;
+        if(ex){
+          setField('ex-trt', ex.extrt);
+          setField('ex-dose', ex.exdose);
+          setField('ex-dosu', ex.exdosu);
+          setSelectField('ex-freq', ex.exdosfrq);
+          setSelectField('ex-route', ex.exroute);
+          setField('ex-start', ex.exstdtc);
+          setField('ex-end', ex.exendtc);
+          loaded++;
+        }
+      }
+    } catch(e){}
+
+    if(loaded > 0){
+      banner.className='prefetch-banner loaded';
+      document.getElementById('prefetch-icon').textContent='✓';
+      document.getElementById('prefetch-msg').textContent=`Existing data loaded for ${loaded} CRF section(s). Fields highlighted in green were pre-populated.`;
+      setTimeout(()=>{ banner.className='prefetch-banner'; }, 5000);
+    } else {
+      banner.className='prefetch-banner empty';
+      document.getElementById('prefetch-icon').textContent='○';
+      document.getElementById('prefetch-msg').textContent='No previously saved data found for this visit. Enter new values below.';
+      setTimeout(()=>{ banner.className='prefetch-banner'; }, 4000);
+    }
+  } catch(e){
+    banner.className='prefetch-banner';
+  }
+}
+
+function setField(id, value){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(value !== null && value !== undefined && value !== ''){
+    el.value = value;
+    el.classList.add('prefetched');
+  }
+}
+
+function setSelectField(id, value){
+  const el = document.getElementById(id);
+  if(!el || !value) return;
+  for(let opt of el.options){
+    if(opt.value === value || opt.text === value){
+      el.value = opt.value;
+      el.classList.add('prefetched');
+      return;
+    }
+  }
+}
+
+function clearCRFFields(){
+  const ids=['vs-sysbp','vs-diabp','vs-pulse','vs-temp','vs-weight','vs-height','vs-resp',
+    'lb-hgb','lb-wbc','lb-plt','lb-alt','lb-ast','lb-creat','lb-glucose',
+    'ae-term','ae-decod','ae-bodsys','ae-start','ae-end',
+    'ex-trt','ex-dose','ex-dosu','ex-start','ex-end',
+    'cm-trt','cm-dose','cm-dosu','cm-indc','cm-start','cm-end'];
+  ids.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.value='';el.classList.remove('prefetched');}
+  });
+  ['ae-sev','ae-ser','ae-rel','ae-out','ex-freq','ex-route','cm-route'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.value='';el.classList.remove('prefetched');}
+  });
+  document.getElementById('ae-death').value='N';
+  document.getElementById('save-alert').style.display='none';
 }
 
 function setToday(){
@@ -637,10 +1031,10 @@ async function loadAEList(){
     if(!aes||!aes.length){list.innerHTML='<div class="empty">No AEs recorded for this subject</div>';return;}
     list.innerHTML=aes.map(a=>`
       <div class="ae-card">
-        <div><div class="ae-term">${a.aeterm}</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;">${a.aestdtc||''}${a.aeendtc?' → '+a.aeendtc:''}</div></div>
+        <div><div class="ae-term">${a.aeterm}</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px;">${a.aestdtc||''}${a.aeendtc?' → '+a.aeendtc:''}</div></div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <span class="ae-sev ${a.aesev?.toLowerCase()}">${a.aesev}</span>
-          ${a.aeser==='Y'?'<span style="font-family:var(--mono);font-size:10px;color:var(--red);border:1px solid rgba(255,68,102,.3);padding:2px 7px;border-radius:3px;">SAE</span>':''}
+          <span class="ae-sev ${(a.aesev||'').toLowerCase()}">${a.aesev}</span>
+          ${a.aeser==='Y'?'<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--red);border:1px solid rgba(255,68,102,.3);padding:2px 7px;border-radius:3px;">SAE</span>':''}
         </div>
       </div>`).join('');
   }catch(e){list.innerHTML='<div class="empty">No AEs recorded</div>';}
@@ -649,6 +1043,7 @@ async function loadAEList(){
 async function saveCRF(){
   const alertEl=document.getElementById('save-alert');
   alertEl.style.display='none';
+  alertEl.className='save-alert';
   const visitDate=document.getElementById('crf-visit-date').value;
   const visitNum=currentVisit.visit_num;
   const visitName=currentVisit.visit_name;
@@ -716,13 +1111,16 @@ async function saveCRF(){
   try{
     const res=await apiFetch('POST',endpoint,body);
     const flags=res.validation_flags||[];
+    // Mark saved fields as prefetched
+    document.querySelectorAll('.field-group input,.field-group select').forEach(el=>{
+      if(el.value) el.classList.add('prefetched');
+    });
     if(flags.length){
       showAlert(`Saved — ${flags.length} auto-query raised:\n${flags.map(f=>`⚠ ${f.field?.toUpperCase()}: ${f.issue}`).join('\n')}`,'warn');
     } else {
       showAlert(`${activeCRFTab.toUpperCase()} CRF saved successfully!`,'success');
     }
     if(activeCRFTab==='ae'){
-      // Clear AE fields and reload list
       ['ae-term','ae-decod','ae-bodsys','ae-start','ae-end'].forEach(id=>document.getElementById(id).value='');
       document.getElementById('ae-sev').value='';
       document.getElementById('ae-ser').value='';
@@ -738,7 +1136,7 @@ function showAlert(msg, type){
   el.textContent=msg;
   el.className='save-alert '+type;
   el.style.display='block';
-  if(type==='success') setTimeout(()=>el.style.display='none',3000);
+  if(type==='success') setTimeout(()=>{el.style.display='none';el.className='save-alert';},3000);
 }
 </script>
 </body>
