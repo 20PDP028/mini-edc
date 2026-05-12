@@ -881,8 +881,8 @@ function initCRF(){
   loadAEList();
   showCRFTab('vs');
 
-  // ── PRE-FETCH FIX: Load existing saved CRF data for this visit ──
-  if(currentVisit.status==='COMPLETED' || currentVisit.visit_date){
+  // ── PRE-FETCH: Only load data if visit is actually COMPLETED ──
+  if(currentVisit.status === 'COMPLETED'){
     prefetchCRFData();
   }
 }
@@ -903,7 +903,7 @@ async function prefetchCRFData(){
     try {
       const vsData = await apiFetch('GET', `/studies/${currentStudy}/subjects/${uid}/crf/vs?visit_num=${vnum}`);
       if(vsData && (Array.isArray(vsData) ? vsData.length : vsData)){
-        const vs = Array.isArray(vsData) ? vsData.find(r=>r.visit_num===vnum)||vsData[0] : vsData;
+        const vs = Array.isArray(vsData) ? vsData.find(r=>r.visit_num===vnum) : vsData;
         if(vs){
           setField('vs-sysbp', vs.sysbp);
           setField('vs-diabp', vs.diabp);
@@ -922,7 +922,7 @@ async function prefetchCRFData(){
     try {
       const lbData = await apiFetch('GET', `/studies/${currentStudy}/subjects/${uid}/crf/lb?visit_num=${vnum}`);
       if(lbData && (Array.isArray(lbData) ? lbData.length : lbData)){
-        const lb = Array.isArray(lbData) ? lbData.find(r=>r.visit_num===vnum)||lbData[0] : lbData;
+        const lb = Array.isArray(lbData) ? lbData.find(r=>r.visit_num===vnum) : lbData;
         if(lb){
           setField('lb-hgb', lb.hgb);
           setField('lb-wbc', lb.wbc);
@@ -940,7 +940,7 @@ async function prefetchCRFData(){
     try {
       const exData = await apiFetch('GET', `/studies/${currentStudy}/subjects/${uid}/crf/ex?visit_num=${vnum}`);
       if(exData && (Array.isArray(exData) ? exData.length : exData)){
-        const ex = Array.isArray(exData) ? exData.find(r=>r.visit_num===vnum)||exData[0] : exData;
+        const ex = Array.isArray(exData) ? exData.find(r=>r.visit_num===vnum) : exData;
         if(ex){
           setField('ex-trt', ex.extrt);
           setField('ex-dose', ex.exdose);
