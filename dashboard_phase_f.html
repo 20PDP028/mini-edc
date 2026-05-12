@@ -3,171 +3,259 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Mini EDC — Phase F</title>
+<title>SARA EDC</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
-  --bg: #0a0e14;
-  --bg2: #111620;
-  --bg3: #1a2030;
-  --border: #1e2a3a;
-  --accent: #00d4ff;
-  --accent2: #00ff9d;
-  --accent3: #ff6b35;
-  --warn: #ffcc00;
-  --danger: #ff4455;
-  --text: #e0eaf5;
-  --text2: #7a90a8;
-  --text3: #4a5a6a;
-  --card: #111820;
+  --bg: #060a0f;
+  --bg2: #0d1117;
+  --bg3: #161c26;
+  --bg4: #1c2434;
+  --border: #1e2d3d;
+  --border2: #253447;
+  --accent: #2dd4bf;
+  --accent-dim: rgba(45,212,191,.12);
+  --accent2: #34d399;
+  --accent3: #f97316;
+  --warn: #fbbf24;
+  --danger: #f43f5e;
+  --info: #60a5fa;
+  --text: #cdd9e5;
+  --text2: #768a9c;
+  --text3: #3d5166;
+  --card: #0d1117;
+  --card2: #111820;
   --font-mono: 'IBM Plex Mono', monospace;
   --font: 'IBM Plex Sans', sans-serif;
+  --sidebar-w: 224px;
+  --topbar-h: 52px;
+  --radius: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,.4);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:0.3;pointer-events:none;z-index:0;}
-.app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:56px 1fr;min-height:100vh;position:relative;z-index:1;}
-.topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 24px;position:sticky;top:0;z-index:100;}
-.logo{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--accent);letter-spacing:2px;text-transform:uppercase;}
+html{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden;font-size:14px;line-height:1.5;}
+
+/* ── Layout ── */
+.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;grid-template-rows:var(--topbar-h) 1fr;min-height:100vh;}
+
+/* ── Topbar ── */
+.topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;position:sticky;top:0;z-index:200;height:var(--topbar-h);}
+.logo{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--accent);letter-spacing:2.5px;text-transform:uppercase;flex-shrink:0;}
 .logo span{color:var(--accent2);}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
-.badge{font-family:var(--font-mono);font-size:11px;padding:3px 8px;border-radius:2px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);}
-.badge.online{border-color:var(--accent2);color:var(--accent2);}
-.study-select{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:4px 10px;border-radius:2px;outline:none;cursor:pointer;}
+.topbar-divider{width:1px;height:20px;background:var(--border);flex-shrink:0;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.badge{font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:3px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);letter-spacing:.5px;flex-shrink:0;}
+.badge.online{border-color:rgba(52,211,153,.4);color:var(--accent2);background:rgba(52,211,153,.08);}
+.badge.phase{border-color:rgba(45,212,191,.3);color:var(--accent);}
+.study-select{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:11px;padding:5px 10px;border-radius:3px;outline:none;cursor:pointer;max-width:340px;min-width:180px;}
 .study-select:focus{border-color:var(--accent);}
-#user-badge{font-family:var(--font-mono);font-size:11px;color:var(--accent);padding:4px 10px;border:1px solid var(--accent);border-radius:2px;cursor:pointer;}
-#logout-btn{background:transparent;border:1px solid var(--border);color:var(--text2);font-family:var(--font-mono);font-size:11px;padding:4px 10px;border-radius:2px;cursor:pointer;transition:all .2s;}
+#user-badge{font-family:var(--font-mono);font-size:10px;color:var(--accent);padding:4px 10px;border:1px solid rgba(45,212,191,.3);border-radius:3px;background:rgba(45,212,191,.06);white-space:nowrap;}
+#logout-btn{background:transparent;border:1px solid var(--border);color:var(--text3);font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:3px;cursor:pointer;transition:all .2s;white-space:nowrap;}
 #logout-btn:hover{border-color:var(--danger);color:var(--danger);}
-.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:16px 0;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
-.nav-section{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:2px;padding:12px 16px 6px;text-transform:uppercase;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+#hamburger{display:none;background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:4px;}
+
+/* ── Sidebar ── */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:12px 0;display:flex;flex-direction:column;gap:1px;overflow-y:auto;position:sticky;top:var(--topbar-h);height:calc(100vh - var(--topbar-h));}
+.nav-section{font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:2px;padding:14px 14px 5px;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;font-size:12px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;border-radius:0 4px 4px 0;margin-right:8px;}
 .nav-item:hover{background:var(--bg3);color:var(--text);}
-.nav-item.active{background:var(--bg3);color:var(--accent);border-left-color:var(--accent);}
-.nav-item .icon{font-size:15px;width:18px;text-align:center;}
-.main{padding:24px;overflow-y:auto;background:var(--bg);}
+.nav-item.active{background:var(--accent-dim);color:var(--accent);border-left-color:var(--accent);font-weight:500;}
+.nav-item .icon{font-size:14px;width:16px;text-align:center;flex-shrink:0;}
+
+/* ── Main content ── */
+.main{padding:20px 24px;overflow-y:auto;background:var(--bg);}
 .panel{display:none;}
 .panel.active{display:block;}
-.page-header{margin-bottom:24px;}
-.page-title{font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--text);letter-spacing:1px;}
-.page-sub{font-size:13px;color:var(--text2);margin-top:4px;}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:16px;position:relative;overflow:hidden;}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);}
-.stat-card.green::before{background:var(--accent2);}
-.stat-card.orange::before{background:var(--accent3);}
-.stat-card.yellow::before{background:var(--warn);}
-.stat-card.red::before{background:var(--danger);}
-.stat-val{font-family:var(--font-mono);font-size:28px;font-weight:600;color:var(--text);}
-.stat-label{font-size:12px;color:var(--text2);margin-top:4px;}
-.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:24px;}
-.table-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);}
-.table-title{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--text);}
-table{width:100%;border-collapse:collapse;}
-th{font-family:var(--font-mono);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg2);}
-td{font-size:13px;padding:10px 16px;border-bottom:1px solid var(--border);color:var(--text2);}
+
+/* ── Page header ── */
+.page-header{margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.page-header-left .page-title{font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--text);letter-spacing:.5px;}
+.page-header-left .page-sub{font-size:12px;color:var(--text2);margin-top:3px;}
+.page-title{font-family:var(--font-mono);font-size:16px;font-weight:600;color:var(--text);letter-spacing:.5px;}
+.page-sub{font-size:12px;color:var(--text2);margin-top:3px;}
+
+/* ── Stat cards ── */
+.stats-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;}
+.stat-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s;}
+.stat-card:hover{border-color:var(--border2);}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--accent),transparent);}
+.stat-card.green::after{background:linear-gradient(90deg,var(--accent2),transparent);}
+.stat-card.orange::after{background:linear-gradient(90deg,var(--accent3),transparent);}
+.stat-card.yellow::after{background:linear-gradient(90deg,var(--warn),transparent);}
+.stat-card.red::after{background:linear-gradient(90deg,var(--danger),transparent);}
+.stat-card.info::after{background:linear-gradient(90deg,var(--info),transparent);}
+.stat-val{font-family:var(--font-mono);font-size:24px;font-weight:600;color:var(--text);line-height:1;}
+.stat-label{font-size:11px;color:var(--text2);margin-top:6px;letter-spacing:.3px;}
+.stat-trend{font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:4px;}
+
+/* ── Chart grid ── */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.chart-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.chart-card-title{font-family:var(--font-mono);font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.chart-card-title span{color:var(--text3);font-size:10px;}
+.chart-wrap{position:relative;height:160px;}
+
+/* ── Tables ── */
+.table-wrap{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg2);}
+.table-title{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text);letter-spacing:.5px;text-transform:uppercase;}
+.table-wrap-body{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:500px;}
+th{font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg2);white-space:nowrap;}
+td{font-size:12px;padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text2);}
 tr:last-child td{border-bottom:none;}
 tr:hover td{background:var(--bg3);color:var(--text);}
-.mono{font-family:var(--font-mono);font-size:12px;}
-.pill{font-family:var(--font-mono);font-size:10px;padding:2px 8px;border-radius:2px;font-weight:600;letter-spacing:1px;}
-.pill.active,.pill.enrolled,.pill.open{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.3);}
-.pill.completed,.pill.closed{background:rgba(0,255,157,.1);color:var(--accent2);border:1px solid rgba(0,255,157,.3);}
-.pill.pending,.pill.planned,.pill.answered{background:rgba(255,204,0,.1);color:var(--warn);border:1px solid rgba(255,204,0,.3);}
-.pill.withdrawn,.pill.screen_failed,.pill.inactive{background:rgba(255,68,85,.1);color:var(--danger);border:1px solid rgba(255,68,85,.3);}
-.pill.mild{background:rgba(0,255,157,.1);color:var(--accent2);border:1px solid rgba(0,255,157,.3);}
-.pill.moderate{background:rgba(255,204,0,.1);color:var(--warn);border:1px solid rgba(255,204,0,.3);}
-.pill.severe{background:rgba(255,68,85,.1);color:var(--danger);border:1px solid rgba(255,68,85,.3);}
-.pill.admin{background:rgba(255,107,53,.1);color:var(--accent3);border:1px solid rgba(255,107,53,.3);}
-.btn{font-family:var(--font-mono);font-size:12px;padding:7px 14px;border-radius:2px;cursor:pointer;border:1px solid;transition:all .2s;letter-spacing:.5px;}
-.btn-primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600;}
+
+/* ── Utilities ── */
+.mono{font-family:var(--font-mono);font-size:11px;}
+.pill{font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:3px;font-weight:500;letter-spacing:.5px;white-space:nowrap;}
+.pill.active,.pill.enrolled,.pill.open{background:rgba(45,212,191,.1);color:var(--accent);border:1px solid rgba(45,212,191,.25);}
+.pill.completed,.pill.closed{background:rgba(52,211,153,.1);color:var(--accent2);border:1px solid rgba(52,211,153,.25);}
+.pill.pending,.pill.planned,.pill.answered{background:rgba(251,191,36,.1);color:var(--warn);border:1px solid rgba(251,191,36,.25);}
+.pill.withdrawn,.pill.screen_failed,.pill.inactive{background:rgba(244,63,94,.1);color:var(--danger);border:1px solid rgba(244,63,94,.25);}
+.pill.mild{background:rgba(52,211,153,.1);color:var(--accent2);border:1px solid rgba(52,211,153,.25);}
+.pill.moderate{background:rgba(251,191,36,.1);color:var(--warn);border:1px solid rgba(251,191,36,.25);}
+.pill.severe{background:rgba(244,63,94,.1);color:var(--danger);border:1px solid rgba(244,63,94,.25);}
+.pill.admin{background:rgba(249,115,22,.1);color:var(--accent3);border:1px solid rgba(249,115,22,.25);}
+.pill.dm,.pill.data_manager{background:rgba(45,212,191,.1);color:var(--accent);border:1px solid rgba(45,212,191,.25);}
+.pill.monitor,.pill.cra{background:rgba(52,211,153,.1);color:var(--accent2);border:1px solid rgba(52,211,153,.25);}
+.pill.investigator{background:rgba(251,191,36,.1);color:var(--warn);border:1px solid rgba(251,191,36,.25);}
+
+/* ── Buttons ── */
+.btn{font-family:var(--font-mono);font-size:11px;padding:6px 12px;border-radius:3px;cursor:pointer;border:1px solid;transition:all .18s;letter-spacing:.3px;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#060a0f;border-color:var(--accent);font-weight:600;}
 .btn-primary:hover{background:transparent;color:var(--accent);}
 .btn-outline{background:transparent;color:var(--text2);border-color:var(--border);}
 .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
-.btn-danger{background:transparent;color:var(--danger);border-color:var(--danger);}
-.btn-danger:hover{background:var(--danger);color:#fff;}
-.btn-warn{background:transparent;color:var(--warn);border-color:var(--warn);}
+.btn-danger{background:transparent;color:var(--danger);border-color:rgba(244,63,94,.4);}
+.btn-danger:hover{background:var(--danger);color:#fff;border-color:var(--danger);}
+.btn-warn{background:transparent;color:var(--warn);border-color:rgba(251,191,36,.4);}
 .btn-warn:hover{background:var(--warn);color:var(--bg);}
-.btn-sm{padding:4px 10px;font-size:11px;}
-.btn-green{background:var(--accent2);color:var(--bg);border-color:var(--accent2);font-weight:600;}
+.btn-sm{padding:3px 8px;font-size:10px;}
+.btn-green{background:var(--accent2);color:#060a0f;border-color:var(--accent2);font-weight:600;}
 .btn-green:hover{background:transparent;color:var(--accent2);}
-.action-btns{display:flex;gap:6px;}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:16px;}
-.form-group{display:flex;flex-direction:column;gap:5px;}
-.form-group label{font-family:var(--font-mono);font-size:11px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;}
-.form-group input,.form-group select,.form-group textarea{background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:8px 10px;border-radius:2px;outline:none;transition:border-color .2s;}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);}
+.action-btns{display:flex;gap:4px;flex-wrap:wrap;}
+
+/* ── Forms ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:14px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group label{font-family:var(--font-mono);font-size:10px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;}
+.form-group input,.form-group select,.form-group textarea{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:7px 10px;border-radius:3px;outline:none;transition:border-color .2s;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(45,212,191,.1);}
 .form-group select option{background:var(--bg2);}
-.form-section{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;margin-bottom:16px;}
-.form-section-title{font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
-.form-actions{display:flex;gap:10px;padding-top:8px;}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;}
+.form-section{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+.form-section-title{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.form-actions{display:flex;gap:8px;padding-top:6px;flex-wrap:wrap;}
+
+/* ── Modals ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(2px);z-index:300;display:none;align-items:center;justify-content:center;padding:16px;}
 .modal-overlay.open{display:flex;}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:4px;width:90%;max-width:620px;max-height:90vh;overflow-y:auto;}
-.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
-.modal-title{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--accent);}
-.modal-close{background:transparent;border:none;color:var(--text2);font-size:20px;cursor:pointer;}
-.modal-body{padding:20px;}
-#login-screen{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;align-items:center;justify-content:center;}
-.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:40px;width:360px;}
-.login-logo{font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--accent);letter-spacing:3px;margin-bottom:6px;}
-.login-sub{font-size:12px;color:var(--text2);margin-bottom:28px;font-family:var(--font-mono);}
-.login-box .form-group{margin-bottom:14px;}
-.login-box .form-group input{width:100%;padding:10px;}
-.login-error{font-family:var(--font-mono);font-size:12px;color:var(--danger);margin-bottom:12px;display:none;}
-.login-btn{width:100%;padding:12px;font-size:13px;margin-top:6px;}
-.alert{font-family:var(--font-mono);font-size:12px;padding:10px 14px;border-radius:2px;margin-bottom:14px;display:none;}
-.alert.success{background:rgba(0,255,157,.1);border:1px solid rgba(0,255,157,.3);color:var(--accent2);}
-.alert.error{background:rgba(255,68,85,.1);border:1px solid rgba(255,68,85,.3);color:var(--danger);}
-.alert.warn{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.4);color:#f5a623;white-space:pre-line;}
-.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;flex-wrap:wrap;}
-.tab{font-family:var(--font-mono);font-size:12px;padding:10px 16px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:600px;max-height:90vh;overflow-y:auto;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg2);z-index:1;}
+.modal-title{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--accent);}
+.modal-close{background:transparent;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:3px;transition:color .2s;}
+.modal-close:hover{color:var(--danger);}
+.modal-body{padding:18px;}
+
+/* ── Login ── */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px;}
+#login-screen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(45,212,191,.06) 0%,transparent 60%);}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:36px;width:100%;max-width:360px;position:relative;}
+.login-logo{font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--accent);letter-spacing:3px;margin-bottom:4px;}
+.login-sub{font-size:11px;color:var(--text3);margin-bottom:28px;font-family:var(--font-mono);}
+.login-tagline{font-size:12px;color:var(--text2);margin-bottom:24px;line-height:1.6;}
+.login-box .form-group{margin-bottom:12px;}
+.login-box .form-group input{width:100%;padding:10px 12px;font-size:13px;}
+.login-error{font-family:var(--font-mono);font-size:11px;color:var(--danger);margin-bottom:10px;display:none;padding:8px;background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:3px;}
+.login-btn{width:100%;padding:11px;font-size:12px;margin-top:4px;letter-spacing:1px;}
+.login-footer{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:10px;color:var(--text3);text-align:center;line-height:1.8;}
+
+/* ── Alerts ── */
+.alert{font-family:var(--font-mono);font-size:11px;padding:9px 12px;border-radius:3px;margin-bottom:12px;display:none;}
+.alert.success{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);color:var(--accent2);}
+.alert.error{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.25);color:var(--danger);}
+.alert.warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);color:var(--warn);white-space:pre-line;}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;flex-wrap:wrap;gap:0;}
+.tab{font-family:var(--font-mono);font-size:11px;padding:9px 14px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;}
 .tab:hover{color:var(--text);}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
-.empty{text-align:center;padding:40px;color:var(--text3);font-family:var(--font-mono);font-size:13px;}
-.loading{text-align:center;padding:30px;color:var(--text2);font-family:var(--font-mono);font-size:12px;}
+
+/* ── Misc ── */
+.empty{text-align:center;padding:36px;color:var(--text3);font-family:var(--font-mono);font-size:12px;}
+.loading{text-align:center;padding:28px;color:var(--text2);font-family:var(--font-mono);font-size:12px;}
 .loading::after{content:'...';animation:dots 1s infinite;}
 @keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
-.query-card{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:14px;margin-bottom:10px;}
-.query-id{font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-bottom:6px;}
-.query-issue{font-size:13px;color:var(--text);margin-bottom:8px;}
-.query-meta{font-family:var(--font-mono);font-size:11px;color:var(--text3);display:flex;gap:16px;flex-wrap:wrap;}
-/* Visit tracker */
-.visit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px;}
-.visit-box{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:12px;cursor:pointer;transition:border-color .2s;}
+.query-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;}
+.query-id{font-family:var(--font-mono);font-size:10px;color:var(--accent);margin-bottom:5px;}
+.query-issue{font-size:12px;color:var(--text);margin-bottom:6px;}
+.query-meta{font-family:var(--font-mono);font-size:10px;color:var(--text3);display:flex;gap:14px;flex-wrap:wrap;}
+.visit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:18px;}
+.visit-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:11px;cursor:pointer;transition:border-color .2s;}
 .visit-box:hover{border-color:var(--accent);}
-.visit-box.done{border-color:var(--accent2);}
+.visit-box.done{border-color:rgba(52,211,153,.5);}
 .visit-box.done .vb-num{color:var(--accent2);}
 .visit-box.planned .vb-num{color:var(--text3);}
-.visit-box.missed{border-color:var(--danger);}
-.visit-box.missed .vb-num{color:var(--danger);}
-.visit-box.missed .vb-status{color:var(--danger);}
+.visit-box.missed{border-color:rgba(244,63,94,.5);}
+.visit-box.missed .vb-num,.visit-box.missed .vb-status{color:var(--danger);}
 .vb-num{font-family:var(--font-mono);font-size:10px;color:var(--accent);margin-bottom:4px;}
-.vb-name{font-size:12px;font-weight:500;margin-bottom:4px;}
+.vb-name{font-size:11px;font-weight:500;margin-bottom:4px;}
 .vb-status{font-family:var(--font-mono);font-size:10px;color:var(--text3);}
-/* Subject detail */
-.subj-detail-header{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
-.subj-detail-id{font-family:var(--font-mono);font-size:18px;color:var(--accent);}
-.subj-detail-meta{display:flex;gap:16px;flex-wrap:wrap;}
-.subj-detail-meta span{font-family:var(--font-mono);font-size:11px;color:var(--text2);}
-/* Data lock banner */
-.lock-banner{background:rgba(255,68,85,.08);border:1px solid rgba(255,68,85,.3);border-radius:4px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;}
-.lock-banner-text{font-family:var(--font-mono);font-size:13px;color:var(--danger);}
-/* Reports */
-.report-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.subj-detail-header{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.subj-detail-id{font-family:var(--font-mono);font-size:16px;color:var(--accent);}
+.subj-detail-meta{display:flex;gap:14px;flex-wrap:wrap;}
+.subj-detail-meta span{font-family:var(--font-mono);font-size:10px;color:var(--text2);}
+.lock-banner{background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.25);border-radius:var(--radius);padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.lock-banner-text{font-family:var(--font-mono);font-size:12px;color:var(--danger);}
+.report-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:border-color .2s;}
+.report-card:hover{border-color:var(--border2);}
 .report-info{flex:1;}
-.report-name{font-family:var(--font-mono);font-size:13px;color:var(--text);margin-bottom:4px;}
-.report-desc{font-size:12px;color:var(--text2);}
-/* User role pills */
-.pill.data_manager,.pill.dm{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.3);}
-.pill.monitor,.pill.cra{background:rgba(0,255,157,.1);color:var(--accent2);border:1px solid rgba(0,255,157,.3);}
-.pill.investigator,.pill.pi{background:rgba(255,204,0,.1);color:var(--warn);border:1px solid rgba(255,204,0,.3);}
-::-webkit-scrollbar{width:6px;height:6px;}
-::-webkit-scrollbar-track{background:var(--bg2);}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
-::-webkit-scrollbar-thumb:hover{background:var(--text3);}
-@media(max-width:768px){.app{grid-template-columns:1fr;}.sidebar{display:none;}.stats-grid{grid-template-columns:repeat(2,1fr);}}
+.report-name{font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:3px;}
+.report-desc{font-size:11px;color:var(--text2);}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+::-webkit-scrollbar-thumb:hover{background:var(--border2);}
+
+/* ── Mobile ── */
+@media(max-width:900px){
+  .stats-grid{grid-template-columns:repeat(3,1fr);}
+  .chart-grid{grid-template-columns:1fr;}
+  .chart-wrap{height:140px;}
+}
+@media(max-width:768px){
+  :root{--sidebar-w:0px;}
+  .app{grid-template-columns:1fr;}
+  .sidebar{display:none;position:fixed;top:var(--topbar-h);left:0;width:220px;height:calc(100vh - var(--topbar-h));z-index:150;border-right:1px solid var(--border);}
+  .sidebar.open{display:flex;}
+  #hamburger{display:block;}
+  .main{padding:12px;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .stat-val{font-size:20px;}
+  .chart-grid{grid-template-columns:1fr;gap:10px;}
+  .chart-wrap{height:130px;}
+  .topbar{gap:8px;padding:0 12px;}
+  .study-select{max-width:150px;min-width:90px;font-size:10px;}
+  .badge.phase{display:none;}
+  table{min-width:400px;}
+  .action-btns .btn-sm:nth-child(n+3){display:none;}
+  .page-header{flex-direction:column;align-items:flex-start;}
+  .modal{max-width:100%;}
+  .form-grid{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:6px;}
+  .stat-card{padding:10px 12px;}
+  .stat-val{font-size:18px;}
+  .stat-label{font-size:10px;}
+  .form-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
@@ -175,25 +263,31 @@ tr:hover td{background:var(--bg3);color:var(--text);}
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">MINI·EDC</div>
-    <div class="login-sub">Phase F // Multi-Study Clinical Data Capture</div>
-    <div class="form-group"><label>User ID</label><input id="login-user" type="text" value="ADMIN" placeholder="ADMIN"/></div>
-    <div class="form-group"><label>Password</label><input id="login-pass" type="password" value="Admin@1234" placeholder="••••••••"/></div>
+    <div class="login-logo">SARA·EDC</div>
+    <div class="login-sub">CLINICAL DATA MANAGEMENT SYSTEM</div>
+    <div class="login-tagline">Multi-Study, Multi-Site Electronic Data Capture platform with 21 CFR Part 11 compliant audit trail.</div>
+    <div class="form-group"><label>User ID</label><input id="login-user" type="text" value="ADMIN" placeholder="Enter User ID" autocomplete="username"/></div>
+    <div class="form-group"><label>Password</label><input id="login-pass" type="password" value="Admin@1234" placeholder="Enter Password" autocomplete="current-password"/></div>
     <div class="login-error" id="login-error"></div>
-    <button class="btn btn-primary login-btn" onclick="doLogin()">AUTHENTICATE</button>
+    <button class="btn btn-primary login-btn" onclick="doLogin()">AUTHENTICATE →</button>
+    <div class="login-footer">
+      Authorized personnel only · All access is logged<br>
+      SARA EDC v2.0 ·  · CDISC Compliant
+    </div>
   </div>
 </div>
 
 <!-- APP -->
 <div class="app" id="app-shell" style="display:none;">
   <header class="topbar">
-    <div class="logo">MINI·<span>EDC</span></div>
-    <div class="badge">PHASE F</div>
+    <button id="hamburger" onclick="toggleSidebar()">☰</button>
+    <div class="logo">SARA·<span>EDC</span></div>
+    <div class="topbar-divider"></div>
     <select class="study-select" id="study-selector" onchange="onStudyChange()">
       <option value="">— SELECT STUDY —</option>
     </select>
     <div class="topbar-right">
-      <div class="badge online" id="api-status">● CONNECTED</div>
+      <div class="badge online" id="api-status">● LIVE</div>
       <div id="user-badge">—</div>
       <button id="logout-btn" onclick="doLogout()">LOGOUT</button>
     </div>
@@ -225,44 +319,48 @@ tr:hover td{background:var(--bg3);color:var(--text);}
     <!-- DASHBOARD -->
     <div class="panel active" id="panel-dashboard">
       <div class="page-header">
-        <div class="page-title">DASHBOARD</div>
-        <div class="page-sub" id="dash-study-name">Select a study to view statistics</div>
+        <div class="page-header-left">
+          <div class="page-title">DASHBOARD</div>
+          <div class="page-sub" id="dash-study-name">Select a study to view statistics</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div id="dash-study-meta" style="font-family:var(--font-mono);font-size:10px;color:var(--text3);display:flex;gap:14px;"></div>
+          <button class="btn btn-outline btn-sm" onclick="loadDashboard()">↻ REFRESH</button>
+        </div>
       </div>
       <div class="stats-grid" id="stats-grid">
-        <div class="stat-card"><div class="stat-val" id="stat-enrolled">—</div><div class="stat-label">Enrolled Subjects</div></div>
+        <div class="stat-card"><div class="stat-val" id="stat-enrolled">—</div><div class="stat-label">Enrolled</div></div>
         <div class="stat-card green"><div class="stat-val" id="stat-completed">—</div><div class="stat-label">Completed</div></div>
+        <div class="stat-card red"><div class="stat-val" id="stat-withdrawn">—</div><div class="stat-label">Withdrawn</div></div>
         <div class="stat-card yellow"><div class="stat-val" id="stat-open-q">—</div><div class="stat-label">Open Queries</div></div>
         <div class="stat-card orange"><div class="stat-val" id="stat-ae">—</div><div class="stat-label">Adverse Events</div></div>
-        <div class="stat-card red"><div class="stat-val" id="stat-sae">—</div><div class="stat-label">Serious AEs</div></div>
-        <div class="stat-card"><div class="stat-val" id="stat-withdrawn">—</div><div class="stat-label">Withdrawn</div></div>
+        <div class="stat-card info"><div class="stat-val" id="stat-sae">—</div><div class="stat-label">Serious AEs</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-card-title">SUBJECT STATUS <span>by enrollment</span></div>
+          <div class="chart-wrap"><canvas id="chart-subjects"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">QUERY STATUS <span>by resolution</span></div>
+          <div class="chart-wrap"><canvas id="chart-queries"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">ENROLLMENT BY SITE <span>subject count</span></div>
+          <div class="chart-wrap"><canvas id="chart-sites"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">AE SEVERITY <span>by count</span></div>
+          <div class="chart-wrap"><canvas id="chart-ae"></canvas></div>
+        </div>
       </div>
       <div class="table-wrap">
-        <div class="table-header"><div class="table-title">RECENT SUBJECTS</div><button class="btn btn-outline btn-sm" onclick="showPanel('subjects')">VIEW ALL</button></div>
-        <div id="dash-subjects-table"><div class="loading">Loading</div></div>
+        <div class="table-header"><div class="table-title">RECENT SUBJECTS</div><button class="btn btn-outline btn-sm" onclick="showPanel('subjects')">VIEW ALL →</button></div>
+        <div class="table-wrap-body" id="dash-subjects-table"><div class="loading">Loading</div></div>
       </div>
       <div class="table-wrap">
-        <div class="table-header"><div class="table-title">OPEN QUERIES</div><button class="btn btn-outline btn-sm" onclick="showPanel('queries')">VIEW ALL</button></div>
-        <div id="dash-queries-table"><div class="loading">Loading</div></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
-        <div class="table-wrap" style="margin:0;padding:16px;">
-          <div class="table-title" style="margin-bottom:14px;font-family:var(--font-mono);font-size:13px;">SUBJECT STATUS</div>
-          <canvas id="chart-subjects" height="200"></canvas>
-        </div>
-        <div class="table-wrap" style="margin:0;padding:16px;">
-          <div class="table-title" style="margin-bottom:14px;font-family:var(--font-mono);font-size:13px;">QUERY STATUS</div>
-          <canvas id="chart-queries" height="200"></canvas>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
-        <div class="table-wrap" style="margin:0;padding:16px;">
-          <div class="table-title" style="margin-bottom:14px;font-family:var(--font-mono);font-size:13px;">ENROLLMENT BY SITE</div>
-          <canvas id="chart-sites" height="200"></canvas>
-        </div>
-        <div class="table-wrap" style="margin:0;padding:16px;">
-          <div class="table-title" style="margin-bottom:14px;font-family:var(--font-mono);font-size:13px;">AE SEVERITY</div>
-          <canvas id="chart-ae" height="200"></canvas>
-        </div>
+        <div class="table-header"><div class="table-title">OPEN QUERIES</div><button class="btn btn-outline btn-sm" onclick="showPanel('queries')">VIEW ALL →</button></div>
+        <div class="table-wrap-body" id="dash-queries-table"><div class="loading">Loading</div></div>
       </div>
     </div>
 
@@ -579,23 +677,9 @@ tr:hover td{background:var(--bg3);color:var(--text);}
       <div class="report-card">
         <div class="report-info">
           <div class="report-name">DATA COMPLETENESS REPORT</div>
-          <div class="report-desc">CRF completion status per subject per domain (CSV)</div>
+          <div class="report-desc">CRF completeness % per subject with missing domain details (CSV)</div>
         </div>
         <button class="btn btn-outline" onclick="exportCompleteness()">EXPORT CSV</button>
-      </div>
-      <div class="report-card">
-        <div class="report-info">
-          <div class="report-name">SDTM DATASET — EX</div>
-          <div class="report-desc">Exposure domain in CDISC SDTM format (CSV)</div>
-        </div>
-        <button class="btn btn-outline" onclick="exportSDTM('ex')">EXPORT CSV</button>
-      </div>
-      <div class="report-card">
-        <div class="report-info">
-          <div class="report-name">SDTM DATASET — CM</div>
-          <div class="report-desc">Concomitant Medications domain in CDISC SDTM format (CSV)</div>
-        </div>
-        <button class="btn btn-outline" onclick="exportSDTM('cm')">EXPORT CSV</button>
       </div>
     </div>
 
@@ -920,15 +1004,39 @@ async function onStudyChange() {
   }
 }
 
+// ── SIDEBAR TOGGLE (mobile) ───────────────────────────────────
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const sidebar = document.querySelector('.sidebar');
+  const ham = document.getElementById('hamburger');
+  if(sidebar && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== ham) {
+    sidebar.classList.remove('open');
+  }
+});
+
+const TICK = { color:'#768a9c', font:{family:'IBM Plex Mono',size:10} };
+const GRID_C = '#1e2d3d';
+const LEG = { labels:{ color:'#768a9c', font:{family:'IBM Plex Mono',size:10}, boxWidth:10, padding:8 } };
+
 // ── DASHBOARD ─────────────────────────────────────────────────
 let chartSubjects, chartQueries, chartSites, chartAE;
-
-function destroyChart(c) { if(c) { try { c.destroy(); } catch(e){} } }
+function destroyChart(c) { if(c){try{c.destroy();}catch(e){}} }
 
 async function loadDashboard() {
   if(!currentStudy) return;
   const study = studyList.find(s=>s.study_id===currentStudy);
-  if(study) document.getElementById('dash-study-name').textContent = study.study_title;
+  if(study) {
+    document.getElementById('dash-study-name').textContent = study.study_title;
+    const meta = document.getElementById('dash-study-meta');
+    if(meta) meta.innerHTML = [
+      study.phase ? `<span>PHASE: ${study.phase}</span>` : '',
+      study.indication ? `<span>IND: ${study.indication}</span>` : '',
+      study.sponsor ? `<span>SPONSOR: ${study.sponsor}</span>` : '',
+      `<span class="pill ${study.status?.toLowerCase()}">${study.status||''}</span>`
+    ].filter(Boolean).join('');
+  }
   try {
     const stats = await api('GET', `/studies/${currentStudy}/stats`);
     document.getElementById('stat-enrolled').textContent = stats.subjects?.enrolled ?? '—';
@@ -937,128 +1045,67 @@ async function loadDashboard() {
     document.getElementById('stat-ae').textContent = stats.adverse_events?.total ?? '—';
     document.getElementById('stat-sae').textContent = stats.adverse_events?.serious ?? '—';
     document.getElementById('stat-withdrawn').textContent = stats.subjects?.withdrawn ?? '—';
-
     // Subject status doughnut
     destroyChart(chartSubjects);
     chartSubjects = new Chart(document.getElementById('chart-subjects'), {
-      type: 'doughnut',
-      data: {
-        labels: ['Enrolled','Completed','Withdrawn','Screen Failed'],
-        datasets: [{
-          data: [stats.subjects?.enrolled||0, stats.subjects?.completed||0, stats.subjects?.withdrawn||0, stats.subjects?.screen_failed||0],
-          backgroundColor: ['#00d4ff','#00ff9d','#ff4455','#ffcc00'],
-          borderWidth: 0
-        }]
-      },
-      options: { plugins: { legend: { labels: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} } } }, cutout:'65%' }
+      type:'doughnut',
+      data:{ labels:['Enrolled','Completed','Withdrawn','Screened'],
+        datasets:[{ data:[stats.subjects?.enrolled||0,stats.subjects?.completed||0,stats.subjects?.withdrawn||0,stats.subjects?.screen_failed||0],
+          backgroundColor:['#2dd4bf','#34d399','#f43f5e','#fbbf24'], borderWidth:0, hoverOffset:4 }] },
+      options:{ maintainAspectRatio:false, plugins:{ legend:LEG }, cutout:'60%' }
     });
-
-    // Query status doughnut
+    // Query doughnut
     destroyChart(chartQueries);
     chartQueries = new Chart(document.getElementById('chart-queries'), {
-      type: 'doughnut',
-      data: {
-        labels: ['Open','Answered','Closed'],
-        datasets: [{
-          data: [stats.queries?.open||0, stats.queries?.answered||0, stats.queries?.closed||0],
-          backgroundColor: ['#ff4455','#ffcc00','#00ff9d'],
-          borderWidth: 0
-        }]
-      },
-      options: { plugins: { legend: { labels: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} } } }, cutout:'65%' }
+      type:'doughnut',
+      data:{ labels:['Open','Answered','Closed'],
+        datasets:[{ data:[stats.queries?.open||0,stats.queries?.answered||0,stats.queries?.closed||0],
+          backgroundColor:['#f43f5e','#fbbf24','#34d399'], borderWidth:0, hoverOffset:4 }] },
+      options:{ maintainAspectRatio:false, plugins:{ legend:LEG }, cutout:'60%' }
     });
   } catch(e) {}
-
   try {
     const subjects = await api('GET', `/studies/${currentStudy}/subjects`);
     subjectList = subjects;
-    const recent = subjects.slice(0,5);
-    document.getElementById('dash-subjects-table').innerHTML = recent.length ? subjectsTableHTML(recent) : '<div class="empty">No subjects enrolled</div>';
-
-    // Enrollment by site bar chart
-    const siteCounts = {};
-    subjects.forEach(s => { siteCounts[s.site_id] = (siteCounts[s.site_id]||0)+1; });
+    document.getElementById('dash-subjects-table').innerHTML = subjects.length ? subjectsTableHTML(subjects.slice(0,5)) : '<div class="empty">No subjects enrolled</div>';
+    // Site bar chart
+    const sc = {};
+    subjects.forEach(s=>{ sc[s.site_id]=(sc[s.site_id]||0)+1; });
     destroyChart(chartSites);
     chartSites = new Chart(document.getElementById('chart-sites'), {
-      type: 'bar',
-      data: {
-        labels: Object.keys(siteCounts),
-        datasets: [{ label:'Subjects', data: Object.values(siteCounts), backgroundColor:'#00d4ff', borderRadius:2 }]
-      },
-      options: {
-        plugins: { legend: { display:false } },
-        scales: {
-          x: { ticks: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} }, grid: { color:'#1e2a3a' } },
-          y: { ticks: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} }, grid: { color:'#1e2a3a' }, beginAtZero:true }
-        }
-      }
+      type:'bar',
+      data:{ labels:Object.keys(sc), datasets:[{ label:'Subjects', data:Object.values(sc), backgroundColor:'rgba(45,212,191,.7)', borderColor:'#2dd4bf', borderWidth:1, borderRadius:3 }] },
+      options:{ maintainAspectRatio:false, plugins:{ legend:{display:false} },
+        scales:{ x:{ticks:TICK,grid:{color:GRID_C}}, y:{ticks:{...TICK,stepSize:1},grid:{color:GRID_C},beginAtZero:true} } }
     });
   } catch(e) {}
-
   try {
-    // AE severity bar chart — collect from all subjects
-    const aeSev = { MILD:0, MODERATE:0, SEVERE:0 };
+    const aeSev = {MILD:0,MODERATE:0,SEVERE:0};
     for(const s of subjectList.slice(0,20)) {
-      try {
-        const aes = await api('GET', `/studies/${currentStudy}/subjects/${s.usubjid}/crf/ae`);
-        aes.forEach(ae => { if(ae.aesev) aeSev[ae.aesev] = (aeSev[ae.aesev]||0)+1; });
-      } catch(e) {}
+      try { const aes = await api('GET',`/studies/${currentStudy}/subjects/${s.usubjid}/crf/ae`);
+        aes.forEach(a=>{ if(a.aesev && aeSev.hasOwnProperty(a.aesev)) aeSev[a.aesev]++; }); } catch(e) {}
     }
     destroyChart(chartAE);
     chartAE = new Chart(document.getElementById('chart-ae'), {
-      type: 'bar',
-      data: {
-        labels: ['MILD','MODERATE','SEVERE'],
-        datasets: [{ label:'AEs', data: [aeSev.MILD, aeSev.MODERATE, aeSev.SEVERE], backgroundColor:['#00ff9d','#ffcc00','#ff4455'], borderRadius:2 }]
-      },
-      options: {
-        plugins: { legend: { display:false } },
-        scales: {
-          x: { ticks: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} }, grid: { color:'#1e2a3a' } },
-          y: { ticks: { color:'#7a90a8', font:{family:'IBM Plex Mono',size:11} }, grid: { color:'#1e2a3a' }, beginAtZero:true }
-        }
-      }
+      type:'bar',
+      data:{ labels:['MILD','MODERATE','SEVERE'],
+        datasets:[{ label:'AEs', data:[aeSev.MILD,aeSev.MODERATE,aeSev.SEVERE],
+          backgroundColor:['rgba(52,211,153,.7)','rgba(251,191,36,.7)','rgba(244,63,94,.7)'],
+          borderColor:['#34d399','#fbbf24','#f43f5e'], borderWidth:1, borderRadius:3 }] },
+      options:{ maintainAspectRatio:false, plugins:{ legend:{display:false} },
+        scales:{ x:{ticks:TICK,grid:{color:GRID_C}}, y:{ticks:{...TICK,stepSize:1},grid:{color:GRID_C},beginAtZero:true} } }
     });
   } catch(e) {}
-
   try {
     const queries = await api('GET', `/studies/${currentStudy}/queries?status=Open`);
-    const openQ = queries.slice(0,5);
-    document.getElementById('dash-queries-table').innerHTML = openQ.length ?
-      `<table><thead><tr><th>Query ID</th><th>Subject</th><th>Field</th><th>Severity</th><th>Raised</th></tr></thead><tbody>${
-        openQ.map(q=>`<tr><td class="mono">${q.query_id}</td><td class="mono">${q.usubjid}</td><td>${q.field}</td><td><span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span></td><td class="mono">${q.raised_at?.slice(0,10)||'—'}</td></tr>`).join('')
+    const el = document.getElementById('dash-queries-table');
+    el.innerHTML = queries.length ?
+      `<table><thead><tr><th>Query ID</th><th>Subject</th><th>Domain</th><th>Field</th><th>Severity</th><th>Raised</th></tr></thead><tbody>${
+        queries.slice(0,5).map(q=>`<tr><td class="mono">${q.query_id}</td><td class="mono">${q.usubjid}</td><td>${q.domain}</td><td>${q.field}</td><td><span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span></td><td class="mono">${q.raised_at?.slice(0,10)||'—'}</td></tr>`).join('')
       }</tbody></table>` : '<div class="empty">No open queries</div>';
   } catch(e) {}
 }
 
-async function exportCompleteness() {
-  if(!currentStudy) { showAlert('alert-reports','Select a study first','error'); return; }
-  try {
-    const subjects = await api('GET', `/studies/${currentStudy}/subjects`);
-    const rows = [];
-    for(const s of subjects) {
-      const row = { STUDYID: currentStudy, USUBJID: s.usubjid, SITE_ID: s.site_id, STATUS: s.status };
-      for(const domain of ['dm','vs','lb','ae','ex','cm']) {
-        try {
-          const data = await api('GET', `/studies/${currentStudy}/subjects/${s.usubjid}/crf/${domain}`);
-          const items = Array.isArray(data) ? data : (data ? [data] : []);
-          row[`${domain.toUpperCase()}_COMPLETE`] = items.length > 0 ? 'YES' : 'NO';
-          row[`${domain.toUpperCase()}_RECORDS`] = items.length;
-        } catch(e) {
-          row[`${domain.toUpperCase()}_COMPLETE`] = 'NO';
-          row[`${domain.toUpperCase()}_RECORDS`] = 0;
-        }
-      }
-      const totalDomains = 6;
-      const completedDomains = ['DM','VS','LB','AE','EX','CM'].filter(d=>row[`${d}_COMPLETE`]==='YES').length;
-      row['COMPLETENESS_PCT'] = Math.round((completedDomains/totalDomains)*100) + '%';
-      rows.push(row);
-    }
-    if(!rows.length) { showAlert('alert-reports','No subjects found','error'); return; }
-    downloadCSV(rows, `COMPLETENESS_${currentStudy}_${new Date().toISOString().slice(0,10)}.csv`);
-    showAlert('alert-reports', `Completeness report exported for ${rows.length} subjects`, 'success');
-  } catch(e) { showAlert('alert-reports', e.message, 'error'); }
-}
 
 function subjectsTableHTML(subjects) {
   return `<table><thead><tr><th>USUBJID</th><th>Site</th><th>Sex</th><th>Consent Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>${
@@ -1944,6 +1991,28 @@ async function exportAudit() {
   try {
     const rows = await api('GET', `/studies/${currentStudy}/audit?limit=10000`);
     downloadCSV(rows, `AUDIT_${currentStudy}.csv`);
+  } catch(e) { showAlert('alert-reports', e.message, 'error'); }
+}
+
+async function exportCompleteness() {
+  if(!currentStudy) { showAlert('alert-reports','Select a study first','error'); return; }
+  showAlert('alert-reports', 'Generating completeness report...', 'warn');
+  try {
+    const subjects = await api('GET', `/studies/${currentStudy}/subjects`);
+    const rows = [];
+    for(const s of subjects) {
+      try {
+        const c = await api('GET', `/studies/${currentStudy}/subjects/${s.usubjid}/completeness`);
+        rows.push({ STUDYID: currentStudy, USUBJID: s.usubjid, SITEID: s.site_id, STATUS: s.status,
+          COMPLETED_VISITS: c.completed_visits, COMPLETENESS_PCT: c.completeness_pct,
+          HAS_DM: c.missing?.find(m=>m.domain==='DM') ? 'MISSING' : 'PRESENT',
+          MISSING_COUNT: c.missing?.length || 0,
+          MISSING_DETAILS: (c.missing||[]).map(m=>`${m.domain}${m.visit_num?'-V'+m.visit_num:''}`).join('|')
+        });
+      } catch(e) { rows.push({ STUDYID: currentStudy, USUBJID: s.usubjid, SITEID: s.site_id, STATUS: s.status, ERROR: 'Failed' }); }
+    }
+    downloadCSV(rows, `COMPLETENESS_${currentStudy}.csv`);
+    showAlert('alert-reports', `Exported completeness for ${rows.length} subjects`, 'success');
   } catch(e) { showAlert('alert-reports', e.message, 'error'); }
 }
 
