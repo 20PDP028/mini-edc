@@ -870,3 +870,13 @@ def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+@app.get("/debug-path", include_in_schema=False)
+def debug_path():
+    import os
+    return {
+        "cwd": os.getcwd(),
+        "static_exists": os.path.exists("static"),
+        "app_static_exists": os.path.exists("/app/static"),
+        "cwd_files": os.listdir(os.getcwd())
+    }
