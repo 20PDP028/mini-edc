@@ -29,6 +29,25 @@
   --sans:'Syne',sans-serif;
   --r:8px;
 }
+[data-theme="light"]{
+  --bg:#f0f2f7;
+  --surface:#ffffff;
+  --surface2:#e8ecf4;
+  --surface3:#dde2ee;
+  --border:#c8d0e0;
+  --border2:#b0bcd4;
+  --accent:#5b4fe8;
+  --accent-dim:rgba(91,79,232,.1);
+  --accent-glow:rgba(91,79,232,.2);
+  --green:#0ab870;
+  --yellow:#d4a000;
+  --red:#e03050;
+  --blue:#1a8fd1;
+  --orange:#d46a00;
+  --text:#1a2340;
+  --text2:#4a5878;
+  --text3:#8898b8;
+}
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;overflow-x:hidden;}
 
@@ -55,7 +74,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .topbar-brand{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);letter-spacing:2px;}
 .topbar-sep{width:1px;height:18px;background:var(--border);}
 .topbar-label{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px;}
-.topbar-study{font-family:var(--mono);font-size:11px;color:var(--text2);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.topbar-study{font-family:var(--mono);font-size:11px;color:var(--accent);padding:3px 10px;border:1px solid rgba(124,111,247,.25);border-radius:4px;background:var(--accent-dim);cursor:pointer;white-space:nowrap;}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
 .user-chip{font-family:var(--mono);font-size:10px;color:var(--accent);padding:4px 10px;border:1px solid rgba(124,111,247,.3);border-radius:4px;background:var(--accent-dim);}
 .btn-logout{font-family:var(--mono);font-size:10px;color:var(--text3);padding:4px 10px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer;transition:all .2s;}
@@ -180,10 +199,10 @@ tr:hover td{background:var(--surface2);color:var(--text);}
 .modal-body{padding:20px;}
 
 /* TABS */
-.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;flex-wrap:wrap;}
-.tab{font-family:var(--mono);font-size:11px;padding:10px 16px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;}
-.tab:hover{color:var(--text);}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;padding:4px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);}
+.tab{font-family:var(--mono);font-size:10px;padding:7px 14px;cursor:pointer;color:var(--text2);border-radius:5px;border:1px solid transparent;transition:all .15s;letter-spacing:.3px;}
+.tab:hover{color:var(--text);background:var(--surface3);}
+.tab.active{color:var(--text);background:var(--surface);border-color:var(--border);box-shadow:0 1px 4px rgba(0,0,0,.4);}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
 
@@ -246,8 +265,9 @@ tr:hover td{background:var(--surface2);color:var(--text);}
     <div class="topbar-sep" style="width:1px;height:18px;background:var(--border);"></div>
     <div class="topbar-label">CDM PORTAL</div>
     <div class="topbar-sep" style="width:1px;height:18px;background:var(--border);"></div>
-    <div class="topbar-study" id="tb-study">Select a study to begin</div>
+    <div class="topbar-study" id="tb-study" title="">Select a study</div>
     <div class="topbar-right">
+      <button id="theme-btn" onclick="toggleTheme()" style="font-family:var(--mono);font-size:14px;background:transparent;border:1px solid var(--border);border-radius:4px;padding:3px 8px;cursor:pointer;color:var(--text2);transition:all .2s;" title="Toggle light/dark mode">🌙</button>
       <div class="user-chip" id="tb-user">—</div>
       <button class="btn-logout" onclick="doLogout()">LOGOUT</button>
     </div>
@@ -256,6 +276,11 @@ tr:hover td{background:var(--surface2);color:var(--text);}
   <div class="app-body">
     <!-- SIDEBAR -->
     <div class="sidebar">
+      <div id="sidebar-study-ctx" style="display:none;margin:10px 12px 2px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">ACTIVE STUDY</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:700;" id="sidebar-study-id">—</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px;cursor:pointer;" onclick="showPanel('home')">change →</div>
+      </div>
       <div class="nav-section">Overview</div>
       <div class="nav-item active" id="nav-home" onclick="showPanel('home')"><span class="ni">⊞</span>Study Select</div>
       <div class="nav-item" id="nav-dashboard" onclick="showPanel('dashboard')"><span class="ni">◈</span>Dashboard</div>
@@ -353,11 +378,18 @@ tr:hover td{background:var(--surface2);color:var(--text);}
           <div class="tab" onclick="loadDataTab('cm')">MEDICATIONS</div>
           <div class="tab" onclick="loadDataTab('dm')">DEMOGRAPHICS</div>
         </div>
-        <div class="filter-bar">
-          <input type="text" id="data-filter" placeholder="Filter by subject ID..." oninput="filterDataTable()"/>
+        <div class="filter-bar" style="align-items:center;flex-wrap:wrap;">
+          <input type="text" id="data-filter" placeholder="Filter by subject ID..." oninput="filterDataTable()" style="flex:1;min-width:160px;max-width:220px;"/>
+          <select id="data-visit-filter" onchange="filterDataTable()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;border-radius:5px;outline:none;">
+            <option value="">All Visits</option>
+          </select>
+          <label style="font-family:var(--mono);font-size:10px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer;">
+            <input type="checkbox" id="data-flag-only" onchange="filterDataTable()" style="accent-color:var(--red);"/> Flagged only
+          </label>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-left:auto;" id="data-row-count">— records</div>
         </div>
         <div class="tbl-card">
-          <div class="tbl-header"><div class="tbl-title" id="data-tab-label">VITAL SIGNS</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);" id="data-row-count">— records</div></div>
+          <div class="tbl-header"><div class="tbl-title" id="data-tab-label">VITAL SIGNS</div></div>
           <div class="tbl-scroll" id="data-table-body"><div class="loading">Loading</div></div>
         </div>
       </div>
@@ -522,9 +554,12 @@ async function loadHomeStudies(){
 
 function selectStudy(id,title){
   currentStudy=id; currentStudyTitle=title;
-  document.getElementById('tb-study').textContent=`${id} — ${title}`;
+  const tb=document.getElementById('tb-study');
+  tb.textContent=id; tb.title=title;
   document.getElementById('dash-study-title').textContent=title;
   document.getElementById('dash-study-sub').textContent=id;
+  const ctx=document.getElementById('sidebar-study-ctx');
+  if(ctx){ctx.style.display='block';document.getElementById('sidebar-study-id').textContent=id;}
   showPanel('dashboard');
 }
 
@@ -747,26 +782,125 @@ async function loadDataTab(tab){
         arr.forEach(r=>{if(r&&r.usubjid) allDataRows.push(r);});
       }catch(e){}
     }
-    document.getElementById('data-row-count').textContent=`${allDataRows.length} records`;
+    const countEl2=document.getElementById('data-row-count');
+    if(countEl2) countEl2.textContent=`Showing ${allDataRows.length} of ${allDataRows.length}`;
+    populateVisitDropdown();
     renderDataTable(allDataRows);
   }catch(e){body.innerHTML=`<div class="empty">${e.message}</div>`;}
 }
 
+// Range thresholds for out-of-range flagging (FIX 3)
+const RANGE_THRESHOLDS = {
+  SYSBP:    {lo:90,  hi:180, unit:'mmHg'},
+  DIABP:    {lo:60,  hi:110, unit:'mmHg'},
+  PULSE:    {lo:50,  hi:100, unit:'bpm'},
+  TEMP:     {lo:36.0,hi:37.5,unit:'°C'},
+  WEIGHT:   {lo:35,  hi:200, unit:'kg'},
+  HEIGHT:   {lo:100, hi:220, unit:'cm'},
+  RESP_RATE:{lo:12,  hi:20,  unit:'br/min'},
+  HGB:      {lo:11.5,hi:17.5,unit:'g/dL'},
+  WBC:      {lo:4,   hi:11,  unit:'10³/µL'},
+  PLATELETS:{lo:150, hi:400, unit:'10³/µL'},
+  ALT:      {lo:0,   hi:56,  unit:'U/L'},
+  AST:      {lo:0,   hi:40,  unit:'U/L'},
+  CREATININE:{lo:0.6,hi:1.2, unit:'mg/dL'},
+};
+function checkRange(key, val) {
+  const t = RANGE_THRESHOLDS[key.toUpperCase()];
+  if (!t) return null;
+  const n = parseFloat(val);
+  if (isNaN(n)) return null;
+  if (n < t.lo) return {dir:'LOW',  rule:`< ${t.lo} ${t.unit}`};
+  if (n > t.hi) return {dir:'HIGH', rule:`> ${t.hi} ${t.unit}`};
+  return null;
+}
+
+// FIX 9: columns hidden by default (audit noise)
+const HIDDEN_COLS = new Set(['created_at','created_by','study_id']);
+// FIX 1: identity columns pinned left
+const IDENTITY_COLS = ['usubjid','visit_num','visit_name'];
+
 function renderDataTable(rows){
   const body=document.getElementById('data-table-body');
   if(!rows.length){body.innerHTML='<div class="empty">No data</div>';return;}
-  const keys=Object.keys(rows[0]).filter(k=>!['id'].includes(k));
-  body.innerHTML=`<table>
-    <thead><tr>${keys.map(k=>`<th>${k.toUpperCase()}</th>`).join('')}</tr></thead>
-    <tbody>${rows.map(r=>`<tr>${keys.map(k=>`<td class="mono">${r[k]??'—'}</td>`).join('')}</tr>`).join('')}</tbody>
+
+  const allKeys = Object.keys(rows[0]).filter(k => k !== 'id');
+  const identityKeys = IDENTITY_COLS.filter(k => allKeys.includes(k));
+  const dataKeys = allKeys.filter(k => !IDENTITY_COLS.includes(k) && !HIDDEN_COLS.has(k));
+  // visit_name merged into visit_num cell so skip as standalone header
+  const headerKeys = [...identityKeys.filter(k=>k!=='visit_name'), ...dataKeys];
+
+  // FIX 2: group rows by usubjid — suppress repeated subject IDs
+  let lastSubj = null;
+  const rowsHtml = rows.map(r => {
+    const subj = r.usubjid || '—';
+    let subjCell;
+    if (subj !== lastSubj) {
+      lastSubj = subj;
+      subjCell = `<td class="mono" style="color:var(--accent);font-weight:700;white-space:nowrap;vertical-align:top;padding-top:10px;">${subj}</td>`;
+    } else {
+      subjCell = `<td style="border-left:2px solid rgba(124,111,247,.12);"></td>`;
+    }
+
+    // Visit cell: merge num + name
+    const visitCell = identityKeys.includes('visit_num')
+      ? `<td class="mono" style="white-space:nowrap;color:var(--text);">V${r.visit_num??'—'}${r.visit_name?' · '+r.visit_name:''}</td>`
+      : '';
+
+    // Data cells with range flagging
+    const dataCells = dataKeys.map(k => {
+      const val = r[k] ?? '—';
+      const flag = checkRange(k, val);
+      if (flag) {
+        return `<td class="mono" style="color:var(--red);background:rgba(255,77,106,.07);" title="${k.toUpperCase()} ${flag.dir}: ${flag.rule}">${val} <span style="font-size:9px;">⚑</span></td>`;
+      }
+      return `<td class="mono" style="text-align:${isNaN(parseFloat(val))?'left':'right'};">${val}</td>`;
+    });
+
+    // usubjid + (optional) visit + data cols
+    const identityExtra = identityKeys
+      .filter(k => k !== 'usubjid' && k !== 'visit_num' && k !== 'visit_name')
+      .map(k => `<td class="mono">${r[k]??'—'}</td>`);
+
+    return `<tr>${subjCell}${visitCell}${identityExtra.join('')}${dataCells.join('')}</tr>`;
+  }).join('');
+
+  const headerHtml = headerKeys.map(k => {
+    const isId = IDENTITY_COLS.includes(k);
+    const lbl = k === 'visit_num' ? 'VISIT' : k.replace(/_/g,' ').toUpperCase();
+    return `<th style="${isId?'color:var(--text2);':''}">${lbl}</th>`;
+  }).join('');
+
+  body.innerHTML = `<table>
+    <thead><tr>${headerHtml}</tr></thead>
+    <tbody>${rowsHtml}</tbody>
   </table>`;
 }
 
 function filterDataTable(){
-  const q=document.getElementById('data-filter').value.toLowerCase();
-  const filtered=allDataRows.filter(r=>(r.usubjid||'').toLowerCase().includes(q));
-  document.getElementById('data-row-count').textContent=`${filtered.length} records`;
+  const q=(document.getElementById('data-filter')||{value:''}).value.toLowerCase();
+  const visitSel=document.getElementById('data-visit-filter');
+  const visit=visitSel?visitSel.value:'';
+  const flagOnly=(document.getElementById('data-flag-only')||{}).checked;
+  let filtered=allDataRows.filter(r=>{
+    if(q && !(r.usubjid||'').toLowerCase().includes(q)) return false;
+    if(visit && String(r.visit_num||'')!==visit) return false;
+    if(flagOnly){
+      const hasflag=Object.keys(r).some(k=>checkRange(k,r[k])!==null);
+      if(!hasflag) return false;
+    }
+    return true;
+  });
+  const countEl=document.getElementById('data-row-count');
+  if(countEl) countEl.textContent=`Showing ${filtered.length} of ${allDataRows.length}`;
   renderDataTable(filtered);
+}
+
+function populateVisitDropdown(){
+  const sel=document.getElementById('data-visit-filter');
+  if(!sel) return;
+  const visits=[...new Set(allDataRows.map(r=>r.visit_num).filter(v=>v!=null))].sort((a,b)=>a-b);
+  sel.innerHTML='<option value="">All Visits</option>'+visits.map(v=>`<option value="${v}">V${v}</option>`).join('');
 }
 
 // QUERIES
@@ -907,6 +1041,26 @@ async function loadAudit(){
       <tbody>${rows.slice(0,200).map(r=>`<tr>${keys.map(k=>`<td class="mono">${r[k]??'—'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   }catch(e){tbl.innerHTML=`<div class="empty">${e.message}</div>`;}
 }
+// THEME TOGGLE
+function toggleTheme(){
+  const isLight=document.documentElement.getAttribute('data-theme')==='light';
+  document.documentElement.setAttribute('data-theme', isLight?'dark':'light');
+  if(isLight) document.documentElement.removeAttribute('data-theme');
+  document.getElementById('theme-btn').textContent=isLight?'🌙':'☀️';
+  localStorage.setItem('cdm-theme', isLight?'dark':'light');
+}
+// Restore saved theme
+(function(){
+  const saved=localStorage.getItem('cdm-theme');
+  if(saved==='light'){
+    document.documentElement.setAttribute('data-theme','light');
+    // btn not rendered yet — set after DOM ready
+    document.addEventListener('DOMContentLoaded',()=>{
+      const btn=document.getElementById('theme-btn');
+      if(btn) btn.textContent='☀️';
+    });
+  }
+})();
 </script>
 </body>
 </html>
