@@ -324,6 +324,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',
     </div>
   </div>
 
+  <!-- BREADCRUMB -->
+  <div id="breadcrumb-bar" style="height:32px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.5px;flex-shrink:0;overflow-x:auto;white-space:nowrap;">
+    <span id="bc-home" style="cursor:pointer;color:var(--accent);" onclick="navigate('study')">HOME</span>
+    <span id="bc-sep1" style="display:none;">›</span>
+    <span id="bc-study-crumb" style="display:none;cursor:pointer;" onclick="navigate('subjects')"></span>
+    <span id="bc-sep2" style="display:none;">›</span>
+    <span id="bc-subj-crumb" style="display:none;cursor:pointer;" onclick="navigate('visits')"></span>
+    <span id="bc-sep3" style="display:none;">›</span>
+    <span id="bc-visit-crumb" style="display:none;color:var(--text2);"></span>
+  </div>
+
   <div class="app-body">
     <!-- STEP NAV -->
     <div class="step-nav" id="step-nav">
@@ -623,6 +634,7 @@ async function doLogin(){
     document.getElementById('app').classList.add('show');
     loadStudies();
     loadTodayVisits();
+    navigate(ROUTES.study);
   } catch(e){err.textContent=e.message;err.style.display='block';}
 }
 document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -632,45 +644,185 @@ function doLogout(){
   token='';currentUser={};currentStudy='';currentSubject=null;currentVisit=null;allStudies=[];allTodayVisits=[];
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app').classList.remove('show');
-  goStep(1);
+  history.replaceState(null, '', location.pathname);
 }
 
-// ─ STEPS ─
-function goStep(n){
-  if(n>1 && !currentStudy) return;
-  if(n>2 && !currentSubject) return;
-  if(n>3 && !currentVisit) return;
-  // Hide today panel
-  document.getElementById('step-today').classList.remove('active');
+function updateBreadcrumb(page){
+  const show = (id, text, visible) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(text !== undefined) el.textContent = text;
+    el.style.display = visible ? '' : 'none';
+  };
+
+  const hasStudy = !!currentStudy;
+  const hasSubj = !!currentSubject;
+  const hasVisit = !!currentVisit;
+
+  if(page === ROUTES.today){
+    show('bc-sep1', undefined, false);
+    show('bc-study-crumb', undefined, false);
+    show('bc-sep2', undefined, false);
+    show('bc-subj-crumb', undefined, false);
+    show('bc-sep3', undefined, false);
+    show('bc-visit-crumb', undefined, false);
+    document.getElementById('bc-home').textContent = 'TODAY\'S VISITS';
+    return;
+  }
+
+  document.getElementById('bc-home').textContent = 'HOME';
+
+  if(page === ROUTES.study || !hasStudy){
+    show('bc-sep1', undefined, false);
+    show('bc-study-crumb', undefined, false);
+    show('bc-sep2', undefined, false);
+    show('bc-subj-crumb', undefined, false);
+    show('bc-sep3', undefined, false);
+    show('bc-visit-crumb', undefined, false);
+  } else if(page === ROUTES.subjects){
+    show('bc-sep1', undefined, true);
+    show('bc-study-crumb', currentStudy, true);
+    show('bc-sep2', undefined, false);
+    show('bc-subj-crumb', undefined, false);
+    show('bc-sep3', undefined, false);
+    show('bc-visit-crumb', undefined, false);
+    document.getElementById('bc-study-crumb').style.color = 'var(--text2)';
+    document.getElementById('bc-study-crumb').style.cursor = 'default';
+    document.getElementById('bc-study-crumb').onclick = null;
+  } else if(page === ROUTES.visits && hasStudy && hasSubj){
+    show('bc-sep1', undefined, true);
+    show('bc-study-crumb', currentStudy, true);
+    show('bc-sep2', undefined, true);
+    show('bc-subj-crumb', currentSubject.usubjid, true);
+    show('bc-sep3', undefined, false);
+    show('bc-visit-crumb', undefined, false);
+    document.getElementById('bc-study-crumb').style.color = 'var(--accent)';
+    document.getElementById('bc-study-crumb').style.cursor = 'pointer';
+    document.getElementById('bc-study-crumb').onclick = ()=>navigate('subjects');
+    document.getElementById('bc-subj-crumb').style.color = 'var(--text2)';
+    document.getElementById('bc-subj-crumb').style.cursor = 'default';
+    document.getElementById('bc-subj-crumb').onclick = null;
+  } else if(page === ROUTES.crf && hasStudy && hasSubj && hasVisit){
+    show('bc-sep1', undefined, true);
+    show('bc-study-crumb', currentStudy, true);
+    show('bc-sep2', undefined, true);
+    show('bc-subj-crumb', currentSubject.usubjid, true);
+    show('bc-sep3', undefined, true);
+    show('bc-visit-crumb', `V${currentVisit.visit_num} — ${currentVisit.visit_name}`, true);
+    document.getElementById('bc-study-crumb').style.color = 'var(--accent)';
+    document.getElementById('bc-study-crumb').style.cursor = 'pointer';
+    document.getElementById('bc-study-crumb').onclick = ()=>navigate('subjects');
+    document.getElementById('bc-subj-crumb').style.color = 'var(--accent)';
+    document.getElementById('bc-subj-crumb').style.cursor = 'pointer';
+    document.getElementById('bc-subj-crumb').onclick = ()=>navigate('visits');
+  }
+}
+
+
+const ROUTES = {
+  today: 'today',
+  study: 'study',
+  subjects: 'subjects',
+  visits: 'visits',
+  crf: 'crf'
+};
+
+function navigate(hash){
+  // Only push if different from current
+  if(location.hash !== '#' + hash){
+    history.pushState(null, '', '#' + hash);
+  }
+  applyRoute(hash);
+}
+
+function applyRoute(hash){
+  // Guard: must be logged in to navigate past login
+  if(!token && hash !== ''){
+    return;
+  }
+
+  const parts = hash.split('/');
+  const page = parts[0];
+
+  // Hide all panels, reset save bar
+  ['today','1','2','3','4'].forEach(id=>{
+    const el = document.getElementById('step-'+id);
+    if(el) el.classList.remove('active');
+  });
+  document.getElementById('save-bar').style.display = 'none';
+  document.getElementById('main-scroll').scrollTop = 0;
+
+  // Reset sidebar states
   document.getElementById('snav-today').classList.remove('today-tab');
   document.getElementById('snav-today').style.backgroundColor = '';
-
   [1,2,3,4].forEach(i=>{
-    document.getElementById('step-'+i).classList.toggle('active',i===n);
-    const nav=document.getElementById('snav-'+i);
+    const nav = document.getElementById('snav-'+i);
     nav.classList.remove('active','done','locked');
-    if(i<n) nav.classList.add('done');
-    else if(i===n) nav.classList.add('active');
-    else nav.classList.add('locked');
   });
-  document.getElementById('save-bar').style.display = n===4 ? 'flex' : 'none';
-  document.getElementById('main-scroll').scrollTop=0;
-  if(n===2) loadSubjects();
-  if(n===3) loadVisits();
-  if(n===4) initCRF();
+
+  if(page === ROUTES.today){
+    document.getElementById('step-today').classList.add('active');
+    document.getElementById('snav-today').classList.add('today-tab');
+    [1,2,3,4].forEach(i=>document.getElementById('snav-'+i).classList.add('locked'));
+    renderTodayVisits();
+    updateBreadcrumb(ROUTES.today);
+
+  } else if(page === ROUTES.study || page === ''){
+    document.getElementById('step-1').classList.add('active');
+    document.getElementById('snav-1').classList.add('active');
+    [2,3,4].forEach(i=>document.getElementById('snav-'+i).classList.add('locked'));
+    updateBreadcrumb(ROUTES.study);
+
+  } else if(page === ROUTES.subjects){
+    if(!currentStudy){ navigate(ROUTES.study); return; }
+    document.getElementById('step-2').classList.add('active');
+    document.getElementById('snav-1').classList.add('done');
+    document.getElementById('snav-2').classList.add('active');
+    [3,4].forEach(i=>document.getElementById('snav-'+i).classList.add('locked'));
+    loadSubjects();
+    updateBreadcrumb(ROUTES.subjects);
+
+  } else if(page === ROUTES.visits){
+    if(!currentStudy){ navigate(ROUTES.study); return; }
+    if(!currentSubject){ navigate(ROUTES.subjects); return; }
+    document.getElementById('step-3').classList.add('active');
+    [1,2].forEach(i=>document.getElementById('snav-'+i).classList.add('done'));
+    document.getElementById('snav-3').classList.add('active');
+    document.getElementById('snav-4').classList.add('locked');
+    loadVisits();
+    updateBreadcrumb(ROUTES.visits);
+
+  } else if(page === ROUTES.crf){
+    if(!currentStudy){ navigate(ROUTES.study); return; }
+    if(!currentSubject){ navigate(ROUTES.subjects); return; }
+    if(!currentVisit){ navigate(ROUTES.visits); return; }
+    document.getElementById('step-4').classList.add('active');
+    document.getElementById('save-bar').style.display = 'flex';
+    [1,2,3].forEach(i=>document.getElementById('snav-'+i).classList.add('done'));
+    document.getElementById('snav-4').classList.add('active');
+    initCRF();
+    updateBreadcrumb(ROUTES.crf);
+
+  } else {
+    // Unknown route → go to study
+    navigate(ROUTES.study);
+  }
+}
+
+// Listen to browser back/forward
+window.addEventListener('hashchange', ()=>{
+  const hash = location.hash.replace(/^#/, '');
+  applyRoute(hash);
+});
+
+// ─ STEPS (kept as thin wrappers that navigate) ─
+function goStep(n){
+  const map = {1: ROUTES.study, 2: ROUTES.subjects, 3: ROUTES.visits, 4: ROUTES.crf};
+  navigate(map[n]);
 }
 
 function goToday(){
-  [1,2,3,4].forEach(i=>{
-    document.getElementById('step-'+i).classList.remove('active');
-    document.getElementById('snav-'+i).classList.remove('active','done');
-    document.getElementById('snav-'+i).classList.add('locked');
-  });
-  document.getElementById('step-today').classList.add('active');
-  document.getElementById('save-bar').style.display='none';
-  document.getElementById('main-scroll').scrollTop=0;
-  document.getElementById('snav-today').classList.add('today-tab');
-  renderTodayVisits();
+  navigate(ROUTES.today);
 }
 
 // ─ TODAY'S VISITS ─
@@ -752,7 +904,7 @@ function jumpToVisit(studyId, studyTitle, subject, visit){
   document.getElementById('tb-study').textContent = studyId;
   document.getElementById('step2-study-label').textContent = studyTitle;
   document.getElementById('step3-subject-label').textContent = `${subject.usubjid} · ${subject.site_id} · ${subject.sex} · ${subject.status}`;
-  goStep(4);
+  navigate(ROUTES.crf);
 }
 
 // ─ STEP 1: STUDIES ─
@@ -781,7 +933,7 @@ function selectStudy(id, title){
   document.getElementById('step2-study-label').textContent=title;
   document.querySelectorAll('.study-card').forEach(c=>c.classList.remove('selected'));
   event.currentTarget.classList.add('selected');
-  setTimeout(()=>goStep(2),300);
+  setTimeout(()=>navigate(ROUTES.subjects),300);
 }
 
 // ─ STEP 2: SUBJECTS ─
@@ -822,7 +974,7 @@ function filterSubjects(){
 function selectSubject(s){
   currentSubject=s;
   document.getElementById('step3-subject-label').textContent=`${s.usubjid} · ${s.site_id} · ${s.sex} · ${s.status}`;
-  goStep(3);
+  navigate(ROUTES.visits);
 }
 
 // ─ STEP 3: VISITS ─
@@ -865,7 +1017,7 @@ function renderVisits(){
 
 function selectVisit(v){
   currentVisit=v;
-  goStep(4);
+  navigate(ROUTES.crf);
 }
 
 // ─ STEP 4: CRF ─
