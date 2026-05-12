@@ -507,12 +507,12 @@ def submit_crf_dm(study_id: str, usubjid: str, crf: CRFDemographics, current_use
     ts = datetime.utcnow().isoformat() + "Z"
     existing = db_exec(f"SELECT id FROM crf_dm WHERE usubjid={PH} AND study_id={PH}", (usubjid, study_id), fetchone=True)
     if existing:
-        db_exec(f"UPDATE crf_dm SET age={PH},sex={PH},race={PH},ethnic={PH},country={PH},rfstdtc={PH},rfendtc={PH},dmdtc={PH},filled_by={PH},filled_at={PH} WHERE usubjid={PH} AND study_id={PH}",
+        db_exec(f"UPDATE crf_dm SET age={PH},sex={PH},race={PH},ethnic={PH},country={PH},rfstdtc={PH},rfendtc={PH},dmdtc={PH},created_by={PH},created_at={PH} WHERE usubjid={PH} AND study_id={PH}",
             (crf.age, crf.sex, crf.race, crf.ethnic, crf.country, crf.rfstdtc, crf.rfendtc, crf.dmdtc, current_user["user_id"], ts, usubjid, study_id), commit=True)
         action = "CRF_DM_UPDATE"
     else:
-        db_exec(f"INSERT INTO crf_dm (usubjid,study_id,site_id,age,sex,race,ethnic,country,rfstdtc,rfendtc,dmdtc,filled_by,filled_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
-            (usubjid, study_id, site_id, crf.age, crf.sex, crf.race, crf.ethnic, crf.country, crf.rfstdtc, crf.rfendtc, crf.dmdtc, current_user["user_id"], ts), commit=True)
+        db_exec(f"INSERT INTO crf_dm (usubjid,study_id,age,sex,race,ethnic,country,rfstdtc,rfendtc,dmdtc,created_by,created_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
+            (usubjid, study_id, crf.age, crf.sex, crf.race, crf.ethnic, crf.country, crf.rfstdtc, crf.rfendtc, crf.dmdtc, current_user["user_id"], ts), commit=True)
         action = "CRF_DM_SUBMIT"
     log_audit(study_id, current_user["user_id"], action, "crf_dm", usubjid)
     return {"message": "Demographics CRF saved", "usubjid": usubjid, "study_id": study_id, **crf.dict(), "filled_by": current_user["user_id"], "filled_at": ts}
@@ -533,11 +533,11 @@ def submit_crf_vs(study_id: str, usubjid: str, crf: CRFVitalSigns, current_user:
     ts = datetime.utcnow().isoformat() + "Z"
     existing = db_exec(f"SELECT id FROM crf_vs WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}", (usubjid, study_id, crf.visit_num), fetchone=True)
     if existing:
-        db_exec(f"UPDATE crf_vs SET vsdtc={PH},sysbp={PH},diabp={PH},pulse={PH},temp={PH},weight={PH},height={PH},resp_rate={PH},filled_by={PH},filled_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
+        db_exec(f"UPDATE crf_vs SET vsdtc={PH},sysbp={PH},diabp={PH},pulse={PH},temp={PH},weight={PH},height={PH},resp_rate={PH},created_by={PH},created_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
             (crf.vsdtc, crf.sysbp, crf.diabp, crf.pulse, crf.temp, crf.weight, crf.height, crf.resp_rate, current_user["user_id"], ts, usubjid, study_id, crf.visit_num), commit=True)
     else:
-        db_exec(f"INSERT INTO crf_vs (usubjid,study_id,site_id,visit_num,visit_name,vsdtc,sysbp,diabp,pulse,temp,weight,height,resp_rate,filled_by,filled_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
-            (usubjid, study_id, site_id, crf.visit_num, crf.visit_name, crf.vsdtc, crf.sysbp, crf.diabp, crf.pulse, crf.temp, crf.weight, crf.height, crf.resp_rate, current_user["user_id"], ts), commit=True)
+        db_exec(f"INSERT INTO crf_vs (usubjid,study_id,visit_num,visit_name,vsdtc,sysbp,diabp,pulse,temp,weight,height,resp_rate,created_by,created_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
+            (usubjid, study_id, crf.visit_num, crf.visit_name, crf.vsdtc, crf.sysbp, crf.diabp, crf.pulse, crf.temp, crf.weight, crf.height, crf.resp_rate, current_user["user_id"], ts), commit=True)
     log_audit(study_id, current_user["user_id"], "CRF_VS_SUBMIT", "crf_vs", f"{usubjid}-V{crf.visit_num}")
     flags = validate_vs(study_id, usubjid, crf.visit_num, crf.dict(), current_user["user_id"])
     return {"message": "Vital Signs CRF saved", "usubjid": usubjid, "study_id": study_id, "visit_num": crf.visit_num, **crf.dict(), "filled_by": current_user["user_id"], "filled_at": ts, "validation_flags": flags}
@@ -555,11 +555,11 @@ def submit_crf_lb(study_id: str, usubjid: str, crf: CRFLaboratory, current_user:
     ts = datetime.utcnow().isoformat() + "Z"
     existing = db_exec(f"SELECT id FROM crf_lb WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}", (usubjid, study_id, crf.visit_num), fetchone=True)
     if existing:
-        db_exec(f"UPDATE crf_lb SET lbdtc={PH},hgb={PH},wbc={PH},plt={PH},alt={PH},ast={PH},creatinine={PH},glucose={PH},filled_by={PH},filled_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
+        db_exec(f"UPDATE crf_lb SET lbdtc={PH},hgb={PH},wbc={PH},plt={PH},alt={PH},ast={PH},creatinine={PH},glucose={PH},created_by={PH},created_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
             (crf.lbdtc, crf.hgb, crf.wbc, crf.plt, crf.alt, crf.ast, crf.creatinine, crf.glucose, current_user["user_id"], ts, usubjid, study_id, crf.visit_num), commit=True)
     else:
-        db_exec(f"INSERT INTO crf_lb (usubjid,study_id,site_id,visit_num,visit_name,lbdtc,hgb,wbc,plt,alt,ast,creatinine,glucose,filled_by,filled_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
-            (usubjid, study_id, site_id, crf.visit_num, crf.visit_name, crf.lbdtc, crf.hgb, crf.wbc, crf.plt, crf.alt, crf.ast, crf.creatinine, crf.glucose, current_user["user_id"], ts), commit=True)
+        db_exec(f"INSERT INTO crf_lb (usubjid,study_id,visit_num,visit_name,lbdtc,hgb,wbc,plt,alt,ast,creatinine,glucose,created_by,created_at) VALUES ({PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH},{PH})",
+            (usubjid, study_id, crf.visit_num, crf.visit_name, crf.lbdtc, crf.hgb, crf.wbc, crf.plt, crf.alt, crf.ast, crf.creatinine, crf.glucose, current_user["user_id"], ts), commit=True)
     log_audit(study_id, current_user["user_id"], "CRF_LB_SUBMIT", "crf_lb", f"{usubjid}-V{crf.visit_num}")
     flags = validate_lb(study_id, usubjid, crf.visit_num, crf.dict(), current_user["user_id"])
     return {"message": "Laboratory CRF saved", "usubjid": usubjid, "study_id": study_id, "visit_num": crf.visit_num, **crf.dict(), "filled_by": current_user["user_id"], "filled_at": ts, "validation_flags": flags}
@@ -634,7 +634,7 @@ def edit_crf_vs(study_id: str, usubjid: str, visit_num: int, crf: CRFVitalSigns,
         old = existing.get(field); new = getattr(crf, field, None)
         if old != new:
             log_audit(study_id, current_user["user_id"], "CRF_VS_EDIT", "crf_vs", f"{usubjid}-V{visit_num}", field, str(old), str(new))
-    db_exec(f"UPDATE crf_vs SET vsdtc={PH},sysbp={PH},diabp={PH},pulse={PH},temp={PH},weight={PH},height={PH},resp_rate={PH},filled_by={PH},filled_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
+    db_exec(f"UPDATE crf_vs SET vsdtc={PH},sysbp={PH},diabp={PH},pulse={PH},temp={PH},weight={PH},height={PH},resp_rate={PH},created_by={PH},created_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
         (crf.vsdtc, crf.sysbp, crf.diabp, crf.pulse, crf.temp, crf.weight, crf.height, crf.resp_rate, current_user["user_id"], ts, usubjid, study_id, visit_num), commit=True)
     flags = validate_vs(study_id, usubjid, visit_num, crf.dict(), current_user["user_id"])
     return {"message": "VS record updated", "validation_flags": flags}
@@ -649,7 +649,7 @@ def edit_crf_lb(study_id: str, usubjid: str, visit_num: int, crf: CRFLaboratory,
         old = existing.get(field); new = getattr(crf, field, None)
         if old != new:
             log_audit(study_id, current_user["user_id"], "CRF_LB_EDIT", "crf_lb", f"{usubjid}-V{visit_num}", field, str(old), str(new))
-    db_exec(f"UPDATE crf_lb SET lbdtc={PH},hgb={PH},wbc={PH},plt={PH},alt={PH},ast={PH},creatinine={PH},glucose={PH},filled_by={PH},filled_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
+    db_exec(f"UPDATE crf_lb SET lbdtc={PH},hgb={PH},wbc={PH},plt={PH},alt={PH},ast={PH},creatinine={PH},glucose={PH},created_by={PH},created_at={PH} WHERE usubjid={PH} AND study_id={PH} AND visit_num={PH}",
         (crf.lbdtc, crf.hgb, crf.wbc, crf.plt, crf.alt, crf.ast, crf.creatinine, crf.glucose, current_user["user_id"], ts, usubjid, study_id, visit_num), commit=True)
     flags = validate_lb(study_id, usubjid, visit_num, crf.dict(), current_user["user_id"])
     return {"message": "LB record updated", "validation_flags": flags}
@@ -664,7 +664,7 @@ def edit_crf_dm(study_id: str, usubjid: str, crf: CRFDemographics, current_user:
         old = existing.get(field); new = getattr(crf, field, None)
         if str(old) != str(new):
             log_audit(study_id, current_user["user_id"], "CRF_DM_EDIT", "crf_dm", usubjid, field, str(old), str(new))
-    db_exec(f"UPDATE crf_dm SET age={PH},sex={PH},race={PH},ethnic={PH},country={PH},rfstdtc={PH},rfendtc={PH},dmdtc={PH},filled_by={PH},filled_at={PH} WHERE usubjid={PH} AND study_id={PH}",
+    db_exec(f"UPDATE crf_dm SET age={PH},sex={PH},race={PH},ethnic={PH},country={PH},rfstdtc={PH},rfendtc={PH},dmdtc={PH},created_by={PH},created_at={PH} WHERE usubjid={PH} AND study_id={PH}",
         (crf.age, crf.sex, crf.race, crf.ethnic, crf.country, crf.rfstdtc, crf.rfendtc, crf.dmdtc, current_user["user_id"], ts, usubjid, study_id), commit=True)
     return {"message": "DM record updated"}
 
@@ -780,14 +780,6 @@ def get_audit(study_id: str, limit: int = Query(100, ge=1, le=500), current_user
 @app.get("/health", tags=["system"], summary="Health check")
 def health():
     return {"status": "healthy", "version": "2.0.0", "phase": "F", "timestamp": datetime.utcnow().isoformat()+"Z"}
-
-@app.get("/studies/{study_id}/ae-severity-summary", tags=["system"], summary="AE severity counts for dashboard")
-def ae_severity_summary(study_id: str, current_user: dict = Depends(get_current_user)):
-    rows = db_exec(
-        f"SELECT aesev, COUNT(*) as count FROM crf_ae WHERE study_id={PH} GROUP BY aesev",
-        (study_id,), fetchall=True
-    ) or []
-    return rows
 
 @app.get("/studies/{study_id}/stats", tags=["system"], summary="Study statistics")
 def study_stats(study_id: str, current_user: dict = Depends(get_current_user)):
