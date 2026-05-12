@@ -867,16 +867,36 @@ def ae_severity_summary(study_id: str, current_user: dict = Depends(get_current_
 def root():
     return {"name": "Mini EDC Phase F REST API", "version": "2.0.0", "phase": "F", "docs": "/docs", "health": "/health"}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# ── Portal shortcuts ──────────────────────────────────────────
+
+@app.get("/crc", include_in_schema=False)
+def serve_crc():
+    return FileResponse("/app/static/crc_portal.html")
+
+@app.get("/cdm", include_in_schema=False)
+def serve_cdm():
+    return FileResponse("/app/static/cdm_portal.html")
+
+# ── Debug routes ──────────────────────────────────────────────
 
 @app.get("/debug-path", include_in_schema=False)
 def debug_path():
-    import os
     return {
         "cwd": os.getcwd(),
         "static_exists": os.path.exists("static"),
         "app_static_exists": os.path.exists("/app/static"),
-        "cwd_files": os.listdir(os.getcwd())
+        "cwd_files": os.listdir(os.getcwd()),
     }
+
+@app.get("/debug-static", include_in_schema=False)
+def debug_static():
+    static_path = "/app/static"
+    if os.path.exists(static_path):
+        return {"static_files": os.listdir(static_path)}
+    return {"error": f"{static_path} does not exist"}
+
+# ─────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
