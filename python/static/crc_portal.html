@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SARA · CRC Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07090d;
+  --surface:#0e1117;
+  --surface2:#141a24;
+  --surface3:#1a2233;
+  --border:#1f2d3d;
+  --border2:#2a3d52;
+  --accent:#00e5c3;
+  --accent-dim:rgba(0,229,195,.1);
+  --accent-glow:rgba(0,229,195,.2);
+  --green:#22d984;
+  --yellow:#f5c842;
+  --red:#ff4466;
+  --blue:#4da6ff;
+  --text:#d4e4f4;
+  --text2:#7a8fa3;
+  --text3:#3a5066;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Syne',sans-serif;
+  --r:8px;
+  --step:0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;overflow-x:hidden;}
+
+/* ─ LOGIN ─ */
+#login-screen{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+#login-screen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(0,229,195,.07),transparent);}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;width:380px;position:relative;}
+.login-brand{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);letter-spacing:3px;margin-bottom:2px;}
+.login-role{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:3px;margin-bottom:28px;}
+.login-field{margin-bottom:14px;}
+.login-field label{display:block;font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:5px;}
+.login-field input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 12px;border-radius:6px;outline:none;}
+.login-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+.login-btn{width:100%;padding:12px;background:var(--accent);color:#07090d;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:2px;border:none;border-radius:6px;cursor:pointer;margin-top:6px;transition:opacity .2s;}
+.login-btn:hover{opacity:.85;}
+.login-err{font-family:var(--mono);font-size:11px;color:var(--red);background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);border-radius:4px;padding:8px 10px;margin-bottom:10px;display:none;}
+
+/* ─ APP SHELL ─ */
+#app{display:none;height:100vh;flex-direction:column;}
+#app.show{display:flex;}
+
+/* ─ TOPBAR ─ */
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0;position:sticky;top:0;z-index:100;}
+.topbar-brand{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);letter-spacing:2px;}
+.topbar-sep{width:1px;height:18px;background:var(--border);}
+.topbar-label{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px;}
+.topbar-study{font-family:var(--mono);font-size:11px;color:var(--text2);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.user-chip{font-family:var(--mono);font-size:10px;color:var(--accent);padding:4px 10px;border:1px solid rgba(0,229,195,.25);border-radius:4px;background:var(--accent-dim);}
+.btn-logout{font-family:var(--mono);font-size:10px;color:var(--text3);padding:4px 10px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer;transition:all .2s;}
+.btn-logout:hover{color:var(--red);border-color:rgba(255,68,102,.4);}
+
+/* ─ MAIN LAYOUT ─ */
+.app-body{flex:1;display:flex;overflow:hidden;}
+
+/* ─ STEP SIDEBAR ─ */
+.step-nav{width:200px;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.step-item{display:flex;align-items:center;gap:12px;padding:12px 20px;cursor:pointer;transition:all .15s;border-left:3px solid transparent;position:relative;}
+.step-item:hover{background:var(--surface2);}
+.step-item.active{background:var(--accent-dim);border-left-color:var(--accent);}
+.step-item.done{border-left-color:var(--green);}
+.step-num{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--text3);flex-shrink:0;transition:all .2s;}
+.step-item.active .step-num{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.step-item.done .step-num{border-color:var(--green);color:var(--green);background:rgba(34,217,132,.1);}
+.step-item.locked{opacity:.35;cursor:not-allowed;}
+.step-text{font-family:var(--mono);font-size:11px;color:var(--text2);}
+.step-item.active .step-text{color:var(--accent);}
+.step-item.done .step-text{color:var(--green);}
+.step-connector{width:1.5px;height:20px;background:var(--border);margin:0 auto 0 31px;}
+
+/* ─ MAIN CONTENT ─ */
+.main{flex:1;overflow-y:auto;padding:28px 32px;}
+
+/* ─ STEP PANELS ─ */
+.step-panel{display:none;}
+.step-panel.active{display:block;}
+
+/* ─ STUDY SELECT ─ */
+.study-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:8px;}
+.study-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.study-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent);opacity:0;transition:opacity .2s;}
+.study-card:hover{border-color:var(--accent);background:var(--surface2);}
+.study-card:hover::after{opacity:1;}
+.study-card.selected{border-color:var(--accent);background:var(--accent-dim);}
+.study-card.selected::after{opacity:1;}
+.sc-id{font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:6px;letter-spacing:1px;}
+.sc-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;line-height:1.3;}
+.sc-meta{display:flex;gap:10px;flex-wrap:wrap;}
+.sc-tag{font-family:var(--mono);font-size:10px;color:var(--text3);background:var(--surface3);padding:2px 7px;border-radius:3px;}
+
+/* ─ SUBJECT SEARCH ─ */
+.search-wrap{position:relative;margin-bottom:20px;}
+.search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:12px 16px 12px 44px;border-radius:var(--r);outline:none;transition:border-color .2s;}
+.search-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;}
+.subject-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto;}
+.subj-item{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .15s;}
+.subj-item:hover{border-color:var(--accent);background:var(--surface2);}
+.subj-item.selected{border-color:var(--accent);background:var(--accent-dim);}
+.subj-id{font-family:var(--mono);font-size:12px;color:var(--accent);}
+.subj-meta{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.subj-status{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;}
+.subj-status.enrolled{color:var(--accent);background:var(--accent-dim);border:1px solid rgba(0,229,195,.2);}
+.subj-status.completed{color:var(--green);background:rgba(34,217,132,.1);border:1px solid rgba(34,217,132,.2);}
+.subj-status.withdrawn{color:var(--red);background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);}
+
+/* ─ VISIT SELECT ─ */
+.visit-timeline{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+.visit-item{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px 16px;cursor:pointer;transition:all .15s;}
+.visit-item:hover{border-color:var(--accent);}
+.visit-item.selected{border-color:var(--accent);background:var(--accent-dim);}
+.visit-item.completed-v{border-color:rgba(34,217,132,.3);}
+.visit-item.planned-v{opacity:1;}
+.vi-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.vi-dot.done{background:var(--green);}
+.vi-dot.plan{background:var(--border2);}
+.vi-num{font-family:var(--mono);font-size:10px;color:var(--text3);width:50px;flex-shrink:0;}
+.vi-name{font-family:var(--mono);font-size:12px;color:var(--text);flex:1;}
+.vi-date{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.vi-badge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;}
+.vi-badge.done{color:var(--green);background:rgba(34,217,132,.1);}
+.vi-badge.plan{color:var(--yellow);background:rgba(245,200,66,.08);}
+
+/* ─ CRF ENTRY ─ */
+.crf-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.crf-subject-id{font-family:var(--mono);font-size:14px;color:var(--accent);font-weight:700;}
+.crf-visit-badge{font-family:var(--mono);font-size:11px;color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);padding:4px 12px;border-radius:4px;}
+.crf-date-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.crf-date-label{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.crf-date-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 10px;border-radius:4px;outline:none;}
+.crf-date-input:focus{border-color:var(--accent);}
+.btn-today{font-family:var(--mono);font-size:10px;padding:6px 10px;background:var(--accent-dim);color:var(--accent);border:1px solid rgba(0,229,195,.25);border-radius:4px;cursor:pointer;}
+.btn-today:hover{background:var(--accent);color:#07090d;}
+
+.crf-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto;}
+.crf-tab{font-family:var(--mono);font-size:11px;padding:10px 18px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;}
+.crf-tab:hover{color:var(--text2);}
+.crf-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.crf-tab-panel{display:none;}
+.crf-tab-panel.active{display:block;}
+
+.field-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:18px;}
+.field-group{display:flex;flex-direction:column;gap:5px;}
+.field-group label{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;}
+.field-group input,.field-group select,.field-group textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 11px;border-radius:5px;outline:none;transition:border-color .2s;}
+.field-group input:focus,.field-group select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim);}
+.field-group select option{background:var(--surface2);}
+.field-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;}
+.field-section-title{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+
+.save-bar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;gap:12px;z-index:50;}
+.btn-save{font-family:var(--mono);font-size:12px;font-weight:700;padding:11px 28px;background:var(--accent);color:#07090d;border:none;border-radius:6px;cursor:pointer;letter-spacing:1px;transition:opacity .2s;}
+.btn-save:hover{opacity:.85;}
+.btn-secondary{font-family:var(--mono);font-size:11px;padding:11px 18px;background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:all .2s;}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+.save-alert{font-family:var(--mono);font-size:11px;padding:8px 14px;border-radius:4px;display:none;}
+.save-alert.success{background:rgba(34,217,132,.08);border:1px solid rgba(34,217,132,.2);color:var(--green);}
+.save-alert.error{background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);color:var(--red);}
+.save-alert.warn{background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);color:var(--yellow);white-space:pre-line;}
+
+/* ─ AE LIST ─ */
+.ae-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.ae-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.ae-term{font-family:var(--mono);font-size:12px;color:var(--text);}
+.ae-sev{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;}
+.ae-sev.mild{color:var(--green);background:rgba(34,217,132,.1);}
+.ae-sev.moderate{color:var(--yellow);background:rgba(245,200,66,.08);}
+.ae-sev.severe{color:var(--red);background:rgba(255,68,102,.08);}
+
+/* ─ HEADERS ─ */
+.page-heading{margin-bottom:24px;}
+.page-heading h2{font-family:var(--sans);font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.page-heading p{font-family:var(--mono);font-size:11px;color:var(--text3);}
+.section-label{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+
+/* ─ NEXT BUTTON ─ */
+.btn-next{font-family:var(--mono);font-size:11px;font-weight:700;padding:10px 24px;background:var(--accent);color:#07090d;border:none;border-radius:6px;cursor:pointer;letter-spacing:1px;margin-top:16px;transition:opacity .2s;}
+.btn-next:hover{opacity:.85;}
+.btn-back{font-family:var(--mono);font-size:11px;padding:10px 18px;background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:6px;cursor:pointer;margin-top:16px;transition:all .2s;}
+.btn-back:hover{border-color:var(--text);color:var(--text);}
+
+/* ─ SCROLLBAR ─ */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* ─ EMPTY / LOADING ─ */
+.empty{text-align:center;padding:40px;color:var(--text3);font-family:var(--mono);font-size:12px;}
+.loading{text-align:center;padding:30px;color:var(--text2);font-family:var(--mono);font-size:12px;}
+.loading::after{content:'...';animation:dots 1s infinite;}
+@keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
+
+.info-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:6px;}
+.info-chip{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.info-chip span{color:var(--text2);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">SARA·EDC</div>
+    <div class="login-role">CRC DATA ENTRY PORTAL</div>
+    <div class="login-field"><label>User ID</label><input id="l-user" type="text" value="ADMIN" autocomplete="username"/></div>
+    <div class="login-field"><label>Password</label><input id="l-pass" type="password" value="Admin@1234" autocomplete="current-password"/></div>
+    <div class="login-err" id="l-err"></div>
+    <button class="login-btn" onclick="doLogin()">SIGN IN →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-brand">SARA·EDC</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-label">CRC PORTAL</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-study" id="tb-study">No study selected</div>
+    <div class="topbar-right">
+      <div class="user-chip" id="tb-user">—</div>
+      <button class="btn-logout" onclick="doLogout()">LOGOUT</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- STEP NAV -->
+    <div class="step-nav">
+      <div class="step-item active" id="snav-1" onclick="goStep(1)">
+        <div class="step-num">1</div>
+        <div class="step-text">SELECT STUDY</div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item locked" id="snav-2" onclick="goStep(2)">
+        <div class="step-num">2</div>
+        <div class="step-text">SELECT SUBJECT</div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item locked" id="snav-3" onclick="goStep(3)">
+        <div class="step-num">3</div>
+        <div class="step-text">SELECT VISIT</div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item locked" id="snav-4" onclick="goStep(4)">
+        <div class="step-num">4</div>
+        <div class="step-text">ENTER CRF</div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main" id="main-scroll">
+
+      <!-- STEP 1: STUDY -->
+      <div class="step-panel active" id="step-1">
+        <div class="page-heading">
+          <h2>Select Study</h2>
+          <p>Choose the study you are entering data for</p>
+        </div>
+        <div class="section-label">Available Studies</div>
+        <div class="study-grid" id="study-grid"><div class="loading">Loading</div></div>
+      </div>
+
+      <!-- STEP 2: SUBJECT -->
+      <div class="step-panel" id="step-2">
+        <div class="page-heading">
+          <h2>Select Subject</h2>
+          <p id="step2-study-label">—</p>
+        </div>
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="subj-search" placeholder="Search by subject ID, site, sex..." oninput="filterSubjects()"/>
+        </div>
+        <div class="subject-list" id="subject-list"><div class="loading">Loading</div></div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="btn-back" onclick="goStep(1)">← BACK</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: VISIT -->
+      <div class="step-panel" id="step-3">
+        <div class="page-heading">
+          <h2>Select Visit</h2>
+          <p id="step3-subject-label">—</p>
+        </div>
+        <div class="section-label">VISIT SCHEDULE</div>
+        <div class="visit-timeline" id="visit-timeline"><div class="loading">Loading</div></div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="btn-back" onclick="goStep(2)">← BACK</button>
+        </div>
+      </div>
+
+      <!-- STEP 4: CRF ENTRY -->
+      <div class="step-panel" id="step-4">
+        <div class="crf-header">
+          <div>
+            <div class="crf-subject-id" id="crf-subj-display">—</div>
+            <div class="info-row" style="margin-top:6px;" id="crf-subj-meta"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+            <div class="crf-visit-badge" id="crf-visit-display">—</div>
+            <div class="crf-date-row">
+              <div class="crf-date-label">VISIT DATE</div>
+              <input type="date" class="crf-date-input" id="crf-visit-date"/>
+              <button class="btn-today" onclick="setToday()">TODAY</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="save-alert" id="crf-alert"></div>
+
+        <!-- CRF TABS — DM hidden, only VS/LB/AE/EX/CM -->
+        <div class="crf-tabs" id="crf-tabs">
+          <div class="crf-tab active" onclick="showCRFTab('vs')">VITAL SIGNS</div>
+          <div class="crf-tab" onclick="showCRFTab('lb')">LABORATORY</div>
+          <div class="crf-tab" onclick="showCRFTab('ae')">ADVERSE EVENTS</div>
+          <div class="crf-tab" onclick="showCRFTab('ex')">EXPOSURE</div>
+          <div class="crf-tab" onclick="showCRFTab('cm')">MEDICATIONS</div>
+        </div>
+
+        <!-- VS -->
+        <div class="crf-tab-panel active" id="ctab-vs">
+          <div class="field-section">
+            <div class="field-section-title">Vital Signs</div>
+            <div class="field-grid">
+              <div class="field-group"><label>Systolic BP (mmHg)</label><input type="number" step="0.1" id="vs-sysbp" placeholder="e.g. 120"/></div>
+              <div class="field-group"><label>Diastolic BP (mmHg)</label><input type="number" step="0.1" id="vs-diabp" placeholder="e.g. 80"/></div>
+              <div class="field-group"><label>Pulse (bpm)</label><input type="number" step="0.1" id="vs-pulse" placeholder="e.g. 72"/></div>
+              <div class="field-group"><label>Temperature (°C)</label><input type="number" step="0.1" id="vs-temp" placeholder="e.g. 36.8"/></div>
+              <div class="field-group"><label>Weight (kg)</label><input type="number" step="0.1" id="vs-weight" placeholder="e.g. 70"/></div>
+              <div class="field-group"><label>Height (cm)</label><input type="number" step="0.1" id="vs-height" placeholder="e.g. 170"/></div>
+              <div class="field-group"><label>Resp. Rate (/min)</label><input type="number" step="0.1" id="vs-resp" placeholder="e.g. 16"/></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LB -->
+        <div class="crf-tab-panel" id="ctab-lb">
+          <div class="field-section">
+            <div class="field-section-title">Laboratory Values</div>
+            <div class="field-grid">
+              <div class="field-group"><label>Hemoglobin (g/dL)</label><input type="number" step="0.1" id="lb-hgb" placeholder="e.g. 14"/></div>
+              <div class="field-group"><label>WBC (K/uL)</label><input type="number" step="0.1" id="lb-wbc" placeholder="e.g. 7"/></div>
+              <div class="field-group"><label>Platelets (K/uL)</label><input type="number" id="lb-plt" placeholder="e.g. 250"/></div>
+              <div class="field-group"><label>ALT (U/L)</label><input type="number" step="0.1" id="lb-alt" placeholder="e.g. 25"/></div>
+              <div class="field-group"><label>AST (U/L)</label><input type="number" step="0.1" id="lb-ast" placeholder="e.g. 22"/></div>
+              <div class="field-group"><label>Creatinine (mg/dL)</label><input type="number" step="0.01" id="lb-creat" placeholder="e.g. 0.9"/></div>
+              <div class="field-group"><label>Glucose (mg/dL)</label><input type="number" step="0.1" id="lb-glucose" placeholder="e.g. 95"/></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AE -->
+        <div class="crf-tab-panel" id="ctab-ae">
+          <div class="field-section">
+            <div class="field-section-title">New Adverse Event</div>
+            <div class="field-grid">
+              <div class="field-group" style="grid-column:span 2"><label>AE Term *</label><input type="text" id="ae-term" placeholder="e.g. Headache"/></div>
+              <div class="field-group"><label>Decoded Term</label><input type="text" id="ae-decod" placeholder="MedDRA term"/></div>
+              <div class="field-group"><label>Body System</label><input type="text" id="ae-bodsys" placeholder="e.g. Nervous system"/></div>
+              <div class="field-group"><label>Start Date *</label><input type="date" id="ae-start"/></div>
+              <div class="field-group"><label>End Date</label><input type="date" id="ae-end"/></div>
+              <div class="field-group"><label>Severity *</label>
+                <select id="ae-sev"><option value="">Select...</option><option>MILD</option><option>MODERATE</option><option>SEVERE</option></select>
+              </div>
+              <div class="field-group"><label>Serious? *</label>
+                <select id="ae-ser"><option value="">Select...</option><option value="Y">Yes</option><option value="N">No</option></select>
+              </div>
+              <div class="field-group"><label>Relationship</label>
+                <select id="ae-rel"><option value="">Select...</option><option>RELATED</option><option>PROBABLY RELATED</option><option>POSSIBLY RELATED</option><option>UNLIKELY RELATED</option><option>NOT RELATED</option></select>
+              </div>
+              <div class="field-group"><label>Outcome</label>
+                <select id="ae-out"><option value="">Select...</option><option>RECOVERED</option><option>ONGOING</option><option>FATAL</option><option>UNKNOWN</option></select>
+              </div>
+              <div class="field-group"><label>Fatal?</label>
+                <select id="ae-death"><option value="N">No</option><option value="Y">Yes</option></select>
+              </div>
+            </div>
+          </div>
+          <div class="section-label" style="margin-top:8px;">Existing AEs for this Subject</div>
+          <div class="ae-list" id="ae-list"><div class="empty">No AEs recorded</div></div>
+        </div>
+
+        <!-- EX -->
+        <div class="crf-tab-panel" id="ctab-ex">
+          <div class="field-section">
+            <div class="field-section-title">Drug Exposure</div>
+            <div class="field-grid">
+              <div class="field-group" style="grid-column:span 2"><label>Treatment *</label><input type="text" id="ex-trt" placeholder="Study drug name"/></div>
+              <div class="field-group"><label>Dose</label><input type="number" step="0.1" id="ex-dose" placeholder="e.g. 100"/></div>
+              <div class="field-group"><label>Unit</label><input type="text" id="ex-dosu" placeholder="e.g. mg"/></div>
+              <div class="field-group"><label>Frequency</label>
+                <select id="ex-freq"><option value="">Select...</option><option>QD</option><option>BID</option><option>TID</option><option>QID</option><option>Q3W</option><option>Q4W</option></select>
+              </div>
+              <div class="field-group"><label>Route</label>
+                <select id="ex-route"><option value="">Select...</option><option>ORAL</option><option>INTRAVENOUS</option><option>SUBCUTANEOUS</option><option>INTRAMUSCULAR</option></select>
+              </div>
+              <div class="field-group"><label>Start Date</label><input type="date" id="ex-start"/></div>
+              <div class="field-group"><label>End Date</label><input type="date" id="ex-end"/></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CM -->
+        <div class="crf-tab-panel" id="ctab-cm">
+          <div class="field-section">
+            <div class="field-section-title">Concomitant Medications</div>
+            <div class="field-grid">
+              <div class="field-group" style="grid-column:span 2"><label>Medication Name *</label><input type="text" id="cm-trt" placeholder="e.g. Aspirin"/></div>
+              <div class="field-group"><label>Dose</label><input type="number" step="0.1" id="cm-dose" placeholder="e.g. 100"/></div>
+              <div class="field-group"><label>Unit</label><input type="text" id="cm-dosu" placeholder="e.g. mg"/></div>
+              <div class="field-group"><label>Route</label>
+                <select id="cm-route"><option value="">Select...</option><option>ORAL</option><option>INTRAVENOUS</option><option>SUBCUTANEOUS</option><option>TOPICAL</option></select>
+              </div>
+              <div class="field-group"><label>Indication</label><input type="text" id="cm-indc" placeholder="Reason for use"/></div>
+              <div class="field-group"><label>Start Date</label><input type="date" id="cm-start"/></div>
+              <div class="field-group"><label>End Date</label><input type="date" id="cm-end"/></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:80px;"></div>
+      </div><!-- end step-4 -->
+
+    </div><!-- end main -->
+  </div><!-- end app-body -->
+
+  <!-- SAVE BAR (only visible on step 4) -->
+  <div class="save-bar" id="save-bar" style="display:none;">
+    <button class="btn-save" onclick="saveCRF()">SAVE CRF</button>
+    <button class="btn-secondary" onclick="goStep(3)">← CHANGE VISIT</button>
+    <div class="save-alert" id="save-alert" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+const API = 'https://mini-edc-production.up.railway.app';
+let token = '', currentUser = {}, currentStudy = '', currentSubject = null, currentVisit = null;
+let allSubjects = [], allVisits = [];
+let activeCRFTab = 'vs';
+
+async function apiFetch(method, path, body=null){
+  const url = `${API}${path}${path.includes('?')?'&':'?'}token=${token}`;
+  const opts = {method, headers:{'Content-Type':'application/json'}};
+  if(body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  const data = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(data.detail || 'Request failed');
+  return data;
+}
+
+async function doLogin(){
+  const uid = document.getElementById('l-user').value.trim();
+  const pw = document.getElementById('l-pass').value;
+  const err = document.getElementById('l-err');
+  err.style.display='none';
+  try {
+    const r = await fetch(`${API}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,password:pw})});
+    const d = await r.json();
+    if(!r.ok){err.textContent=d.detail;err.style.display='block';return;}
+    token=d.token; currentUser=d;
+    document.getElementById('tb-user').textContent=`${d.user_id} [${d.role}]`;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').classList.add('show');
+    loadStudies();
+  } catch(e){err.textContent=e.message;err.style.display='block';}
+}
+document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+function doLogout(){
+  try{apiFetch('POST','/auth/logout');}catch(e){}
+  token='';currentUser={};currentStudy='';currentSubject=null;currentVisit=null;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').classList.remove('show');
+  goStep(1);
+}
+
+// ─ STEPS ─
+function goStep(n){
+  if(n>1 && !currentStudy) return;
+  if(n>2 && !currentSubject) return;
+  if(n>3 && !currentVisit) return;
+  [1,2,3,4].forEach(i=>{
+    document.getElementById('step-'+i).classList.toggle('active',i===n);
+    const nav=document.getElementById('snav-'+i);
+    nav.classList.remove('active','done','locked');
+    if(i<n) nav.classList.add('done');
+    else if(i===n) nav.classList.add('active');
+    else nav.classList.add('locked');
+  });
+  document.getElementById('save-bar').style.display = n===4 ? 'flex' : 'none';
+  document.getElementById('main-scroll').scrollTop=0;
+  if(n===2) loadSubjects();
+  if(n===3) loadVisits();
+  if(n===4) initCRF();
+}
+
+// ─ STEP 1: STUDIES ─
+async function loadStudies(){
+  const grid=document.getElementById('study-grid');
+  grid.innerHTML='<div class="loading">Loading</div>';
+  try{
+    const studies = await apiFetch('GET','/studies');
+    if(!studies.length){grid.innerHTML='<div class="empty">No studies found</div>';return;}
+    grid.innerHTML=studies.map(s=>`
+      <div class="study-card" onclick="selectStudy('${s.study_id}','${s.study_title.replace(/'/g,"\\'")}')">
+        <div class="sc-id">${s.study_id}</div>
+        <div class="sc-title">${s.study_title}</div>
+        <div class="sc-meta">
+          ${s.phase?`<span class="sc-tag">${s.phase}</span>`:''}
+          ${s.indication?`<span class="sc-tag">${s.indication}</span>`:''}
+          <span class="sc-tag" style="color:${s.status==='ACTIVE'?'var(--green)':'var(--text3)'}">${s.status}</span>
+        </div>
+      </div>`).join('');
+  }catch(e){grid.innerHTML=`<div class="empty">${e.message}</div>`;}
+}
+
+function selectStudy(id, title){
+  currentStudy=id;
+  document.getElementById('tb-study').textContent=id;
+  document.getElementById('step2-study-label').textContent=title;
+  document.querySelectorAll('.study-card').forEach(c=>c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  setTimeout(()=>goStep(2),300);
+}
+
+// ─ STEP 2: SUBJECTS ─
+async function loadSubjects(){
+  const list=document.getElementById('subject-list');
+  list.innerHTML='<div class="loading">Loading</div>';
+  document.getElementById('subj-search').value='';
+  try{
+    allSubjects = await apiFetch('GET',`/studies/${currentStudy}/subjects`);
+    renderSubjects(allSubjects);
+  }catch(e){list.innerHTML=`<div class="empty">${e.message}</div>`;}
+}
+
+function renderSubjects(subjects){
+  const list=document.getElementById('subject-list');
+  if(!subjects.length){list.innerHTML='<div class="empty">No subjects found</div>';return;}
+  list.innerHTML=subjects.map(s=>`
+    <div class="subj-item" onclick="selectSubject(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+      <div>
+        <div class="subj-id">${s.usubjid}</div>
+        <div class="subj-meta">${s.site_id} · SEX: ${s.sex||'—'} · CONSENT: ${s.consent_date||'—'}</div>
+      </div>
+      <span class="subj-status ${s.status?.toLowerCase()}">${s.status}</span>
+    </div>`).join('');
+}
+
+function filterSubjects(){
+  const q=document.getElementById('subj-search').value.toLowerCase();
+  const filtered=allSubjects.filter(s=>
+    s.usubjid.toLowerCase().includes(q)||
+    (s.site_id||'').toLowerCase().includes(q)||
+    (s.sex||'').toLowerCase().includes(q)||
+    (s.status||'').toLowerCase().includes(q)
+  );
+  renderSubjects(filtered);
+}
+
+function selectSubject(s){
+  currentSubject=s;
+  document.getElementById('step3-subject-label').textContent=`${s.usubjid} · ${s.site_id} · ${s.sex} · ${s.status}`;
+  goStep(3);
+}
+
+// ─ STEP 3: VISITS ─
+async function loadVisits(){
+  const tl=document.getElementById('visit-timeline');
+  tl.innerHTML='<div class="loading">Loading</div>';
+  try{
+    allVisits = await apiFetch('GET',`/studies/${currentStudy}/subjects/${currentSubject.usubjid}/visits`);
+    allVisits.sort((a,b)=>a.visit_num-b.visit_num);
+    if(!allVisits.length){tl.innerHTML='<div class="empty">No visits found</div>';return;}
+    tl.innerHTML=allVisits.map(v=>`
+      <div class="visit-item ${v.status==='COMPLETED'?'completed-v':'planned-v'}" onclick="selectVisit(${JSON.stringify(v).replace(/"/g,'&quot;')})">
+        <div class="vi-dot ${v.status==='COMPLETED'?'done':'plan'}"></div>
+        <div class="vi-num">V${v.visit_num}</div>
+        <div class="vi-name">${v.visit_name}</div>
+        <div class="vi-date">${v.visit_date||'No date set'}</div>
+        <span class="vi-badge ${v.status==='COMPLETED'?'done':'plan'}">${v.status}</span>
+      </div>`).join('');
+  }catch(e){tl.innerHTML=`<div class="empty">${e.message}</div>`;}
+}
+
+function selectVisit(v){
+  currentVisit=v;
+  goStep(4);
+}
+
+// ─ STEP 4: CRF ─
+function initCRF(){
+  document.getElementById('crf-subj-display').textContent=currentSubject.usubjid;
+  document.getElementById('crf-subj-meta').innerHTML=`
+    <div class="info-chip">SITE: <span>${currentSubject.site_id}</span></div>
+    <div class="info-chip">SEX: <span>${currentSubject.sex||'—'}</span></div>
+    <div class="info-chip">STATUS: <span>${currentSubject.status}</span></div>`;
+  document.getElementById('crf-visit-display').textContent=`V${currentVisit.visit_num} — ${currentVisit.visit_name}`;
+  // Set today's date by default
+  setToday();
+  // Load AE list
+  loadAEList();
+  // Reset to VS tab
+  showCRFTab('vs');
+}
+
+function setToday(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('crf-visit-date').value=today;
+}
+
+function showCRFTab(tab){
+  activeCRFTab=tab;
+  document.querySelectorAll('.crf-tab').forEach((t,i)=>{
+    const tabs=['vs','lb','ae','ex','cm'];
+    t.classList.toggle('active',tabs[i]===tab);
+  });
+  document.querySelectorAll('.crf-tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('ctab-'+tab).classList.add('active');
+}
+
+async function loadAEList(){
+  const list=document.getElementById('ae-list');
+  try{
+    const aes=await apiFetch('GET',`/studies/${currentStudy}/subjects/${currentSubject.usubjid}/crf/ae`);
+    if(!aes||!aes.length){list.innerHTML='<div class="empty">No AEs recorded for this subject</div>';return;}
+    list.innerHTML=aes.map(a=>`
+      <div class="ae-card">
+        <div><div class="ae-term">${a.aeterm}</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;">${a.aestdtc||''}${a.aeendtc?' → '+a.aeendtc:''}</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="ae-sev ${a.aesev?.toLowerCase()}">${a.aesev}</span>
+          ${a.aeser==='Y'?'<span style="font-family:var(--mono);font-size:10px;color:var(--red);border:1px solid rgba(255,68,102,.3);padding:2px 7px;border-radius:3px;">SAE</span>':''}
+        </div>
+      </div>`).join('');
+  }catch(e){list.innerHTML='<div class="empty">No AEs recorded</div>';}
+}
+
+async function saveCRF(){
+  const alertEl=document.getElementById('save-alert');
+  alertEl.style.display='none';
+  const visitDate=document.getElementById('crf-visit-date').value;
+  const visitNum=currentVisit.visit_num;
+  const visitName=currentVisit.visit_name;
+  const usubjid=currentSubject.usubjid;
+  let body={}, endpoint='';
+
+  if(activeCRFTab==='vs'){
+    endpoint=`/studies/${currentStudy}/subjects/${usubjid}/crf/vs`;
+    body={visit_num:visitNum,visit_name:visitName,vsdtc:visitDate,
+      sysbp:parseFloat(document.getElementById('vs-sysbp').value)||null,
+      diabp:parseFloat(document.getElementById('vs-diabp').value)||null,
+      pulse:parseFloat(document.getElementById('vs-pulse').value)||null,
+      temp:parseFloat(document.getElementById('vs-temp').value)||null,
+      weight:parseFloat(document.getElementById('vs-weight').value)||null,
+      height:parseFloat(document.getElementById('vs-height').value)||null,
+      resp_rate:parseFloat(document.getElementById('vs-resp').value)||null};
+    if(!visitDate){showAlert('Visit date is required','error');return;}
+  } else if(activeCRFTab==='lb'){
+    endpoint=`/studies/${currentStudy}/subjects/${usubjid}/crf/lb`;
+    body={visit_num:visitNum,visit_name:visitName,lbdtc:visitDate,
+      hgb:parseFloat(document.getElementById('lb-hgb').value)||null,
+      wbc:parseFloat(document.getElementById('lb-wbc').value)||null,
+      plt:parseFloat(document.getElementById('lb-plt').value)||null,
+      alt:parseFloat(document.getElementById('lb-alt').value)||null,
+      ast:parseFloat(document.getElementById('lb-ast').value)||null,
+      creatinine:parseFloat(document.getElementById('lb-creat').value)||null,
+      glucose:parseFloat(document.getElementById('lb-glucose').value)||null};
+    if(!visitDate){showAlert('Visit date is required','error');return;}
+  } else if(activeCRFTab==='ae'){
+    const term=document.getElementById('ae-term').value.trim();
+    const start=document.getElementById('ae-start').value;
+    const sev=document.getElementById('ae-sev').value;
+    const ser=document.getElementById('ae-ser').value;
+    if(!term||!start||!sev||!ser){showAlert('AE term, start date, severity and serious flag are required','error');return;}
+    endpoint=`/studies/${currentStudy}/subjects/${usubjid}/crf/ae`;
+    body={aeterm:term,aedecod:document.getElementById('ae-decod').value||null,
+      aebodsys:document.getElementById('ae-bodsys').value||null,
+      aestdtc:start,aeendtc:document.getElementById('ae-end').value||null,
+      aesev:sev,aeser:ser,aerel:document.getElementById('ae-rel').value||null,
+      aeout:document.getElementById('ae-out').value||null,
+      aesdth:document.getElementById('ae-death').value||'N'};
+  } else if(activeCRFTab==='ex'){
+    const trt=document.getElementById('ex-trt').value.trim();
+    if(!trt){showAlert('Treatment name is required','error');return;}
+    endpoint=`/studies/${currentStudy}/subjects/${usubjid}/crf/ex`;
+    body={visit_num:visitNum,visit_name:visitName,extrt:trt,
+      exdose:parseFloat(document.getElementById('ex-dose').value)||null,
+      exdosu:document.getElementById('ex-dosu').value||null,
+      exdosfrq:document.getElementById('ex-freq').value||null,
+      exroute:document.getElementById('ex-route').value||null,
+      exstdtc:document.getElementById('ex-start').value||null,
+      exendtc:document.getElementById('ex-end').value||null};
+  } else if(activeCRFTab==='cm'){
+    const trt=document.getElementById('cm-trt').value.trim();
+    if(!trt){showAlert('Medication name is required','error');return;}
+    endpoint=`/studies/${currentStudy}/subjects/${usubjid}/crf/cm`;
+    body={cmtrt:trt,cmdose:parseFloat(document.getElementById('cm-dose').value)||null,
+      cmdosu:document.getElementById('cm-dosu').value||null,
+      cmroute:document.getElementById('cm-route').value||null,
+      cmstdtc:document.getElementById('cm-start').value||null,
+      cmendtc:document.getElementById('cm-end').value||null,
+      cmindc:document.getElementById('cm-indc').value||null};
+  }
+
+  try{
+    const res=await apiFetch('POST',endpoint,body);
+    const flags=res.validation_flags||[];
+    if(flags.length){
+      showAlert(`Saved — ${flags.length} auto-query raised:\n${flags.map(f=>`⚠ ${f.field?.toUpperCase()}: ${f.issue}`).join('\n')}`,'warn');
+    } else {
+      showAlert(`${activeCRFTab.toUpperCase()} CRF saved successfully!`,'success');
+    }
+    if(activeCRFTab==='ae'){
+      // Clear AE fields and reload list
+      ['ae-term','ae-decod','ae-bodsys','ae-start','ae-end'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('ae-sev').value='';
+      document.getElementById('ae-ser').value='';
+      document.getElementById('ae-rel').value='';
+      document.getElementById('ae-out').value='';
+      loadAEList();
+    }
+  }catch(e){showAlert(e.message,'error');}
+}
+
+function showAlert(msg, type){
+  const el=document.getElementById('save-alert');
+  el.textContent=msg;
+  el.className='save-alert '+type;
+  el.style.display='block';
+  if(type==='success') setTimeout(()=>el.style.display='none',3000);
+}
+</script>
+</body>
+</html>

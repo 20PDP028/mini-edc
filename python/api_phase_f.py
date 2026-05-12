@@ -769,6 +769,44 @@ def close_query(study_id: str, query_id: str, current_user: dict = Depends(get_c
     log_audit(study_id, current_user["user_id"], "QUERY_CLOSED", "queries", query_id)
     return {"query_id": query_id, "status": "Closed", "closed_by": current_user["user_id"], "closed_at": ts}
 
+
+class QueryUpdate(BaseModel):
+    status: Literal["Answered", "Closed"]
+    response: Optional[str] = None
+
+
+@app.put("/studies/{study_id}/queries/{query_id}", tags=["queries"], summary="Answer or close a query (CDM portal)")
+def update_query(study_id: str, query_id: str, update: QueryUpdate, current_user: dict = Depends(get_current_user)):
+    """
+    Used by the CDM portal to answer (status=Answered) or close (status=Closed) a query.
+    For status=Answered, a response text must be provided.
+    For status=Closed, the query must currently be in Answered state.
+    """
+    q = db_exec(f"SELECT * FROM queries WHERE query_id={PH} AND study_id={PH}", (query_id, study_id), fetchone=True)
+    if not q:
+        raise HTTPException(status_code=404, detail=f"Query {query_id} not found")
+    ts = datetime.utcnow().isoformat() + "Z"
+    if update.status == "Answered":
+        if not update.response or not update.response.strip():
+            raise HTTPException(status_code=400, detail="A response is required to answer a query")
+        db_exec(
+            f"UPDATE queries SET status='Answered', response={PH}, answered_by={PH}, answered_at={PH} WHERE query_id={PH} AND study_id={PH}",
+            (update.response.strip(), current_user["user_id"], ts, query_id, study_id),
+            commit=True
+        )
+        log_audit(study_id, current_user["user_id"], "QUERY_ANSWERED", "queries", query_id)
+        return {"query_id": query_id, "status": "Answered", "response": update.response, "answered_by": current_user["user_id"], "answered_at": ts}
+    elif update.status == "Closed":
+        if q["status"] not in ("Answered", "Open"):
+            raise HTTPException(status_code=400, detail=f"Cannot close a query with status '{q['status']}'")
+        db_exec(
+            f"UPDATE queries SET status='Closed', closed_by={PH}, closed_at={PH} WHERE query_id={PH} AND study_id={PH}",
+            (current_user["user_id"], ts, query_id, study_id),
+            commit=True
+        )
+        log_audit(study_id, current_user["user_id"], "QUERY_CLOSED", "queries", query_id)
+        return {"query_id": query_id, "status": "Closed", "closed_by": current_user["user_id"], "closed_at": ts}
+
 # ── Routes: Audit ─────────────────────────────────────────────
 
 @app.get("/studies/{study_id}/audit", tags=["audit"], summary="Get audit trail for a study")
@@ -789,12 +827,41 @@ def study_stats(study_id: str, current_user: dict = Depends(get_current_user)):
     qry_map = {r["status"]: r["c"] for r in qry}
     ae_count = db_exec(f"SELECT COUNT(*) as c FROM crf_ae WHERE study_id={PH}", (study_id,), fetchone=True)
     sae_count = db_exec(f"SELECT COUNT(*) as c FROM crf_ae WHERE study_id={PH} AND aeser='Y'", (study_id,), fetchone=True)
+    site_count = db_exec(f"SELECT COUNT(*) as c FROM sites WHERE study_id={PH}", (study_id,), fetchone=True)
     return {
         "study_id": study_id,
-        "subjects": {"total": sum(subj_map.values()), "enrolled": subj_map.get("ENROLLED",0), "completed": subj_map.get("COMPLETED",0), "withdrawn": subj_map.get("WITHDRAWN",0), "screen_failed": subj_map.get("SCREEN_FAILED",0)},
-        "queries": {"total": sum(qry_map.values()), "open": qry_map.get("Open",0), "answered": qry_map.get("Answered",0), "closed": qry_map.get("Closed",0)},
-        "adverse_events": {"total": ae_count["c"] if ae_count else 0, "serious": sae_count["c"] if sae_count else 0}
+        "subjects": {
+            "total": sum(subj_map.values()),
+            "enrolled": subj_map.get("ENROLLED", 0),
+            "completed": subj_map.get("COMPLETED", 0),
+            "withdrawn": subj_map.get("WITHDRAWN", 0),
+            "screen_failed": subj_map.get("SCREEN_FAILED", 0),
+        },
+        "queries": {
+            "total": sum(qry_map.values()),
+            "open": qry_map.get("Open", 0),
+            "answered": qry_map.get("Answered", 0),
+            "closed": qry_map.get("Closed", 0),
+        },
+        # "aes" key used by CDM dashboard; "adverse_events" kept as alias
+        "aes": {
+            "total": ae_count["c"] if ae_count else 0,
+            "serious": sae_count["c"] if sae_count else 0,
+        },
+        "adverse_events": {
+            "total": ae_count["c"] if ae_count else 0,
+            "serious": sae_count["c"] if sae_count else 0,
+        },
+        "sites": site_count["c"] if site_count else 0,
     }
+
+@app.get("/studies/{study_id}/ae-severity-summary", tags=["system"], summary="AE severity counts for dashboard chart")
+def ae_severity_summary(study_id: str, current_user: dict = Depends(get_current_user)):
+    rows = db_exec(
+        f"SELECT aesev, COUNT(*) as count FROM crf_ae WHERE study_id={PH} GROUP BY aesev",
+        (study_id,), fetchall=True
+    ) or []
+    return rows
 
 @app.get("/", tags=["system"], summary="API root")
 def root():

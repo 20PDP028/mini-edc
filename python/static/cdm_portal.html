@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SARA · CDM Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#060810;
+  --surface:#0c1120;
+  --surface2:#111827;
+  --surface3:#16202f;
+  --border:#1a2640;
+  --border2:#243452;
+  --accent:#7c6ff7;
+  --accent-dim:rgba(124,111,247,.1);
+  --accent-glow:rgba(124,111,247,.2);
+  --green:#10e88a;
+  --yellow:#f5c842;
+  --red:#ff4d6a;
+  --blue:#4db8ff;
+  --orange:#ff8c42;
+  --text:#c8d8ea;
+  --text2:#6a7f99;
+  --text3:#2e4460;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Syne',sans-serif;
+  --r:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;overflow-x:hidden;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+#login-screen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% -5%,rgba(124,111,247,.08),transparent);}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;width:380px;position:relative;}
+.login-brand{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);letter-spacing:3px;margin-bottom:2px;}
+.login-role{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:3px;margin-bottom:28px;}
+.login-field{margin-bottom:14px;}
+.login-field label{display:block;font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:5px;}
+.login-field input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 12px;border-radius:6px;outline:none;}
+.login-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+.login-btn{width:100%;padding:12px;background:var(--accent);color:#fff;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:2px;border:none;border-radius:6px;cursor:pointer;margin-top:6px;transition:opacity .2s;}
+.login-btn:hover{opacity:.85;}
+.login-err{font-family:var(--mono);font-size:11px;color:var(--red);background:rgba(255,77,106,.08);border:1px solid rgba(255,77,106,.2);border-radius:4px;padding:8px 10px;margin-bottom:10px;display:none;}
+
+/* APP */
+#app{display:none;height:100vh;flex-direction:column;}
+#app.show{display:flex;}
+
+/* TOPBAR */
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;position:sticky;top:0;z-index:200;}
+.topbar-brand{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);letter-spacing:2px;}
+.topbar-sep{width:1px;height:18px;background:var(--border);}
+.topbar-label{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:1px;}
+.topbar-study{font-family:var(--mono);font-size:11px;color:var(--text2);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.user-chip{font-family:var(--mono);font-size:10px;color:var(--accent);padding:4px 10px;border:1px solid rgba(124,111,247,.3);border-radius:4px;background:var(--accent-dim);}
+.btn-logout{font-family:var(--mono);font-size:10px;color:var(--text3);padding:4px 10px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer;transition:all .2s;}
+.btn-logout:hover{color:var(--red);border-color:rgba(255,77,106,.3);}
+
+/* BODY */
+.app-body{flex:1;display:flex;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:200px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;overflow-y:auto;}
+.nav-section{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;padding:14px 16px 6px;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text2);border-left:2px solid transparent;transition:all .15s;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--accent-dim);color:var(--accent);border-left-color:var(--accent);}
+.nav-item .ni{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;font-family:var(--mono);font-size:9px;background:rgba(255,77,106,.15);color:var(--red);border:1px solid rgba(255,77,106,.3);padding:1px 6px;border-radius:10px;}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:24px 28px;background:var(--bg);}
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* STUDY LANDING */
+.study-landing{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 52px);padding:40px;}
+.landing-title{font-family:var(--sans);font-size:28px;font-weight:800;color:var(--text);margin-bottom:8px;text-align:center;}
+.landing-sub{font-family:var(--mono);font-size:12px;color:var(--text3);margin-bottom:40px;text-align:center;}
+.study-select-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;width:100%;max-width:960px;}
+.study-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.study-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent);opacity:0;transition:opacity .2s;}
+.study-card:hover{border-color:var(--accent);transform:translateY(-1px);}
+.study-card:hover::before{opacity:1;}
+.sc-id{font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:7px;letter-spacing:1px;}
+.sc-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.3;}
+.sc-row{display:flex;gap:8px;flex-wrap:wrap;}
+.sc-tag{font-family:var(--mono);font-size:10px;color:var(--text3);background:var(--surface3);border:1px solid var(--border);padding:2px 8px;border-radius:3px;}
+.sc-tag.active{color:var(--green);border-color:rgba(16,232,138,.2);background:rgba(16,232,138,.07);}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.page-title{font-family:var(--sans);font-size:18px;font-weight:700;color:var(--text);}
+.page-sub{font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:3px;}
+
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:22px;}
+@media(max-width:1200px){.stats-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:768px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.stat-card.teal::after{background:linear-gradient(90deg,var(--accent),transparent);}
+.stat-card.green::after{background:linear-gradient(90deg,var(--green),transparent);}
+.stat-card.yellow::after{background:linear-gradient(90deg,var(--yellow),transparent);}
+.stat-card.red::after{background:linear-gradient(90deg,var(--red),transparent);}
+.stat-card.blue::after{background:linear-gradient(90deg,var(--blue),transparent);}
+.stat-card.orange::after{background:linear-gradient(90deg,var(--orange),transparent);}
+.stat-val{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--text);line-height:1;}
+.stat-label{font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:6px;letter-spacing:.3px;}
+
+/* CHART GRID */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px;}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr;}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;}
+.chart-title{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;}
+.chart-wrap{position:relative;height:170px;}
+
+/* TABLE */
+.tbl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px;}
+.tbl-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);background:var(--surface2);}
+.tbl-title{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text);letter-spacing:.5px;}
+.tbl-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:500px;}
+th{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap;}
+td{font-size:12px;padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text2);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);color:var(--text);}
+.mono{font-family:var(--mono);font-size:11px;}
+
+/* PILLS */
+.pill{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;font-weight:500;letter-spacing:.3px;white-space:nowrap;}
+.pill.open{color:var(--red);background:rgba(255,77,106,.08);border:1px solid rgba(255,77,106,.2);}
+.pill.answered{color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);}
+.pill.closed{color:var(--green);background:rgba(16,232,138,.08);border:1px solid rgba(16,232,138,.2);}
+.pill.critical{color:var(--red);background:rgba(255,77,106,.08);border:1px solid rgba(255,77,106,.2);}
+.pill.major{color:var(--orange);background:rgba(255,140,66,.08);border:1px solid rgba(255,140,66,.2);}
+.pill.minor{color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);}
+.pill.enrolled{color:var(--accent);background:var(--accent-dim);border:1px solid rgba(124,111,247,.2);}
+.pill.completed{color:var(--green);background:rgba(16,232,138,.08);border:1px solid rgba(16,232,138,.2);}
+.pill.withdrawn{color:var(--red);background:rgba(255,77,106,.08);border:1px solid rgba(255,77,106,.2);}
+.pill.mild{color:var(--green);background:rgba(16,232,138,.08);border:1px solid rgba(16,232,138,.2);}
+.pill.moderate{color:var(--yellow);background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);}
+.pill.severe{color:var(--red);background:rgba(255,77,106,.08);border:1px solid rgba(255,77,106,.2);}
+
+/* BUTTONS */
+.btn{font-family:var(--mono);font-size:11px;padding:7px 14px;border-radius:5px;cursor:pointer;border:1px solid;transition:all .18s;letter-spacing:.3px;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700;}
+.btn-primary:hover{opacity:.85;}
+.btn-outline{background:transparent;color:var(--text2);border-color:var(--border);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:transparent;color:var(--red);border-color:rgba(255,77,106,.3);}
+.btn-danger:hover{background:var(--red);color:#fff;}
+.btn-sm{padding:3px 9px;font-size:10px;}
+.btn-green{background:var(--green);color:#060810;border-color:var(--green);font-weight:700;}
+.btn-green:hover{opacity:.85;}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:14px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group label{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;}
+.form-group input,.form-group select,.form-group textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;border-radius:5px;outline:none;transition:border-color .2s;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim);}
+.form-group select option{background:var(--surface2);}
+.form-section{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;}
+.form-section-title{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(3px);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;}
+.modal-title{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);}
+.modal-close{background:transparent;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:2px 6px;border-radius:3px;transition:color .2s;}
+.modal-close:hover{color:var(--red);}
+.modal-body{padding:20px;}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;flex-wrap:wrap;}
+.tab{font-family:var(--mono);font-size:11px;padding:10px 16px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* QUERY CARD */
+.query-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:10px;transition:border-color .2s;}
+.query-card:hover{border-color:var(--border2);}
+.query-card-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.query-id{font-family:var(--mono);font-size:11px;color:var(--accent);}
+.query-issue{font-size:13px;color:var(--text);margin-bottom:6px;line-height:1.4;}
+.query-meta{font-family:var(--mono);font-size:10px;color:var(--text3);display:flex;gap:14px;flex-wrap:wrap;}
+.query-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+
+/* SUBJECT DETAIL */
+.subj-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin-bottom:16px;}
+.subj-id{font-family:var(--mono);font-size:15px;color:var(--accent);font-weight:700;margin-bottom:6px;}
+.subj-meta-row{display:flex;gap:16px;flex-wrap:wrap;}
+.subj-meta-chip{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.subj-meta-chip span{color:var(--text2);}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.filter-bar input,.filter-bar select{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;border-radius:5px;outline:none;}
+.filter-bar input:focus,.filter-bar select:focus{border-color:var(--accent);}
+.filter-bar input{min-width:200px;}
+
+/* ALERT */
+.alert{font-family:var(--mono);font-size:11px;padding:9px 12px;border-radius:4px;margin-bottom:14px;display:none;}
+.alert.success{background:rgba(16,232,138,.07);border:1px solid rgba(16,232,138,.2);color:var(--green);}
+.alert.error{background:rgba(255,77,106,.07);border:1px solid rgba(255,77,106,.2);color:var(--red);}
+
+/* MISC */
+.empty{text-align:center;padding:40px;color:var(--text3);font-family:var(--mono);font-size:12px;}
+.loading{text-align:center;padding:30px;color:var(--text2);font-family:var(--mono);font-size:12px;}
+.loading::after{content:'...';animation:dots 1s infinite;}
+@keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
+.section-label{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">SARA·EDC</div>
+    <div class="login-role">CDM MANAGEMENT PORTAL</div>
+    <div class="login-field"><label>User ID</label><input id="l-user" type="text" value="ADMIN" autocomplete="username"/></div>
+    <div class="login-field"><label>Password</label><input id="l-pass" type="password" value="Admin@1234" autocomplete="current-password"/></div>
+    <div class="login-err" id="l-err"></div>
+    <button class="login-btn" onclick="doLogin()">SIGN IN →</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">SARA·EDC</div>
+    <div class="topbar-sep" style="width:1px;height:18px;background:var(--border);"></div>
+    <div class="topbar-label">CDM PORTAL</div>
+    <div class="topbar-sep" style="width:1px;height:18px;background:var(--border);"></div>
+    <div class="topbar-study" id="tb-study">Select a study to begin</div>
+    <div class="topbar-right">
+      <div class="user-chip" id="tb-user">—</div>
+      <button class="btn-logout" onclick="doLogout()">LOGOUT</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="nav-section">Overview</div>
+      <div class="nav-item active" id="nav-home" onclick="showPanel('home')"><span class="ni">⊞</span>Study Select</div>
+      <div class="nav-item" id="nav-dashboard" onclick="showPanel('dashboard')"><span class="ni">◈</span>Dashboard</div>
+      <div class="nav-section">Data Review</div>
+      <div class="nav-item" id="nav-subjects" onclick="showPanel('subjects')"><span class="ni">◉</span>Subjects</div>
+      <div class="nav-item" id="nav-data" onclick="showPanel('data')"><span class="ni">⊟</span>CRF Database</div>
+      <div class="nav-section">Quality</div>
+      <div class="nav-item" id="nav-queries" onclick="showPanel('queries')"><span class="ni">⚑</span>Queries<span class="nav-badge" id="open-q-badge">0</span></div>
+      <div class="nav-item" id="nav-raise" onclick="showPanel('raise')"><span class="ni">＋</span>Raise Query</div>
+      <div class="nav-section">Admin</div>
+      <div class="nav-item" id="nav-audit" onclick="showPanel('audit')"><span class="ni">☰</span>Audit Trail</div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- HOME: STUDY SELECT -->
+      <div class="panel active" id="panel-home">
+        <div class="study-landing">
+          <div class="landing-title">Select a Study</div>
+          <div class="landing-sub">CHOOSE A STUDY TO ACCESS ITS DATA, QUERIES AND METRICS</div>
+          <div class="study-select-grid" id="home-study-grid"><div class="loading">Loading</div></div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="panel" id="panel-dashboard">
+        <div class="page-header">
+          <div><div class="page-title" id="dash-study-title">Dashboard</div><div class="page-sub" id="dash-study-sub">—</div></div>
+          <button class="btn btn-outline" onclick="loadDashboard()">↻ REFRESH</button>
+        </div>
+        <div class="stats-grid" id="dash-stats">
+          <div class="stat-card teal"><div class="stat-val" id="s-enrolled">—</div><div class="stat-label">ENROLLED</div></div>
+          <div class="stat-card green"><div class="stat-val" id="s-completed">—</div><div class="stat-label">COMPLETED</div></div>
+          <div class="stat-card yellow"><div class="stat-val" id="s-withdrawn">—</div><div class="stat-label">WITHDRAWN</div></div>
+          <div class="stat-card red"><div class="stat-val" id="s-qopen">—</div><div class="stat-label">OPEN QUERIES</div></div>
+          <div class="stat-card orange"><div class="stat-val" id="s-sae">—</div><div class="stat-label">SERIOUS AEs</div></div>
+          <div class="stat-card blue"><div class="stat-val" id="s-sites">—</div><div class="stat-label">SITES</div></div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card"><div class="chart-title">Subject Enrollment Status</div><div class="chart-wrap"><canvas id="chart-subj"></canvas></div></div>
+          <div class="chart-card"><div class="chart-title">AE Severity Breakdown</div><div class="chart-wrap"><canvas id="chart-ae"></canvas></div></div>
+          <div class="chart-card"><div class="chart-title">Query Status Distribution</div><div class="chart-wrap"><canvas id="chart-query"></canvas></div></div>
+          <div class="chart-card"><div class="chart-title">Enrollment by Site</div><div class="chart-wrap"><canvas id="chart-site"></canvas></div></div>
+        </div>
+        <div class="tbl-card">
+          <div class="tbl-header"><div class="tbl-title">Recent Open Queries</div><button class="btn btn-sm btn-outline" onclick="showPanel('queries')">VIEW ALL</button></div>
+          <div class="tbl-scroll"><div id="dash-query-table"><div class="loading">Loading</div></div></div>
+        </div>
+      </div>
+
+      <!-- SUBJECTS -->
+      <div class="panel" id="panel-subjects">
+        <div class="page-header">
+          <div><div class="page-title">Subjects</div><div class="page-sub" id="subj-study-sub">—</div></div>
+        </div>
+        <div class="filter-bar">
+          <input type="text" id="subj-filter" placeholder="Search subject ID, site, status..." oninput="filterSubjectsTable()"/>
+          <select id="subj-status-filter" onchange="filterSubjectsTable()">
+            <option value="">All Statuses</option>
+            <option>ENROLLED</option><option>COMPLETED</option><option>WITHDRAWN</option>
+          </select>
+        </div>
+        <div class="tbl-card">
+          <div class="tbl-header"><div class="tbl-title" id="subj-count-label">All Subjects</div></div>
+          <div class="tbl-scroll" id="subjects-table"><div class="loading">Loading</div></div>
+        </div>
+      </div>
+
+      <!-- SUBJECT DETAIL (shown over subjects panel) -->
+      <div class="panel" id="panel-subject-detail">
+        <div style="margin-bottom:16px;"><button class="btn btn-outline btn-sm" onclick="showPanel('subjects')">← BACK TO SUBJECTS</button></div>
+        <div class="subj-card" id="sd-header"></div>
+        <div class="tabs" id="sd-tabs">
+          <div class="tab active" onclick="loadSDTab('visits')">VISIT TRACKER</div>
+          <div class="tab" onclick="loadSDTab('dm')">DEMOGRAPHICS</div>
+          <div class="tab" onclick="loadSDTab('vs')">VITAL SIGNS</div>
+          <div class="tab" onclick="loadSDTab('lb')">LABORATORY</div>
+          <div class="tab" onclick="loadSDTab('ae')">ADVERSE EVENTS</div>
+          <div class="tab" onclick="loadSDTab('queries')">QUERIES</div>
+        </div>
+        <div id="sd-content"><div class="loading">Loading</div></div>
+      </div>
+
+      <!-- CRF DATABASE -->
+      <div class="panel" id="panel-data">
+        <div class="page-header">
+          <div><div class="page-title">CRF Database</div><div class="page-sub">View all collected CRF data for this study</div></div>
+        </div>
+        <div class="tabs">
+          <div class="tab active" onclick="loadDataTab('vs')">VITAL SIGNS</div>
+          <div class="tab" onclick="loadDataTab('lb')">LABORATORY</div>
+          <div class="tab" onclick="loadDataTab('ae')">ADVERSE EVENTS</div>
+          <div class="tab" onclick="loadDataTab('ex')">EXPOSURE</div>
+          <div class="tab" onclick="loadDataTab('cm')">MEDICATIONS</div>
+          <div class="tab" onclick="loadDataTab('dm')">DEMOGRAPHICS</div>
+        </div>
+        <div class="filter-bar">
+          <input type="text" id="data-filter" placeholder="Filter by subject ID..." oninput="filterDataTable()"/>
+        </div>
+        <div class="tbl-card">
+          <div class="tbl-header"><div class="tbl-title" id="data-tab-label">VITAL SIGNS</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);" id="data-row-count">— records</div></div>
+          <div class="tbl-scroll" id="data-table-body"><div class="loading">Loading</div></div>
+        </div>
+      </div>
+
+      <!-- QUERIES -->
+      <div class="panel" id="panel-queries">
+        <div class="page-header">
+          <div><div class="page-title">Query Management</div><div class="page-sub">Review, answer and close queries</div></div>
+          <button class="btn btn-primary btn-sm" onclick="showPanel('raise')">+ RAISE QUERY</button>
+        </div>
+        <div class="filter-bar">
+          <input type="text" id="q-search" placeholder="Search subject, field, issue..." oninput="filterQueries()"/>
+          <select id="q-status-filter" onchange="filterQueries()">
+            <option value="">All Statuses</option>
+            <option>Open</option><option>Answered</option><option>Closed</option>
+          </select>
+          <select id="q-sev-filter" onchange="filterQueries()">
+            <option value="">All Severities</option>
+            <option>Critical</option><option>Major</option><option>Minor</option>
+          </select>
+        </div>
+        <div id="query-list"><div class="loading">Loading</div></div>
+      </div>
+
+      <!-- RAISE QUERY -->
+      <div class="panel" id="panel-raise">
+        <div class="page-header">
+          <div><div class="page-title">Raise New Query</div><div class="page-sub">Flag a data issue for site resolution</div></div>
+        </div>
+        <div class="alert" id="raise-alert"></div>
+        <div class="form-section">
+          <div class="form-section-title">Query Details</div>
+          <div class="form-grid">
+            <div class="form-group" style="grid-column:span 2">
+              <label>Subject ID *</label>
+              <select id="rq-usubjid"><option value="">Select subject...</option></select>
+            </div>
+            <div class="form-group"><label>Domain *</label>
+              <select id="rq-domain"><option value="">Select...</option><option>VS</option><option>LB</option><option>AE</option><option>EX</option><option>CM</option><option>DM</option></select>
+            </div>
+            <div class="form-group"><label>Visit Number</label><input type="number" id="rq-visitnum" placeholder="e.g. 3"/></div>
+            <div class="form-group"><label>Field *</label><input type="text" id="rq-field" placeholder="e.g. SYSBP"/></div>
+            <div class="form-group"><label>Current Value</label><input type="text" id="rq-value" placeholder="e.g. 210"/></div>
+            <div class="form-group" style="grid-column:span 2">
+              <label>Issue Description *</label>
+              <textarea id="rq-issue" rows="3" placeholder="Describe the data issue clearly..."></textarea>
+            </div>
+            <div class="form-group"><label>Severity *</label>
+              <select id="rq-sev"><option value="">Select...</option><option>Critical</option><option>Major</option><option>Minor</option></select>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="raiseQuery()">RAISE QUERY</button>
+        </div>
+      </div>
+
+      <!-- AUDIT TRAIL -->
+      <div class="panel" id="panel-audit">
+        <div class="page-header">
+          <div><div class="page-title">Audit Trail</div><div class="page-sub">All system activity for this study</div></div>
+          <button class="btn btn-outline btn-sm" onclick="loadAudit()">↻ REFRESH</button>
+        </div>
+        <div class="tbl-card">
+          <div class="tbl-header"><div class="tbl-title">Audit Log</div></div>
+          <div class="tbl-scroll" id="audit-table"><div class="loading">Loading</div></div>
+        </div>
+      </div>
+
+    </div><!-- end main -->
+  </div><!-- end app-body -->
+</div><!-- end app -->
+
+<!-- QUERY ANSWER MODAL -->
+<div class="modal-overlay" id="modal-query">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="mq-title">Query Details</div>
+      <button class="modal-close" onclick="closeModal('modal-query')">✕</button>
+    </div>
+    <div class="modal-body" id="mq-body"></div>
+  </div>
+</div>
+
+<script>
+const API = 'https://mini-edc-production.up.railway.app';
+let token='', currentUser={}, currentStudy='', currentStudyTitle='';
+let allSubjectsData=[], allQueriesData=[], allDataRows=[], activeDataTab='vs';
+let chartSubj=null, chartAE=null, chartQuery=null, chartSite=null;
+let currentSubjectDetail=null, activeSDTab='visits';
+
+async function apiFetch(method, path, body=null){
+  const url=`${API}${path}${path.includes('?')?'&':'?'}token=${token}`;
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(url,opts);
+  const data=await r.json().catch(()=>({}));
+  if(r.status===404){const e=new Error(data.detail||'Not found');e.status=404;throw e;}
+  if(!r.ok) throw new Error(data.detail||'Request failed');
+  return data;
+}
+
+async function doLogin(){
+  const uid=document.getElementById('l-user').value.trim();
+  const pw=document.getElementById('l-pass').value;
+  const err=document.getElementById('l-err');
+  err.style.display='none';
+  try{
+    const r=await fetch(`${API}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,password:pw})});
+    const d=await r.json();
+    if(!r.ok){err.textContent=d.detail;err.style.display='block';return;}
+    token=d.token;currentUser=d;
+    document.getElementById('tb-user').textContent=`${d.user_id} [${d.role}]`;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').classList.add('show');
+    loadHomeStudies();
+  }catch(e){err.textContent=e.message;err.style.display='block';}
+}
+document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+function doLogout(){
+  try{apiFetch('POST','/auth/logout');}catch(e){}
+  token='';currentUser={};currentStudy='';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').classList.remove('show');
+}
+
+// NAVIGATION
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  const nav=document.getElementById('nav-'+name);
+  if(nav) nav.classList.add('active');
+  if(!currentStudy && name!=='home'){showPanel('home');return;}
+  if(name==='dashboard') loadDashboard();
+  if(name==='subjects') loadSubjectsPanel();
+  if(name==='queries') loadQueries();
+  if(name==='data') loadDataTab('vs');
+  if(name==='audit') loadAudit();
+  if(name==='raise') loadRaiseSubjects();
+}
+
+// HOME STUDIES
+async function loadHomeStudies(){
+  const grid=document.getElementById('home-study-grid');
+  grid.innerHTML='<div class="loading">Loading</div>';
+  try{
+    const studies=await apiFetch('GET','/studies');
+    if(!studies.length){grid.innerHTML='<div class="empty">No studies found</div>';return;}
+    grid.innerHTML=studies.map(s=>`
+      <div class="study-card" onclick="selectStudy('${s.study_id}','${s.study_title.replace(/'/g,"\\'")}')">
+        <div class="sc-id">${s.study_id}</div>
+        <div class="sc-title">${s.study_title}</div>
+        <div class="sc-row">
+          ${s.phase?`<span class="sc-tag">${s.phase}</span>`:''}
+          ${s.sponsor?`<span class="sc-tag">${s.sponsor}</span>`:''}
+          ${s.indication?`<span class="sc-tag">${s.indication}</span>`:''}
+          <span class="sc-tag ${s.status==='ACTIVE'?'active':''}">${s.status}</span>
+        </div>
+      </div>`).join('');
+  }catch(e){grid.innerHTML=`<div class="empty">${e.message}</div>`;}
+}
+
+function selectStudy(id,title){
+  currentStudy=id; currentStudyTitle=title;
+  document.getElementById('tb-study').textContent=`${id} — ${title}`;
+  document.getElementById('dash-study-title').textContent=title;
+  document.getElementById('dash-study-sub').textContent=id;
+  showPanel('dashboard');
+}
+
+// DASHBOARD
+function destroyChart(c){if(c){try{c.destroy();}catch(e){}}}
+const GRID='rgba(255,255,255,.05)';
+const TICK={color:'#4a6080',font:{family:'JetBrains Mono',size:10}};
+
+async function loadDashboard(){
+  try{
+    const stats=await apiFetch('GET',`/studies/${currentStudy}/stats`);
+    document.getElementById('s-enrolled').textContent=stats.subjects?.enrolled??'0';
+    document.getElementById('s-completed').textContent=stats.subjects?.completed??'0';
+    document.getElementById('s-withdrawn').textContent=stats.subjects?.withdrawn??'0';
+    document.getElementById('s-qopen').textContent=stats.queries?.open??'0';
+    document.getElementById('s-sae').textContent=stats.aes?.serious??'0';
+    document.getElementById('s-sites').textContent=stats.sites??'0';
+    document.getElementById('open-q-badge').textContent=stats.queries?.open??'0';
+
+    // Subject donut
+    destroyChart(chartSubj);
+    chartSubj=new Chart(document.getElementById('chart-subj'),{
+      type:'doughnut',
+      data:{labels:['Enrolled','Completed','Withdrawn'],
+        datasets:[{data:[stats.subjects?.enrolled||0,stats.subjects?.completed||0,stats.subjects?.withdrawn||0],
+          backgroundColor:['rgba(124,111,247,.7)','rgba(16,232,138,.7)','rgba(255,77,106,.7)'],
+          borderColor:['#7c6ff7','#10e88a','#ff4d6a'],borderWidth:1}]},
+      options:{maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#6a7f99',font:{family:'JetBrains Mono',size:10},boxWidth:10}}},cutout:'65%'}
+    });
+
+    // Query donut
+    destroyChart(chartQuery);
+    chartQuery=new Chart(document.getElementById('chart-query'),{
+      type:'doughnut',
+      data:{labels:['Open','Answered','Closed'],
+        datasets:[{data:[stats.queries?.open||0,stats.queries?.answered||0,stats.queries?.closed||0],
+          backgroundColor:['rgba(255,77,106,.7)','rgba(245,200,66,.7)','rgba(16,232,138,.7)'],
+          borderColor:['#ff4d6a','#f5c842','#10e88a'],borderWidth:1}]},
+      options:{maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#6a7f99',font:{family:'JetBrains Mono',size:10},boxWidth:10}}},cutout:'65%'}
+    });
+  }catch(e){}
+
+  // AE severity
+  try{
+    const aes=await apiFetch('GET',`/studies/${currentStudy}/ae-severity-summary`);
+    const aeSev={MILD:0,MODERATE:0,SEVERE:0};
+    if(Array.isArray(aes)) aes.forEach(r=>{if(r.aesev&&aeSev.hasOwnProperty(r.aesev)) aeSev[r.aesev]=parseInt(r.count||r.c||0);});
+    destroyChart(chartAE);
+    chartAE=new Chart(document.getElementById('chart-ae'),{
+      type:'bar',
+      data:{labels:['MILD','MODERATE','SEVERE'],
+        datasets:[{label:'AEs',data:[aeSev.MILD,aeSev.MODERATE,aeSev.SEVERE],
+          backgroundColor:['rgba(16,232,138,.6)','rgba(245,200,66,.6)','rgba(255,77,106,.6)'],
+          borderColor:['#10e88a','#f5c842','#ff4d6a'],borderWidth:1,borderRadius:3}]},
+      options:{maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{x:{ticks:TICK,grid:{color:GRID}},y:{ticks:{...TICK,stepSize:1},grid:{color:GRID},beginAtZero:true}}}
+    });
+  }catch(e){}
+
+  // Site enrollment
+  try{
+    const sites=await apiFetch('GET',`/studies/${currentStudy}/sites`);
+    const siteSubj=await apiFetch('GET',`/studies/${currentStudy}/subjects`);
+    const counts={};
+    siteSubj.forEach(s=>{counts[s.site_id]=(counts[s.site_id]||0)+1;});
+    const labels=sites.map(s=>s.site_id.split('-').slice(-1)[0]);
+    const data=sites.map(s=>counts[s.site_id]||0);
+    destroyChart(chartSite);
+    chartSite=new Chart(document.getElementById('chart-site'),{
+      type:'bar',
+      data:{labels,datasets:[{label:'Subjects',data,
+        backgroundColor:'rgba(124,111,247,.6)',borderColor:'#7c6ff7',borderWidth:1,borderRadius:3}]},
+      options:{maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{x:{ticks:TICK,grid:{color:GRID}},y:{ticks:{...TICK,stepSize:1},grid:{color:GRID},beginAtZero:true}}}
+    });
+  }catch(e){}
+
+  // Open queries table
+  try{
+    const queries=await apiFetch('GET',`/studies/${currentStudy}/queries?status=Open`);
+    const el=document.getElementById('dash-query-table');
+    if(!queries.length){el.innerHTML='<div class="empty">No open queries</div>';return;}
+    el.innerHTML=`<table><thead><tr><th>Query ID</th><th>Subject</th><th>Domain</th><th>Field</th><th>Issue</th><th>Severity</th><th>Raised</th></tr></thead><tbody>${
+      queries.slice(0,8).map(q=>`<tr>
+        <td class="mono">${q.query_id}</td>
+        <td class="mono">${q.usubjid}</td>
+        <td class="mono">${q.domain}</td>
+        <td class="mono">${q.field}</td>
+        <td>${(q.issue||'').slice(0,60)}${(q.issue||'').length>60?'…':''}</td>
+        <td><span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span></td>
+        <td class="mono">${(q.raised_at||'').slice(0,10)}</td>
+      </tr>`).join('')
+    }</tbody></table>`;
+  }catch(e){}
+}
+
+// SUBJECTS
+async function loadSubjectsPanel(){
+  document.getElementById('subj-study-sub').textContent=currentStudy;
+  const tbl=document.getElementById('subjects-table');
+  tbl.innerHTML='<div class="loading">Loading</div>';
+  try{
+    allSubjectsData=await apiFetch('GET',`/studies/${currentStudy}/subjects`);
+    renderSubjectsTable(allSubjectsData);
+  }catch(e){tbl.innerHTML=`<div class="empty">${e.message}</div>`;}
+}
+
+function renderSubjectsTable(subjects){
+  const tbl=document.getElementById('subjects-table');
+  document.getElementById('subj-count-label').textContent=`${subjects.length} Subjects`;
+  if(!subjects.length){tbl.innerHTML='<div class="empty">No subjects</div>';return;}
+  tbl.innerHTML=`<table><thead><tr><th>Subject ID</th><th>Site</th><th>Sex</th><th>Race</th><th>Consent Date</th><th>Enroll Date</th><th>Status</th><th>Action</th></tr></thead><tbody>${
+    subjects.map(s=>`<tr>
+      <td class="mono">${s.usubjid}</td>
+      <td class="mono">${s.site_id}</td>
+      <td>${s.sex||'—'}</td>
+      <td>${s.race||'—'}</td>
+      <td class="mono">${s.consent_date||'—'}</td>
+      <td class="mono">${s.enroll_date||'—'}</td>
+      <td><span class="pill ${s.status?.toLowerCase()}">${s.status}</span></td>
+      <td><button class="btn btn-sm btn-outline" onclick='openSubjectDetail(${JSON.stringify(s)})'>VIEW</button></td>
+    </tr>`).join('')
+  }</tbody></table>`;
+}
+
+function filterSubjectsTable(){
+  const q=document.getElementById('subj-filter').value.toLowerCase();
+  const st=document.getElementById('subj-status-filter').value;
+  const filtered=allSubjectsData.filter(s=>
+    (!q||s.usubjid?.toLowerCase().includes(q)||s.site_id?.toLowerCase().includes(q)||s.status?.toLowerCase().includes(q))&&
+    (!st||s.status===st)
+  );
+  renderSubjectsTable(filtered);
+}
+
+// SUBJECT DETAIL
+async function openSubjectDetail(s){
+  currentSubjectDetail=s;
+  document.getElementById('sd-header').innerHTML=`
+    <div class="subj-id">${s.usubjid}</div>
+    <div class="subj-meta-row" style="margin-top:8px;">
+      <div class="subj-meta-chip">SITE: <span>${s.site_id}</span></div>
+      <div class="subj-meta-chip">SEX: <span>${s.sex||'—'}</span></div>
+      <div class="subj-meta-chip">RACE: <span>${s.race||'—'}</span></div>
+      <div class="subj-meta-chip">CONSENT: <span>${s.consent_date||'—'}</span></div>
+      <div class="subj-meta-chip">STATUS: <span style="color:${s.status==='ENROLLED'?'var(--accent)':s.status==='COMPLETED'?'var(--green)':'var(--red)'}">${s.status}</span></div>
+    </div>`;
+  document.querySelectorAll('#sd-tabs .tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  showPanel('subject-detail');
+  loadSDTab('visits');
+}
+
+async function loadSDTab(tab){
+  activeSDTab=tab;
+  document.querySelectorAll('#sd-tabs .tab').forEach((t,i)=>{
+    const tabs=['visits','dm','vs','lb','ae','queries'];
+    t.classList.toggle('active',tabs[i]===tab);
+  });
+  const el=document.getElementById('sd-content');
+  el.innerHTML='<div class="loading">Loading</div>';
+  const uid=currentSubjectDetail.usubjid;
+  try{
+    if(tab==='visits'){
+      const visits=await apiFetch('GET',`/studies/${currentStudy}/subjects/${uid}/visits`);
+      visits.sort((a,b)=>a.visit_num-b.visit_num);
+      if(!visits.length){el.innerHTML='<div class="empty">No visits</div>';return;}
+      el.innerHTML=`
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">
+          ${visits.map(v=>`
+            <div style="background:var(--surface2);border:1px solid ${v.status==='COMPLETED'?'rgba(16,232,138,.3)':'var(--border)'};border-radius:6px;padding:12px;">
+              <div style="font-family:var(--mono);font-size:10px;color:${v.status==='COMPLETED'?'var(--green)':'var(--text3)'};margin-bottom:4px;">V${v.visit_num} · ${v.status}</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;">${v.visit_name}</div>
+              <div style="font-family:var(--mono);font-size:10px;color:var(--text3);">${v.visit_date||'—'}</div>
+            </div>`).join('')}
+        </div>`;
+    } else if(tab==='queries'){
+      const queries=await apiFetch('GET',`/studies/${currentStudy}/queries`).then(qs=>qs.filter(q=>q.usubjid===uid));
+      if(!queries.length){el.innerHTML='<div class="empty">No queries for this subject</div>';return;}
+      el.innerHTML=queries.map(q=>`
+        <div class="query-card">
+          <div class="query-card-top"><span class="mono">${q.query_id}</span><span class="pill ${q.status?.toLowerCase()}">${q.status}</span><span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span></div>
+          <div class="query-issue">${q.issue}</div>
+          <div class="query-meta"><span>Domain: ${q.domain}</span><span>Field: ${q.field}</span><span>Raised: ${(q.raised_at||'').slice(0,10)}</span></div>
+        </div>`).join('');
+    } else {
+      const data=await apiFetch('GET',`/studies/${currentStudy}/subjects/${uid}/crf/${tab}`);
+      const rows=Array.isArray(data)?data:[data];
+      if(!rows.length||!rows[0]){el.innerHTML='<div class="empty">No '+tab.toUpperCase()+' data</div>';return;}
+      const keys=Object.keys(rows[0]).filter(k=>!['id'].includes(k));
+      el.innerHTML=`<div class="tbl-card"><div class="tbl-scroll"><table>
+        <thead><tr>${keys.map(k=>`<th>${k.toUpperCase()}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(r=>`<tr>${keys.map(k=>`<td class="mono">${r[k]??'—'}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table></div></div>`;
+    }
+  }catch(e){
+    if(e.status===404) el.innerHTML=`<div class="empty">No ${tab.toUpperCase()} data recorded</div>`;
+    else el.innerHTML=`<div class="empty">${e.message}</div>`;
+  }
+}
+
+// CRF DATABASE
+async function loadDataTab(tab){
+  activeDataTab=tab;
+  document.querySelectorAll('#panel-data .tab').forEach((t,i)=>{
+    const tabs=['vs','lb','ae','ex','cm','dm'];
+    t.classList.toggle('active',tabs[i]===tab);
+  });
+  document.getElementById('data-tab-label').textContent={'vs':'VITAL SIGNS','lb':'LABORATORY','ae':'ADVERSE EVENTS','ex':'EXPOSURE','cm':'MEDICATIONS','dm':'DEMOGRAPHICS'}[tab]||tab.toUpperCase();
+  document.getElementById('data-filter').value='';
+  const body=document.getElementById('data-table-body');
+  body.innerHTML='<div class="loading">Loading</div>';
+  try{
+    const subjects=await apiFetch('GET',`/studies/${currentStudy}/subjects`);
+    allDataRows=[];
+    const batchSize=15;
+    for(let i=0;i<Math.min(subjects.length,batchSize);i++){
+      try{
+        const rows=await apiFetch('GET',`/studies/${currentStudy}/subjects/${subjects[i].usubjid}/crf/${tab}`);
+        const arr=Array.isArray(rows)?rows:[rows];
+        arr.forEach(r=>{if(r&&r.usubjid) allDataRows.push(r);});
+      }catch(e){}
+    }
+    document.getElementById('data-row-count').textContent=`${allDataRows.length} records`;
+    renderDataTable(allDataRows);
+  }catch(e){body.innerHTML=`<div class="empty">${e.message}</div>`;}
+}
+
+function renderDataTable(rows){
+  const body=document.getElementById('data-table-body');
+  if(!rows.length){body.innerHTML='<div class="empty">No data</div>';return;}
+  const keys=Object.keys(rows[0]).filter(k=>!['id'].includes(k));
+  body.innerHTML=`<table>
+    <thead><tr>${keys.map(k=>`<th>${k.toUpperCase()}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r=>`<tr>${keys.map(k=>`<td class="mono">${r[k]??'—'}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function filterDataTable(){
+  const q=document.getElementById('data-filter').value.toLowerCase();
+  const filtered=allDataRows.filter(r=>(r.usubjid||'').toLowerCase().includes(q));
+  document.getElementById('data-row-count').textContent=`${filtered.length} records`;
+  renderDataTable(filtered);
+}
+
+// QUERIES
+async function loadQueries(){
+  const list=document.getElementById('query-list');
+  list.innerHTML='<div class="loading">Loading</div>';
+  try{
+    allQueriesData=await apiFetch('GET',`/studies/${currentStudy}/queries`);
+    renderQueries(allQueriesData);
+  }catch(e){list.innerHTML=`<div class="empty">${e.message}</div>`;}
+}
+
+function renderQueries(queries){
+  const list=document.getElementById('query-list');
+  if(!queries.length){list.innerHTML='<div class="empty">No queries found</div>';return;}
+  list.innerHTML=queries.map(q=>`
+    <div class="query-card">
+      <div class="query-card-top">
+        <span class="mono">${q.query_id}</span>
+        <span class="pill ${q.status?.toLowerCase()}">${q.status}</span>
+        <span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span>
+      </div>
+      <div class="query-issue">${q.issue}</div>
+      <div class="query-meta">
+        <span>Subject: ${q.usubjid}</span>
+        <span>Domain: ${q.domain}</span>
+        <span>Field: ${q.field}</span>
+        ${q.value?`<span>Value: ${q.value}</span>`:''}
+        <span>Raised: ${(q.raised_at||'').slice(0,10)}</span>
+        ${q.raised_by?`<span>By: ${q.raised_by}</span>`:''}
+      </div>
+      ${q.response?`<div style="background:var(--surface3);border-radius:4px;padding:8px 12px;margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--text2);">Response: ${q.response}</div>`:''}
+      <div class="query-actions">
+        ${q.status==='Open'?`<button class="btn btn-sm btn-outline" onclick="openQueryModal('${q.query_id}','answer')">ANSWER</button>`:''}
+        ${q.status==='Answered'?`<button class="btn btn-sm btn-green" onclick="closeQuery('${q.query_id}')">CLOSE</button>`:''}
+        ${q.status!=='Closed'?`<button class="btn btn-sm btn-danger" onclick="closeQuery('${q.query_id}')">CLOSE</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function filterQueries(){
+  const q=document.getElementById('q-search').value.toLowerCase();
+  const st=document.getElementById('q-status-filter').value;
+  const sv=document.getElementById('q-sev-filter').value;
+  const filtered=allQueriesData.filter(qr=>
+    (!q||qr.usubjid?.toLowerCase().includes(q)||qr.issue?.toLowerCase().includes(q)||qr.field?.toLowerCase().includes(q))&&
+    (!st||qr.status===st)&&
+    (!sv||qr.severity===sv)
+  );
+  renderQueries(filtered);
+}
+
+function openQueryModal(qid, action){
+  const q=allQueriesData.find(x=>x.query_id===qid);
+  if(!q) return;
+  document.getElementById('mq-title').textContent=`${q.query_id} — ${action==='answer'?'Answer Query':'Query Detail'}`;
+  document.getElementById('mq-body').innerHTML=`
+    <div style="margin-bottom:14px;">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:4px;">${q.usubjid} · ${q.domain} · ${q.field}</div>
+      <div style="font-size:13px;color:var(--text);margin-bottom:8px;">${q.issue}</div>
+      <div style="display:flex;gap:8px;"><span class="pill ${q.status?.toLowerCase()}">${q.status}</span><span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span></div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>Response</label>
+      <textarea id="q-response" rows="4" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:10px;border-radius:5px;outline:none;resize:vertical;" placeholder="Enter your response to this query..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary btn-sm" onclick="answerQuery('${qid}')">SUBMIT RESPONSE</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-query')">CANCEL</button>
+    </div>`;
+  document.getElementById('modal-query').classList.add('open');
+}
+
+async function answerQuery(qid){
+  const response=document.getElementById('q-response').value.trim();
+  if(!response) return;
+  try{
+    await apiFetch('PUT',`/studies/${currentStudy}/queries/${qid}`,{status:'Answered',response});
+    closeModal('modal-query');
+    loadQueries();
+  }catch(e){alert(e.message);}
+}
+
+async function closeQuery(qid){
+  try{
+    await apiFetch('PUT',`/studies/${currentStudy}/queries/${qid}`,{status:'Closed'});
+    loadQueries();
+  }catch(e){alert(e.message);}
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// RAISE QUERY
+async function loadRaiseSubjects(){
+  try{
+    const subjects=await apiFetch('GET',`/studies/${currentStudy}/subjects`);
+    const sel=document.getElementById('rq-usubjid');
+    sel.innerHTML='<option value="">Select subject...</option>'+subjects.map(s=>`<option value="${s.usubjid}">${s.usubjid}</option>`).join('');
+  }catch(e){}
+}
+
+async function raiseQuery(){
+  const usubjid=document.getElementById('rq-usubjid').value;
+  const domain=document.getElementById('rq-domain').value;
+  const field=document.getElementById('rq-field').value.trim();
+  const issue=document.getElementById('rq-issue').value.trim();
+  const severity=document.getElementById('rq-sev').value;
+  const alertEl=document.getElementById('raise-alert');
+  alertEl.style.display='none';
+  if(!usubjid||!domain||!field||!issue||!severity){
+    alertEl.textContent='Please fill all required fields';alertEl.className='alert error';alertEl.style.display='block';return;
+  }
+  try{
+    await apiFetch('POST',`/studies/${currentStudy}/queries`,{
+      usubjid,domain,field,issue,severity,
+      visit_num:parseInt(document.getElementById('rq-visitnum').value)||null,
+      value:document.getElementById('rq-value').value||null
+    });
+    alertEl.textContent='Query raised successfully!';alertEl.className='alert success';alertEl.style.display='block';
+    ['rq-usubjid','rq-domain','rq-field','rq-issue','rq-sev','rq-visitnum','rq-value'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el.tagName==='SELECT') el.value=''; else el.value='';
+    });
+    setTimeout(()=>alertEl.style.display='none',3000);
+    document.getElementById('open-q-badge').textContent=parseInt(document.getElementById('open-q-badge').textContent||'0')+1;
+  }catch(e){alertEl.textContent=e.message;alertEl.className='alert error';alertEl.style.display='block';}
+}
+
+// AUDIT
+async function loadAudit(){
+  const tbl=document.getElementById('audit-table');
+  tbl.innerHTML='<div class="loading">Loading</div>';
+  try{
+    const rows=await apiFetch('GET',`/studies/${currentStudy}/audit`);
+    if(!rows||!rows.length){tbl.innerHTML='<div class="empty">No audit records</div>';return;}
+    const keys=['event_time','action','table_name','record_id','field_name','old_value','new_value','performed_by'];
+    tbl.innerHTML=`<table><thead><tr>${keys.map(k=>`<th>${k.toUpperCase()}</th>`).join('')}</tr></thead>
+      <tbody>${rows.slice(0,200).map(r=>`<tr>${keys.map(k=>`<td class="mono">${r[k]??'—'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  }catch(e){tbl.innerHTML=`<div class="empty">${e.message}</div>`;}
+}
+</script>
+</body>
+</html>
