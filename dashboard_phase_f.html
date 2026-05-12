@@ -499,10 +499,13 @@ tr:hover td{background:var(--bg3);color:var(--text);}
       <div class="page-header"><div class="page-title">CRF DATA ENTRY</div><div class="page-sub">Enter clinical data for a subject</div></div>
       <div id="alert-crf" class="alert"></div>
       <div class="form-section" style="margin-bottom:16px;">
-        <div class="form-section-title">Select Subject</div>
+        <div class="form-section-title">Select Subject & Visit</div>
         <div class="form-grid">
-          <div class="form-group"><label>Subject</label><select id="crf-subject" onchange="onCRFSubjectChange()"><option value="">Select subject...</option></select></div>
+          <div class="form-group"><label>Subject *</label><select id="crf-subject" onchange="onCRFSubjectChange()"><option value="">Select subject...</option></select></div>
+          <div class="form-group"><label>Visit *</label><select id="crf-visit" onchange="onCRFVisitChange()" disabled><option value="">Select subject first...</option></select></div>
+          <div class="form-group"><label>Visit Date</label><input id="crf-visit-date" type="date" disabled/></div>
         </div>
+        <div id="crf-visit-info" style="display:none;margin-top:8px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-mono);font-size:11px;color:var(--text2);"></div>
       </div>
       <div id="crf-tabs-wrap" style="display:none;">
         <div class="tabs">
@@ -532,9 +535,9 @@ tr:hover td{background:var(--bg3);color:var(--text);}
         <div class="tab-panel" id="crf-vs">
           <div class="form-section">
             <div class="form-section-title">Vital Signs CRF</div>
+            <input type="hidden" id="vs-visit"/>
+            <input type="hidden" id="vs-visitname"/>
             <div class="form-grid">
-              <div class="form-group"><label>Visit Number *</label><input id="vs-visit" type="number" placeholder="1"/></div>
-              <div class="form-group"><label>Visit Name</label><input id="vs-visitname" placeholder="BASELINE"/></div>
               <div class="form-group"><label>Date *</label><input id="vs-date" type="date"/></div>
               <div class="form-group"><label>Systolic BP (mmHg)</label><input id="vs-sysbp" type="number" step="0.1" placeholder="120"/></div>
               <div class="form-group"><label>Diastolic BP (mmHg)</label><input id="vs-diabp" type="number" step="0.1" placeholder="80"/></div>
@@ -550,9 +553,9 @@ tr:hover td{background:var(--bg3);color:var(--text);}
         <div class="tab-panel" id="crf-lb">
           <div class="form-section">
             <div class="form-section-title">Laboratory CRF</div>
+            <input type="hidden" id="lb-visit"/>
+            <input type="hidden" id="lb-visitname"/>
             <div class="form-grid">
-              <div class="form-group"><label>Visit Number *</label><input id="lb-visit" type="number" placeholder="1"/></div>
-              <div class="form-group"><label>Visit Name</label><input id="lb-visitname" placeholder="BASELINE"/></div>
               <div class="form-group"><label>Date *</label><input id="lb-date" type="date"/></div>
               <div class="form-group"><label>HGB (g/dL)</label><input id="lb-hgb" type="number" step="0.1" placeholder="14.5"/></div>
               <div class="form-group"><label>WBC (10³/μL)</label><input id="lb-wbc" type="number" step="0.1" placeholder="7.2"/></div>
@@ -590,9 +593,9 @@ tr:hover td{background:var(--bg3);color:var(--text);}
         <div class="tab-panel" id="crf-ex">
           <div class="form-section">
             <div class="form-section-title">Exposure CRF</div>
+            <input type="hidden" id="ex-visit"/>
+            <input type="hidden" id="ex-visitname"/>
             <div class="form-grid">
-              <div class="form-group"><label>Visit Number *</label><input id="ex-visit" type="number" placeholder="1"/></div>
-              <div class="form-group"><label>Visit Name</label><input id="ex-visitname" placeholder="BASELINE"/></div>
               <div class="form-group"><label>Treatment *</label><input id="ex-trt" placeholder="STUDY DRUG"/></div>
               <div class="form-group"><label>Dose</label><input id="ex-dose" type="number" step="0.1" placeholder="100"/></div>
               <div class="form-group"><label>Dose Unit</label><input id="ex-dosu" placeholder="mg"/></div>
@@ -1721,7 +1724,69 @@ async function loadCRFSubjects() {
 function onCRFSubjectChange() {
   const uid = document.getElementById('crf-subject').value;
   document.getElementById('crf-tabs-wrap').style.display = uid ? 'block' : 'none';
-  if(uid) loadAEList(uid);
+  document.getElementById('crf-visit-info').style.display = 'none';
+  const visitSel = document.getElementById('crf-visit');
+  const dateFld = document.getElementById('crf-visit-date');
+  visitSel.innerHTML = '<option value="">Loading visits...</option>';
+  visitSel.disabled = true;
+  dateFld.disabled = true;
+  dateFld.value = '';
+  if(!uid) return;
+  loadAEList(uid);
+  api('GET', `/studies/${currentStudy}/subjects/${uid}/visits`).then(visits => {
+    const planned = visits.filter(v => v.status === 'PLANNED').sort((a,b) => a.visit_num - b.visit_num);
+    const completed = visits.filter(v => v.status === 'COMPLETED').sort((a,b) => a.visit_num - b.visit_num);
+    visitSel.innerHTML = '<option value="">Select visit...</option>';
+    if(planned.length) {
+      const g1 = document.createElement('optgroup');
+      g1.label = 'PLANNED';
+      planned.forEach(v => {
+        const o = document.createElement('option');
+        o.value = JSON.stringify({num: v.visit_num, name: v.visit_name, date: v.visit_date});
+        o.textContent = `Visit ${v.visit_num} — ${v.visit_name} (${v.visit_date||'no date'})`;
+        g1.appendChild(o);
+      });
+      visitSel.appendChild(g1);
+    }
+    if(completed.length) {
+      const g2 = document.createElement('optgroup');
+      g2.label = 'COMPLETED (re-entry)';
+      completed.forEach(v => {
+        const o = document.createElement('option');
+        o.value = JSON.stringify({num: v.visit_num, name: v.visit_name, date: v.visit_date});
+        o.textContent = `Visit ${v.visit_num} — ${v.visit_name} (${v.visit_date||'no date'})`;
+        g2.appendChild(o);
+      });
+      visitSel.appendChild(g2);
+    }
+    visitSel.disabled = false;
+    dateFld.disabled = false;
+    if(planned.length > 0) {
+      visitSel.value = visitSel.options[1]?.value || '';
+      onCRFVisitChange();
+    }
+  }).catch(() => {
+    visitSel.innerHTML = '<option value="">Could not load visits</option>';
+  });
+}
+
+function onCRFVisitChange() {
+  const raw = document.getElementById('crf-visit').value;
+  if(!raw) return;
+  const v = JSON.parse(raw);
+  document.getElementById('vs-visit').value = v.num;
+  document.getElementById('vs-visitname').value = v.name;
+  document.getElementById('lb-visit').value = v.num;
+  document.getElementById('lb-visitname').value = v.name;
+  document.getElementById('ex-visit').value = v.num;
+  document.getElementById('ex-visitname').value = v.name;
+  const dateVal = v.date || new Date().toISOString().slice(0,10);
+  document.getElementById('crf-visit-date').value = dateVal;
+  document.getElementById('vs-date').value = dateVal;
+  document.getElementById('lb-date').value = dateVal;
+  document.getElementById('ex-start').value = dateVal;
+  document.getElementById('crf-visit-info').style.display = 'block';
+  document.getElementById('crf-visit-info').textContent = `VISIT ${v.num} — ${v.name} — Planned: ${v.date||'TBD'}`;
 }
 
 function showCRFTab(tab) {
@@ -1751,16 +1816,16 @@ async function submitCRF(type) {
   if(type==='dm') {
     body = { age: parseInt(document.getElementById('dm-age').value)||null, sex: document.getElementById('dm-sex').value||null, race: document.getElementById('dm-race').value||null, ethnic: document.getElementById('dm-ethnic').value||null, country: document.getElementById('dm-country').value||null, rfstdtc: document.getElementById('dm-rfstdtc').value||null, rfendtc: document.getElementById('dm-rfendtc').value||null, dmdtc: document.getElementById('dm-dmdtc').value||null };
   } else if(type==='vs') {
-    if(!document.getElementById('vs-visit').value||!document.getElementById('vs-date').value) { showAlert('alert-crf','Visit number and date required','error'); return; }
+    if(!document.getElementById('vs-visit').value||!document.getElementById('vs-date').value) { showAlert('alert-crf','Select a visit first','error'); return; }
     body = { visit_num: parseInt(document.getElementById('vs-visit').value), visit_name: document.getElementById('vs-visitname').value||null, vsdtc: document.getElementById('vs-date').value, sysbp: parseFloat(document.getElementById('vs-sysbp').value)||null, diabp: parseFloat(document.getElementById('vs-diabp').value)||null, pulse: parseFloat(document.getElementById('vs-pulse').value)||null, temp: parseFloat(document.getElementById('vs-temp').value)||null, weight: parseFloat(document.getElementById('vs-weight').value)||null, height: parseFloat(document.getElementById('vs-height').value)||null, resp_rate: parseFloat(document.getElementById('vs-resp').value)||null };
   } else if(type==='lb') {
-    if(!document.getElementById('lb-visit').value||!document.getElementById('lb-date').value) { showAlert('alert-crf','Visit number and date required','error'); return; }
+    if(!document.getElementById('lb-visit').value||!document.getElementById('lb-date').value) { showAlert('alert-crf','Select a visit first','error'); return; }
     body = { visit_num: parseInt(document.getElementById('lb-visit').value), visit_name: document.getElementById('lb-visitname').value||null, lbdtc: document.getElementById('lb-date').value, hgb: parseFloat(document.getElementById('lb-hgb').value)||null, wbc: parseFloat(document.getElementById('lb-wbc').value)||null, plt: parseFloat(document.getElementById('lb-plt').value)||null, alt: parseFloat(document.getElementById('lb-alt').value)||null, ast: parseFloat(document.getElementById('lb-ast').value)||null, creatinine: parseFloat(document.getElementById('lb-creat').value)||null, glucose: parseFloat(document.getElementById('lb-glucose').value)||null };
   } else if(type==='ae') {
     if(!document.getElementById('ae-term').value||!document.getElementById('ae-start').value||!document.getElementById('ae-sev').value||!document.getElementById('ae-ser').value) { showAlert('alert-crf','AE term, start date, severity and serious required','error'); return; }
     body = { aeterm: document.getElementById('ae-term').value, aedecod: document.getElementById('ae-decod').value||null, aebodsys: document.getElementById('ae-bodsys').value||null, aestdtc: document.getElementById('ae-start').value, aeendtc: document.getElementById('ae-end').value||null, aesev: document.getElementById('ae-sev').value, aeser: document.getElementById('ae-ser').value, aerel: document.getElementById('ae-rel').value||null, aeout: document.getElementById('ae-out').value||null, aesdth: document.getElementById('ae-death').value };
   } else if(type==='ex') {
-    if(!document.getElementById('ex-visit').value||!document.getElementById('ex-trt').value) { showAlert('alert-crf','Visit and treatment required','error'); return; }
+    if(!document.getElementById('ex-visit').value||!document.getElementById('ex-trt').value) { showAlert('alert-crf','Select a visit and enter treatment','error'); return; }
     body = { visit_num: parseInt(document.getElementById('ex-visit').value), visit_name: document.getElementById('ex-visitname').value||null, extrt: document.getElementById('ex-trt').value, exdose: parseFloat(document.getElementById('ex-dose').value)||null, exdosu: document.getElementById('ex-dosu').value||null, exdosfrq: document.getElementById('ex-freq').value||null, exroute: document.getElementById('ex-route').value||null, exstdtc: document.getElementById('ex-start').value||null, exendtc: document.getElementById('ex-end').value||null };
   } else if(type==='cm') {
     if(!document.getElementById('cm-trt').value) { showAlert('alert-crf','Treatment required','error'); return; }
