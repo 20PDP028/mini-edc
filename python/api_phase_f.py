@@ -781,6 +781,14 @@ def get_audit(study_id: str, limit: int = Query(100, ge=1, le=500), current_user
 def health():
     return {"status": "healthy", "version": "2.0.0", "phase": "F", "timestamp": datetime.utcnow().isoformat()+"Z"}
 
+@app.get("/studies/{study_id}/ae-severity-summary", tags=["system"], summary="AE severity counts for dashboard")
+def ae_severity_summary(study_id: str, current_user: dict = Depends(get_current_user)):
+    rows = db_exec(
+        f"SELECT aesev, COUNT(*) as count FROM crf_ae WHERE study_id={PH} GROUP BY aesev",
+        (study_id,), fetchall=True
+    ) or []
+    return rows
+
 @app.get("/studies/{study_id}/stats", tags=["system"], summary="Study statistics")
 def study_stats(study_id: str, current_user: dict = Depends(get_current_user)):
     subj = db_exec(f"SELECT status, COUNT(*) as c FROM subjects WHERE study_id={PH} GROUP BY status", (study_id,), fetchall=True) or []

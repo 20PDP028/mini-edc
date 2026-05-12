@@ -1135,10 +1135,17 @@ async function loadDashboard() {
     });
   } catch(e) {}
   try {
-    const aeSev = {MILD:0,MODERATE:0,SEVERE:0};
-    for(const s of subjectList.slice(0,20)) {
-      try { const aes = await api('GET',`/studies/${currentStudy}/subjects/${s.usubjid}/crf/ae`);
-        aes.forEach(a=>{ if(a.aesev && aeSev.hasOwnProperty(a.aesev)) aeSev[a.aesev]++; }); } catch(e) {}
+    // Fetch AE severity breakdown via dedicated API query (aggregated, no per-subject loop)
+    const aeSevRows = await api('GET', `/studies/${currentStudy}/ae-severity-summary`).catch(()=>null);
+    let aeSev = {MILD:0,MODERATE:0,SEVERE:0};
+    if(aeSevRows && Array.isArray(aeSevRows)) {
+      aeSevRows.forEach(r=>{ if(r.aesev && aeSev.hasOwnProperty(r.aesev)) aeSev[r.aesev]=r.count||r.c||0; });
+    } else {
+      // Fallback: iterate all subjects (not just first 20)
+      for(const s of subjectList) {
+        try { const aes = await api('GET',`/studies/${currentStudy}/subjects/${s.usubjid}/crf/ae`);
+          if(Array.isArray(aes)) aes.forEach(a=>{ if(a.aesev && aeSev.hasOwnProperty(a.aesev)) aeSev[a.aesev]++; }); } catch(e) {}
+      }
     }
     destroyChart(chartAE);
     chartAE = new Chart(document.getElementById('chart-ae'), {
