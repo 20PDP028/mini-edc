@@ -32,6 +32,29 @@
   --radius: 6px;
   --shadow: 0 1px 3px rgba(0,0,0,.4);
 }
+
+/* ── Light Theme ── */
+body.light {
+  --bg: #f0f4f8;
+  --bg2: #ffffff;
+  --bg3: #e8eef5;
+  --bg4: #dce6f0;
+  --border: #d0dae6;
+  --border2: #b8c8d8;
+  --accent: #0d9488;
+  --accent-dim: rgba(13,148,136,.1);
+  --accent2: #059669;
+  --accent3: #ea6c00;
+  --warn: #d97706;
+  --danger: #e11d48;
+  --info: #2563eb;
+  --text: #1a2433;
+  --text2: #4a5e72;
+  --text3: #8a9eb0;
+  --card: #ffffff;
+  --card2: #f8fafc;
+  --shadow: 0 1px 3px rgba(0,0,0,.12);
+}
 *{margin:0;padding:0;box-sizing:border-box;}
 html{height:100%;}
 body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden;font-size:14px;line-height:1.5;}
@@ -53,6 +76,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 #user-badge{font-family:var(--font-mono);font-size:10px;color:var(--accent);padding:4px 10px;border:1px solid rgba(45,212,191,.3);border-radius:3px;background:rgba(45,212,191,.06);white-space:nowrap;}
 #logout-btn{background:transparent;border:1px solid var(--border);color:var(--text3);font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:3px;cursor:pointer;transition:all .2s;white-space:nowrap;}
 #logout-btn:hover{border-color:var(--danger);color:var(--danger);}
+#theme-btn{background:transparent;border:1px solid var(--border);color:var(--text2);font-size:14px;padding:4px 8px;border-radius:3px;cursor:pointer;transition:all .2s;line-height:1;}
+#theme-btn:hover{border-color:var(--accent);color:var(--accent);}
 #hamburger{display:none;background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:4px;}
 
 /* ── Sidebar ── */
@@ -257,6 +282,7 @@ tr:hover td{background:var(--bg3);color:var(--text);}
   .form-grid{grid-template-columns:1fr;}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -289,6 +315,7 @@ tr:hover td{background:var(--bg3);color:var(--text);}
     <div class="topbar-right">
       <div class="badge online" id="api-status">● LIVE</div>
       <div id="user-badge">—</div>
+      <button id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark theme">🌙</button>
       <button id="logout-btn" onclick="doLogout()">LOGOUT</button>
     </div>
   </header>
@@ -1008,6 +1035,25 @@ async function onStudyChange() {
 function toggleSidebar() {
   document.querySelector('.sidebar').classList.toggle('open');
 }
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('theme-btn').textContent = isLight ? '🌙' : '☀️';
+  localStorage.setItem('sara-edc-theme', isLight ? 'light' : 'dark');
+  // Redraw charts with new theme colors
+  if(typeof loadDashboard === 'function' && currentStudy) loadDashboard();
+}
+
+// Apply saved theme on load
+(function() {
+  if(localStorage.getItem('sara-edc-theme') === 'light') {
+    document.body.classList.add('light');
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('theme-btn');
+      if(btn) btn.textContent = '☀️';
+    });
+  }
+})();
 document.addEventListener('click', e => {
   const sidebar = document.querySelector('.sidebar');
   const ham = document.getElementById('hamburger');
@@ -1016,9 +1062,14 @@ document.addEventListener('click', e => {
   }
 });
 
-const TICK = { color:'#768a9c', font:{family:'IBM Plex Mono',size:10} };
-const GRID_C = '#1e2d3d';
-const LEG = { labels:{ color:'#768a9c', font:{family:'IBM Plex Mono',size:10}, boxWidth:10, padding:8 } };
+function getChartColors() {
+  const light = document.body.classList.contains('light');
+  return {
+    tick: { color: light ? '#4a5e72' : '#768a9c', font:{family:'IBM Plex Mono',size:10} },
+    grid: light ? '#d0dae6' : '#1e2d3d',
+    leg:  { labels:{ color: light ? '#4a5e72' : '#768a9c', font:{family:'IBM Plex Mono',size:10}, boxWidth:10, padding:8 } }
+  };
+}
 
 // ── DASHBOARD ─────────────────────────────────────────────────
 let chartSubjects, chartQueries, chartSites, chartAE;
@@ -1026,6 +1077,7 @@ function destroyChart(c) { if(c){try{c.destroy();}catch(e){}} }
 
 async function loadDashboard() {
   if(!currentStudy) return;
+  const {tick:TICK, grid:GRID_C, leg:LEG} = getChartColors();
   const study = studyList.find(s=>s.study_id===currentStudy);
   if(study) {
     document.getElementById('dash-study-name').textContent = study.study_title;
