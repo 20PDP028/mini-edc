@@ -644,7 +644,7 @@ async function loadDashboard(){
     if(!queries.length){el.innerHTML='<div class="empty">No open queries</div>';return;}
     el.innerHTML=`<table><thead><tr><th>Query ID</th><th>Subject</th><th>Domain</th><th>Field</th><th>Issue</th><th>Severity</th><th>Raised</th></tr></thead><tbody>${
       queries.slice(0,8).map(q=>`<tr>
-        <td class="mono">${q.query_id}</td>
+        <td class="mono">${q.query_id||q.id||'—'}</td>
         <td class="mono">${q.usubjid}</td>
         <td class="mono">${q.domain}</td>
         <td class="mono">${q.field}</td>
@@ -740,7 +740,7 @@ async function loadSDTab(tab){
       if(!queries.length){el.innerHTML='<div class="empty">No queries for this subject</div>';return;}
       el.innerHTML=queries.map(q=>`
         <div class="query-card">
-          <div class="query-card-top"><span class="mono">${q.query_id}</span><span class="pill ${q.status?.toLowerCase()}">${q.status}</span><span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span></div>
+          <div class="query-card-top"><span class="mono">${q.query_id||q.id||'—'}</span><span class="pill ${q.status?.toLowerCase()}">${q.status}</span><span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span></div>
           <div class="query-issue">${q.issue}</div>
           <div class="query-meta"><span>Domain: ${q.domain}</span><span>Field: ${q.field}</span><span>Raised: ${(q.raised_at||'').slice(0,10)}</span></div>
         </div>`).join('');
@@ -916,28 +916,33 @@ async function loadQueries(){
 function renderQueries(queries){
   const list=document.getElementById('query-list');
   if(!queries.length){list.innerHTML='<div class="empty">No queries found</div>';return;}
-  list.innerHTML=queries.map(q=>`
+  list.innerHTML=queries.map(q=>{
+    const qid=q.query_id||q.id||'—';
+    const sevClass=(q.severity||'').toLowerCase();
+    const stClass=(q.status||'').toLowerCase();
+    return `
     <div class="query-card">
       <div class="query-card-top">
-        <span class="mono">${q.query_id}</span>
-        <span class="pill ${q.status?.toLowerCase()}">${q.status}</span>
-        <span class="pill ${q.severity?.toLowerCase()}">${q.severity}</span>
+        <span class="mono">${qid}</span>
+        <span class="pill ${stClass}">${q.status||'—'}</span>
+        <span class="pill ${sevClass}">${q.severity||'—'}</span>
       </div>
-      <div class="query-issue">${q.issue}</div>
+      <div class="query-issue">${q.issue||''}</div>
       <div class="query-meta">
-        <span>Subject: ${q.usubjid}</span>
-        <span>Domain: ${q.domain}</span>
-        <span>Field: ${q.field}</span>
+        <span>Subject: ${q.usubjid||'—'}</span>
+        <span>Domain: ${q.domain||'—'}</span>
+        <span>Field: ${q.field||'—'}</span>
         ${q.value?`<span>Value: ${q.value}</span>`:''}
-        <span>Raised: ${(q.raised_at||'').slice(0,10)}</span>
+        <span>Raised: ${(q.raised_at||'').slice(0,10)||'—'}</span>
         ${q.raised_by?`<span>By: ${q.raised_by}</span>`:''}
       </div>
       ${q.response?`<div style="background:var(--surface3);border-radius:4px;padding:8px 12px;margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--text2);">Response: ${q.response}</div>`:''}
       <div class="query-actions">
-        ${q.status==='Open'?`<button class="btn btn-sm btn-outline" onclick="openQueryModal('${q.query_id}','answer')">ANSWER</button><button class="btn btn-sm btn-danger" onclick="closeQuery('${q.query_id}')">CLOSE</button>`:''}
-        ${q.status==='Answered'?`<button class="btn btn-sm btn-green" onclick="closeQuery('${q.query_id}')">CLOSE</button>`:''}
+        ${q.status==='Open'?`<button class="btn btn-sm btn-outline" onclick="openQueryModal('${qid}','answer')">ANSWER</button><button class="btn btn-sm btn-danger" onclick="closeQuery('${qid}')">CLOSE</button>`:''}
+        ${q.status==='Answered'?`<button class="btn btn-sm btn-green" onclick="closeQuery('${qid}')">CLOSE</button>`:''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function filterQueries(){
@@ -953,9 +958,9 @@ function filterQueries(){
 }
 
 function openQueryModal(qid, action){
-  const q=allQueriesData.find(x=>x.query_id===qid);
+  const q=allQueriesData.find(x=>(x.query_id||x.id)===qid);
   if(!q) return;
-  document.getElementById('mq-title').textContent=`${q.query_id} — ${action==='answer'?'Answer Query':'Query Detail'}`;
+  document.getElementById('mq-title').textContent=`${q.query_id||q.id||'—'} — ${action==='answer'?'Answer Query':'Query Detail'}`;
   document.getElementById('mq-body').innerHTML=`
     <div style="margin-bottom:14px;">
       <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:4px;">${q.usubjid} · ${q.domain} · ${q.field}</div>
