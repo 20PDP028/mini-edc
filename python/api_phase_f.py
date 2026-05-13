@@ -727,7 +727,7 @@ def list_queries(study_id: str, status: Optional[str] = Query(None), usubjid: Op
     sql = f"SELECT * FROM queries WHERE study_id={PH}"
     params = [study_id]
     if status:
-        sql += f" AND status={PH}"; params.append(status)
+        sql += f" AND UPPER(status)=UPPER({PH})"; params.append(status)
     if usubjid:
         sql += f" AND usubjid={PH}"; params.append(usubjid)
     sql += " ORDER BY raised_at DESC"
@@ -761,7 +761,7 @@ def close_query(study_id: str, query_id: str, current_user: dict = Depends(get_c
     q = db_exec(f"SELECT * FROM queries WHERE query_id={PH} AND study_id={PH}", (query_id, study_id), fetchone=True)
     if not q:
         raise HTTPException(status_code=404, detail=f"Query {query_id} not found")
-    if q["status"] != "Answered":
+    if q["status"].upper() != "ANSWERED":
         raise HTTPException(status_code=400, detail="Only Answered queries can be closed")
     ts = datetime.utcnow().isoformat() + "Z"
     db_exec(f"UPDATE queries SET status='Closed', closed_by={PH}, closed_at={PH} WHERE query_id={PH} AND study_id={PH}",
@@ -797,7 +797,7 @@ def update_query(study_id: str, query_id: str, update: QueryUpdate, current_user
         log_audit(study_id, current_user["user_id"], "QUERY_ANSWERED", "queries", query_id)
         return {"query_id": query_id, "status": "Answered", "response": update.response, "answered_by": current_user["user_id"], "answered_at": ts}
     elif update.status == "Closed":
-        if q["status"] not in ("Answered", "Open"):
+        if q["status"].upper() not in ("ANSWERED", "OPEN"):
             raise HTTPException(status_code=400, detail=f"Cannot close a query with status '{q['status']}'")
         db_exec(
             f"UPDATE queries SET status='Closed', closed_by={PH}, closed_at={PH} WHERE query_id={PH} AND study_id={PH}",
@@ -824,7 +824,7 @@ def study_stats(study_id: str, current_user: dict = Depends(get_current_user)):
     subj = db_exec(f"SELECT status, COUNT(*) as c FROM subjects WHERE study_id={PH} GROUP BY status", (study_id,), fetchall=True) or []
     subj_map = {r["status"]: r["c"] for r in subj}
     qry = db_exec(f"SELECT status, COUNT(*) as c FROM queries WHERE study_id={PH} GROUP BY status", (study_id,), fetchall=True) or []
-    qry_map = {r["status"]: r["c"] for r in qry}
+    qry_map = {r["status"].capitalize(): r["c"] for r in qry}
     ae_count = db_exec(f"SELECT COUNT(*) as c FROM crf_ae WHERE study_id={PH}", (study_id,), fetchone=True)
     sae_count = db_exec(f"SELECT COUNT(*) as c FROM crf_ae WHERE study_id={PH} AND aeser='Y'", (study_id,), fetchone=True)
     site_count = db_exec(f"SELECT COUNT(*) as c FROM sites WHERE study_id={PH}", (study_id,), fetchone=True)
