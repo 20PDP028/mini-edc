@@ -242,6 +242,83 @@ tr:hover td{background:var(--surface2);color:var(--text);}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* ── MOBILE RESPONSIVE ───────────────────────────────────── */
+.hamburger{display:none;background:transparent;border:1px solid var(--border);color:var(--text2);font-size:18px;padding:4px 9px;border-radius:4px;cursor:pointer;flex-shrink:0;transition:all .2s;}
+.hamburger:hover{border-color:var(--accent);color:var(--accent);}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:299;backdrop-filter:blur(2px);}
+
+@media(max-width:768px){
+  .hamburger{display:flex;align-items:center;}
+  .mobile-hide{display:none!important;}
+
+  /* Topbar */
+  .topbar{padding:0 12px;gap:10px;}
+  .topbar-study{font-size:10px;padding:2px 7px;max-width:130px;overflow:hidden;text-overflow:ellipsis;}
+  .btn-logout{font-size:9px;padding:3px 7px;}
+
+  /* Sidebar — slide in from left */
+  .sidebar{position:fixed;left:-220px;top:0;height:100vh;z-index:300;width:220px;
+    transition:left .25s ease;box-shadow:4px 0 20px rgba(0,0,0,.4);}
+  .sidebar.open{left:0;}
+  .sidebar-overlay.open{display:block;}
+
+  /* Main area takes full width */
+  .app-body{position:relative;}
+  .main{padding:16px 14px;}
+
+  /* Stats — 2 col on mobile */
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important;}
+  .stat-val{font-size:20px;}
+
+  /* Charts — single col */
+  .chart-grid{grid-template-columns:1fr!important;}
+  .chart-wrap{height:200px;}
+
+  /* Page header stack */
+  .page-header{flex-direction:column;align-items:flex-start;gap:8px;}
+
+  /* Filter bar stack */
+  .filter-bar{flex-direction:column;align-items:stretch;}
+  .filter-bar input,.filter-bar select{width:100%;min-width:unset;}
+
+  /* Form grid single col */
+  .form-grid{grid-template-columns:1fr!important;}
+  .form-group[style*="grid-column:span 2"]{grid-column:span 1!important;}
+
+  /* Tabs scroll horizontal */
+  .tabs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;}
+  .tabs::-webkit-scrollbar{height:3px;}
+  .tab{white-space:nowrap;flex-shrink:0;}
+
+  /* Query cards */
+  .query-meta{flex-direction:column;gap:4px;}
+  .query-card-top{flex-wrap:wrap;}
+
+  /* Table horizontal scroll */
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{min-width:480px;}
+
+  /* Modal full-width */
+  .modal-overlay{padding:8px;}
+  .modal{max-height:95vh;}
+
+  /* Subject detail meta */
+  .subj-meta-row{flex-direction:column;gap:6px;}
+
+  /* Study select grid single col */
+  .study-select-grid{grid-template-columns:1fr!important;}
+
+  /* Landing */
+  .study-landing{padding:20px 0;}
+  .landing-title{font-size:20px;}
+}
+
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important;}
+  .topbar-brand{font-size:11px;letter-spacing:1px;}
+  .main{padding:12px 10px;}
+}
 </style>
 </head>
 <body>
@@ -261,21 +338,23 @@ tr:hover td{background:var(--surface2);color:var(--text);}
 <!-- APP -->
 <div id="app">
   <div class="topbar">
+    <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">&#9776;</button>
     <div class="topbar-brand">SARA·EDC</div>
-    <div class="topbar-sep" style="width:1px;height:18px;background:var(--border);"></div>
-    <div class="topbar-label">CDM PORTAL</div>
-    <div class="topbar-sep" style="width:1px;height:18px;background:var(--border);"></div>
+    <div class="topbar-sep mobile-hide"></div>
+    <div class="topbar-label mobile-hide">CDM PORTAL</div>
+    <div class="topbar-sep mobile-hide"></div>
     <div class="topbar-study" id="tb-study" title="">Select a study</div>
     <div class="topbar-right">
       <button id="theme-btn" onclick="toggleTheme()" style="font-family:var(--mono);font-size:14px;background:transparent;border:1px solid var(--border);border-radius:4px;padding:3px 8px;cursor:pointer;color:var(--text2);transition:all .2s;" title="Toggle light/dark mode">🌙</button>
-      <div class="user-chip" id="tb-user">—</div>
+      <div class="user-chip mobile-hide" id="tb-user">—</div>
       <button class="btn-logout" onclick="doLogout()">LOGOUT</button>
     </div>
   </div>
 
   <div class="app-body">
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
     <!-- SIDEBAR -->
-    <div class="sidebar">
+    <div class="sidebar" id="main-sidebar">
       <div id="sidebar-study-ctx" style="display:none;margin:10px 12px 2px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;">
         <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:3px;">ACTIVE STUDY</div>
         <div style="font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:700;" id="sidebar-study-id">—</div>
@@ -1045,6 +1124,27 @@ async function loadAudit(){
       <tbody>${rows.slice(0,200).map(r=>`<tr>${keys.map(k=>`<td class="mono">${r[k]??'—'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   }catch(e){tbl.innerHTML=`<div class="empty">${e.message}</div>`;}
 }
+
+// MOBILE SIDEBAR
+function toggleSidebar(){
+  const sb=document.getElementById('main-sidebar');
+  const ov=document.getElementById('sidebar-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('open');
+}
+function closeSidebar(){
+  document.getElementById('main-sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+// Close sidebar on nav item click (mobile)
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.nav-item').forEach(function(el){
+    el.addEventListener('click',function(){
+      if(window.innerWidth<=768) closeSidebar();
+    });
+  });
+});
+
 // THEME TOGGLE
 function toggleTheme(){
   const isLight=document.documentElement.getAttribute('data-theme')==='light';
